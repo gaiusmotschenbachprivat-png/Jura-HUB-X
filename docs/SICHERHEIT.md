@@ -106,3 +106,25 @@ Prüfung mit `npm audit` und `cargo audit` vor jedem Release (siehe README).
 - Backups sind bis Phase 5 unverschlüsselt.
 - Die App wird für Release-Builds signiert werden müssen (Apple Developer ID bzw.
   Windows-Codesignatur). Ohne Signatur warnen macOS und Windows beim Start.
+
+## 10. iPad-/Browser-Version
+
+- **Keine Daten im Netz:** Die Website liefert nur Programmdateien. Datenbank, Dokumente und
+  Backups liegen im privaten Speicher der Website auf dem Gerät (OPFS bzw. IndexedDB). Andere
+  Websites können darauf nicht zugreifen (Same-Origin-Regel).
+- **CSP** wie in der Desktop-App, als `<meta>`-Angabe: Skripte nur von der eigenen Adresse,
+  `connect-src 'self'` (kein Kontakt zu fremden Servern), keine Frames, kein `eval`.
+  WebAssembly ist erlaubt (`wasm-unsafe-eval`) – nötig für SQLite.
+- **Service Worker** speichert ausschließlich die App-Dateien für den Offline-Betrieb, nie
+  Inhalte. Er beantwortet nur Anfragen an die eigene Adresse.
+- **Keine Verschlüsselung durch die App.** Auf dem iPad schützt die Geräteverschlüsselung,
+  sobald ein Code gesetzt ist.
+- **Datenverlust-Risiko:** Löscht man die Website-Daten in Safari, sind die Studiendaten weg.
+  Deshalb erinnert die App an Backups, die über das Teilen-Menü aus der App heraus gesichert
+  werden.
+- **Gleichzeitiger Zugriff** aus mehreren Tabs wird verhindert (Web Locks).
+- **Backups** werden vor dem Einspielen vollständig geprüft (Prüfsummen, erlaubte
+  Eintragsnamen, Datenbank-Integrität) – gleiche Regeln wie am Desktop.
+- **Herkunft der Programmdateien:** Wer die Website ausliefert (z. B. GitHub Pages), könnte
+  theoretisch veränderte Programmdateien ausliefern. Deshalb nur die eigene, selbst gebaute
+  Adresse verwenden.

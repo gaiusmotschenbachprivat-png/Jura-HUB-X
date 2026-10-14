@@ -43,6 +43,11 @@ Architektur, Stack, Projektstruktur, Datenmodell, Sicherheitskonzept, Risiken
 | Eigene Schlagwort-Verwaltung | ⬜ (Schlagwörter vorerst als Text an Karteikarten) |
 | Graph-Darstellung der Verknüpfungen | ⬜ (optional; Navigation über Kontextbereich vorhanden) |
 
+## iPad-/Browser-Version ✅ (Version 0.3)
+
+Gleiche Oberfläche, Datenkern als TypeScript-Port, Speicherung im Gerät (OPFS/IndexedDB),
+offline, Backups austauschbar mit der Desktop-App. Details: [IPAD.md](IPAD.md).
+
 ## Phase 4 – Word und Export ⬜
 PDF-Export, verknüpfte Word-Dateien mit Änderungserkennung (Hash + Änderungszeit),
 Fußnoten im DOCX-Export, Tests mit realen Dokumenten.

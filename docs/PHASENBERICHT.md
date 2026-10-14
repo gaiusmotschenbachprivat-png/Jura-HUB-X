@@ -145,3 +145,59 @@ erste Version sind umgesetzt:
 2. Verknüpfte Word-Dateien mit Änderungserkennung
 3. Fußnoten im Editor und im Export
 4. Formeln als echte Word-Gleichungen
+
+## iPad-/Browser-Version (Version 0.3)
+
+### Umgesetzt
+
+- **Gleiche Oberfläche im Browser**, installierbar über „Zum Home-Bildschirm“ (Web-App-Manifest,
+  Symbol), **offline** nutzbar (Service Worker hält nur die App-Dateien vor).
+- **Datenkern als TypeScript-Port** des Rust-Kerns (`src/core`): Struktur, Notizen mit Versionen,
+  Dokumente, Verknüpfungen, Papierkorb, Volltextsuche (FTS5), Wissen, Karteikarten (FSRS),
+  Planung, PDF-Markierungen, Bilder. Dieselben SQL-Migrationsdateien wie am Desktop.
+- **Speicherung im Gerät:** SQLite (WebAssembly) im Web Worker, Ablage im privaten Dateisystem der
+  Website (OPFS) oder – falls der Browser das nicht kann – in IndexedDB. Jede Änderung ist
+  dauerhaft gespeichert, bevor die Oberfläche sie bestätigt. Nur ein Tab darf gleichzeitig arbeiten.
+- **Backups** im selben Format wie die Desktop-App, erstellt und geprüft im App-Speicher,
+  herausgegeben über das Teilen-Menü („In Dateien sichern“); Wiederherstellung aus Dateien –
+  auch aus Desktop-Backups. Der vorherige Stand wird als eigenes Backup aufbewahrt.
+- **iPad-Bedienung:** Dateiauswahl und Drag-and-drop aus der Dateien-App, langes Drücken statt
+  Rechtsklick, größere Zeilen bei Touch, Hinweis zur Installation, Erinnerung an Backups.
+- pdf.js in der Ausgabe für ältere Browser-Engines (betrifft auch die Desktop-App, ohne
+  Funktionsänderung).
+
+### Ausgeführte Tests (zuletzt alle bestanden)
+
+- Vitest: 56 Tests, davon 31 für den TypeScript-Kern (portierte Rust-Tests: Dokumente,
+  Papierkorb, Verknüpfungen, Wissen, Fundstellen, Karteikarten, Planung, Markierungen,
+  Backups inkl. Beschädigung).
+- **Backup-Kompatibilität in beide Richtungen** (`tests/backup-compat.sh`): Desktop-Backup → in der
+  Browser-Version geprüft, wiederhergestellt, weiterbearbeitet → Backup → am Desktop geprüft und
+  wiederhergestellt (Notiz, Dokument, Suche).
+- Chromium, echte Oberfläche: 24/24 (Einrichtung, Notiz, PDF-Import über Dateiauswahl,
+  PDF-Text, Suche, Neuladen, Backup, „In Dateien sichern“, Wiederherstellung aus Datei,
+  beschädigtes Backup, CSP, zweiter Tab, Offline-Start, Hochformat ohne Querscrollen).
+- WebKit (Safari-Engine, WebKitGTK 2.52): 24/24 Kernabläufe inkl. Neuladen und Wiederherstellung.
+- Desktop-App unverändert: Rust 32, E2E 35/35 + 21/21.
+
+### Während der Tests gefundene und behobene Fehler
+
+1. pdf.js 6 nutzt eine sehr neue JavaScript-Funktion (`getOrInsertComputed`), die Chromium und
+   ältere Safari-Versionen nicht kennen → PDF-Text wurde nicht gelesen. Umstellung auf die
+   kompatible Ausgabe von pdf.js.
+2. WebKitGTK bietet keinen synchronen Dateizugriff (OPFS) → Ersatzspeicher über IndexedDB.
+3. Backend-Weiterleitung an den Worker war fehlerhaft (Start schlug fehl) – behoben.
+
+### Bekannte Einschränkungen
+
+- **Nicht auf einem echten iPad getestet.** Geprüft wurden Chromium, WebKit unter Linux und
+  (im GitHub-Workflow) Safari unter macOS. Teilen-Menü und Home-Bildschirm bitte einmal selbst
+  ausprobieren.
+- Welche Speichervariante Safari auf dem iPad nutzt (OPFS oder IndexedDB), zeigt
+  „Einstellungen → Daten & Sicherheit“. Bei IndexedDB wird die Datenbank nach jeder Änderung
+  vollständig gesichert; bei sehr großen Datenbanken kann das Speichern spürbar dauern.
+- Safari kann Website-Daten löschen, wenn die App nicht vom Home-Bildschirm genutzt wird oder der
+  Speicher knapp ist. Backups regelmäßig in der Dateien-App sichern.
+- Verschieben im Strukturbaum per Finger-Ziehen gibt es nicht (Maus/Trackpad geht).
+- Die Veröffentlichung braucht eine Website-Adresse (GitHub Pages: bei privaten Repositories
+  nur mit kostenpflichtigem GitHub-Tarif).

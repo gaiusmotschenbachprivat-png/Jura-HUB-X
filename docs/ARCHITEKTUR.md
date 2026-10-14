@@ -93,12 +93,24 @@ studium-os/
 │   └── tests/               Integrationstests
 ├── src-tauri/               Tauri-Hülle, Befehle, Konfiguration, Rechte
 └── src/                     React-Oberfläche
-    ├── api/                 Befehle + Typen + Mock
+    ├── api/                 Befehle + Typen + Mock + Browser-Backend (web.ts)
+    ├── core/                Datenkern als TypeScript-Port (iPad-/Browser-Version)
+    ├── web/                 Daten-Worker, OPFS-/IndexedDB-Speicher
     ├── features/            ein Ordner je Funktionsbereich
     ├── lib/                 reine Logik (getestet mit Vitest)
     ├── ui/                  Bausteine
     └── styles/              Design-Tokens, Grundtypografie
 ```
+
+### iPad-/Browser-Version (ADR-002)
+
+Tauri läuft nicht auf dem iPad. Statt einer zweiten Oberfläche läuft dieselbe React-App im
+Browser mit einem eigenen Backend (`src/api/web.ts`). Der Datenkern ist ein TypeScript-Port
+von `studium-core` (`src/core`), der dieselben SQL-Migrationsdateien und SQL-Texte nutzt und
+in einem Web Worker gegen SQLite (WebAssembly) läuft. Das Backup-Format ist identisch, damit
+Daten zwischen iPad und Rechner wandern können. Abwägung: Zwei Implementierungen des Kerns
+müssen synchron gehalten werden; dafür sind die Tests beider Seiten parallel aufgebaut.
+Details: [IPAD.md](IPAD.md).
 
 ## 5. Editor-Datenmodell
 

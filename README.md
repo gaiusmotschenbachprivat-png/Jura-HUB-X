@@ -4,7 +4,7 @@ Lokales Arbeitsinstrument für das Studium (Rechtswissenschaften, Recht & Wirtsc
 Studienstruktur, Mitschriften, Vorlesungsfolien und Skripte, Verknüpfungen, Volltextsuche
 und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, kein Tracking.
 
-> Stand: Version 0.2 (Phase 3 – Dokumente und Lernen). Was fertig ist und was
+> Stand: Version 0.3 (Phase 3 – Dokumente und Lernen, dazu die iPad-/Browser-Version). Was fertig ist und was
 > noch fehlt, steht in [docs/ROADMAP.md](docs/ROADMAP.md) und [docs/PHASENBERICHT.md](docs/PHASENBERICHT.md).
 
 ## Funktionen
@@ -61,14 +61,23 @@ npm run tauri build
 ```
 
 Ergebnis:
-- macOS: `target/release/bundle/dmg/Studium OS_0.2.0_*.dmg`
-- Windows: `target/release/bundle/msi/Studium OS_0.2.0_*.msi` und `…/nsis/*-setup.exe`
+- macOS: `target/release/bundle/dmg/Studium OS_0.3.0_*.dmg`
+- Windows: `target/release/bundle/msi/Studium OS_0.3.0_*.msi` und `…/nsis/*-setup.exe`
 
 Die App ist noch nicht signiert. macOS zeigt beim ersten Öffnen eine Warnung: Rechtsklick auf die App
 → „Öffnen“. Windows SmartScreen: „Weitere Informationen“ → „Trotzdem ausführen“.
 
 Alternativ baut der GitHub-Workflow (`.github/workflows/ci.yml`) die Installationsdateien für macOS und
 Windows automatisch, sobald das Projekt in einem GitHub-Repository liegt.
+
+## iPad
+
+Studium OS gibt es auch als Web-App für das iPad (Safari, „Zum Home-Bildschirm“). Alle Daten
+bleiben auf dem iPad; Backups sind mit der Desktop-App austauschbar. Einrichtung, Technik und
+Unterschiede: [docs/IPAD.md](docs/IPAD.md).
+
+Bauen: `npm run build:web` (Ergebnis in `dist-web/`). Der Workflow `.github/workflows/pages.yml`
+veröffentlicht sie auf GitHub Pages.
 
 ## Wo liegen meine Daten?
 
@@ -90,6 +99,7 @@ Datenträger an. Siehe [docs/SICHERHEIT.md](docs/SICHERHEIT.md).
 npm test                 # Oberflächenlogik (Vitest): Export, Vorlagen, Autosave, FSRS, Gliederung …
 npm run test:rust        # Rust-Kern: Datenbank, Migrationen, Suche, Dokumente, Backups
 npm run typecheck        # TypeScript
+npm run build:web && npm run test:web   # iPad-/Browser-Version im Browser (Playwright)
 tests/e2e/run.sh         # echte Desktop-App per WebDriver, Phase 2 + 3 (nur Linux, siehe Skriptkopf)
 ```
 
