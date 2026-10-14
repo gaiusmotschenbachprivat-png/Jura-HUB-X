@@ -65,7 +65,7 @@ try {
   await page.locator(".area-tab").first().waitFor();
   check("Ersteinrichtung legt 3 Studienbereiche + Gesamtansicht an", (await page.locator(".area-tab").count()) === 4);
   const info = (await api("appInfo")).ok;
-  check("Daten liegen im Browser-Speicher (Plattform web, Schema 2)", info?.platform === "web" && info?.schema_version === 2, JSON.stringify(info));
+  check("Daten liegen im Browser-Speicher (Plattform web, aktuelles Schema)", info?.platform === "web" && info?.schema_version >= 3, JSON.stringify(info));
 
   // 2. Veranstaltung und Notiz über die Oberfläche
   await page.locator(".area-tab").first().click();

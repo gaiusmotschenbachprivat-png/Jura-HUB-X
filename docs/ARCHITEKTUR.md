@@ -112,6 +112,16 @@ Daten zwischen iPad und Rechner wandern können. Abwägung: Zwei Implementierung
 müssen synchron gehalten werden; dafür sind die Tests beider Seiten parallel aufgebaut.
 Details: [IPAD.md](IPAD.md).
 
+### KI-Assistent (ADR-003)
+
+Optionales Modul in `src/ai/` (TypeScript, läuft am Desktop und auf dem iPad gleich). Claude wird
+über das offizielle SDK `@anthropic-ai/sdk` angesprochen; am Desktop über einen eigenen `fetch`, der
+an den Rust-Befehl `ai_http` weiterleitet (Schlüssel bleibt in Rust, CSP der Oberfläche bleibt zu).
+Retrieval nutzt die vorhandene SQLite-FTS5-Suche über eigene Tabellen (`legal_sources`,
+`legal_chunks`, `legal_index`, Migration 0003) statt einer separaten Vektordatenbank: offline,
+ohne zusätzliches Modell, gut für exakte Normbezüge; die Suchschicht (`Retriever`) ist austauschbar.
+Details: [KI-ASSISTENT.md](KI-ASSISTENT.md).
+
 ## 5. Editor-Datenmodell
 
 Notizen werden als **ProseMirror-JSON** gespeichert (strukturierter Baum aus Absätzen,

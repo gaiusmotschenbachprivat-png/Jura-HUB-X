@@ -2,7 +2,8 @@
 
 Lokales Arbeitsinstrument für das Studium (Rechtswissenschaften, Recht & Wirtschaft, WiWiZ):
 Studienstruktur, Mitschriften, Vorlesungsfolien und Skripte, Verknüpfungen, Volltextsuche
-und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, kein Tracking.
+und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, kein Tracking. Einzige Ausnahme ist der
+optionale KI-Assistent – er sendet nur nach deiner Zustimmung und nur beim Absenden einer Frage an Anthropic.
 
 > Stand: Version 0.3 (Phase 3 – Dokumente und Lernen, dazu die iPad-/Browser-Version). Was fertig ist und was
 > noch fehlt, steht in [docs/ROADMAP.md](docs/ROADMAP.md) und [docs/PHASENBERICHT.md](docs/PHASENBERICHT.md).
@@ -33,6 +34,10 @@ und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, 
 - **Karteikarten** mit Wiederholungsplanung nach FSRS, aus Definitionen, Schemata, PDF-Markierungen oder Notiztext
 - **Planung**: Aufgaben, offene Fragen, Lernziele (auch je Vorlesungstermin), Prüfungstermine, ruhige Lernübersicht
 - **Bilder und Formeln** im Editor (Screenshots einfügen, LaTeX mit KaTeX), auch im Word-Export
+- **KI-Assistent (optional, Claude)**: Recherche und Fallgutachten, Vertragsprüfung, Schriftsatzentwürfe auf Basis
+  deiner eigenen Rechtsquellen (Gesetze von gesetze-im-internet.de, Urteile, Kommentare); jedes Zitat wird gegen die
+  Quellen geprüft, personenbezogene Angaben werden vor dem Senden ersetzt. Nur nach ausdrücklicher Zustimmung,
+  mit eigenem API-Schlüssel – Details: [docs/KI-ASSISTENT.md](docs/KI-ASSISTENT.md)
 - **Papierkorb**, Dark/Light Mode, Schriftgröße, anpassbare Seitenleisten, Fokusmodus
 
 ## Installation und Start
@@ -100,6 +105,8 @@ npm test                 # Oberflächenlogik (Vitest): Export, Vorlagen, Autosav
 npm run test:rust        # Rust-Kern: Datenbank, Migrationen, Suche, Dokumente, Backups
 npm run typecheck        # TypeScript
 npm run build:web && npm run test:web   # iPad-/Browser-Version im Browser (Playwright)
+node tests/e2e-web/ki-e2e.mjs            # KI-Assistent in der Oberfläche (Claude API nachgebildet)
+ANTHROPIC_API_KEY=… npm run eval         # Evaluation des KI-Assistenten (echte API, kostenpflichtig)
 tests/e2e/run.sh         # echte Desktop-App per WebDriver, Phase 2 + 3 (nur Linux, siehe Skriptkopf)
 ```
 

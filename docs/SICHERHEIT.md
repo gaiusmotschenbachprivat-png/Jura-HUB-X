@@ -128,3 +128,22 @@ Prüfung mit `npm audit` und `cargo audit` vor jedem Release (siehe README).
 - **Herkunft der Programmdateien:** Wer die Website ausliefert (z. B. GitHub Pages), könnte
   theoretisch veränderte Programmdateien ausliefern. Deshalb nur die eigene, selbst gebaute
   Adresse verwenden.
+
+## 11. KI-Assistent (Claude API)
+
+- **Einzige Netzwerkfunktion für Inhalte**, ausdrücklich einzuschalten (Zustimmungsdialog,
+  jederzeit abschaltbar). Gesendet wird nur beim Absenden einer Frage.
+- **Desktop:** Die Oberfläche hat weiterhin keinen Netzwerkzugriff (CSP unverändert). Das
+  Anthropic-SDK schickt seine Anfragen über einen eng begrenzten Rust-Befehl `ai_http`: nur
+  `POST https://api.anthropic.com/v1/messages` (bzw. `/count_tokens`), nur erlaubte Header,
+  keine Weiterleitungen, Größen- und Zeitlimits. Der Schlüssel kommt ausschließlich aus
+  `ANTHROPIC_API_KEY`, wird erst dort eingesetzt und nie geloggt oder an die Oberfläche gegeben.
+- **Gesetzesabruf** (`law_fetch`): nur `https://www.gesetze-im-internet.de/<abk>/xml.zip`,
+  Abkürzung streng geprüft, Weiterleitungen nur innerhalb dieser Domain, 100-MB-Grenze. Nur auf Klick.
+- **Browser/iPad:** CSP erlaubt zusätzlich `connect-src https://api.anthropic.com`. Der Schlüssel
+  liegt nur im Arbeitsspeicher der Sitzung, nie in Speicher/Datenbank.
+- **Anonymisierung** vor dem Senden (konfigurierbar, nicht lückenlos); eigene Notizen nur nach
+  Freigabe pro Unterhaltung und ebenfalls anonymisiert.
+- **Keine Inhalte in Protokollen** (nur Methode, Pfad, Status, Dauer).
+- **Modellausgaben** werden ohne HTML-Interpretation angezeigt (kein `innerHTML`), Zitate gegen
+  die Quellen geprüft und Abweichungen markiert.
