@@ -480,3 +480,22 @@ fn prune_keeps_manual_backups() {
     assert_eq!(names.len(), 3);
     assert!(names.iter().any(|n| n.starts_with("Studium-OS-Backup-")));
 }
+
+#[test]
+fn internal_links_in_text_become_backlinks() {
+    let f = setup();
+    let def = nodes::create(&f.conn, node(&f.jura, None, "note", "Definition Willenserklärung")).unwrap();
+    let n = nodes::create(&f.conn, node(&f.jura, None, "note", "Mitschrift")).unwrap();
+    let content = serde_json::json!({"type":"doc","content":[{"type":"paragraph","content":[
+        {"type":"text","text":"siehe Definition","marks":[{"type":"link","attrs":{"href":format!("studium:node/{}", def.id)}}]},
+        {"type":"text","text":" und tot","marks":[{"type":"link","attrs":{"href":"studium:node/01900000-0000-7000-8000-00000000dead"}}]}
+    ]}]}).to_string();
+    notes::save(&f.conn, &n.id, &content, "siehe Definition").unwrap();
+    let back = links::for_entity(&f.conn, "node", &def.id).unwrap();
+    assert_eq!(back.len(), 1);
+    assert_eq!(back[0].kind, "mention");
+    assert_eq!(back[0].other_id, n.id);
+    // Link entfernen → Rückverweis verschwindet
+    notes::save(&f.conn, &n.id, &doc_json("ohne Link"), "ohne Link").unwrap();
+    assert!(links::for_entity(&f.conn, "node", &def.id).unwrap().is_empty());
+}

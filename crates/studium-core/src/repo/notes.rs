@@ -117,6 +117,7 @@ pub fn save(conn: &Connection, node_id: &str, content_json: &str, plain_text: &s
     }
     tx.execute("UPDATE nodes SET updated_at = ?2 WHERE id = ?1", params![node_id, ts])?;
     nodes::index(&tx, &node, Some(plain_text))?;
+    sync_mentions(&tx, node_id, content_json)?;
 
     let last: Option<String> = tx
         .query_row(
@@ -212,6 +213,7 @@ pub fn restore_version(conn: &Connection, node_id: &str, version_id: &str) -> Re
     tx.execute("UPDATE nodes SET updated_at = ?2 WHERE id = ?1", params![node_id, ts])?;
     let node = nodes::get(&tx, node_id)?;
     nodes::index(&tx, &node, Some(&text))?;
+    sync_mentions(&tx, node_id, &content)?;
     tx.commit()?;
     Ok(SaveResult { updated_at: ts, version_created: true })
 }
@@ -238,4 +240,108 @@ pub fn recent(conn: &Connection, area_id: Option<&str>, limit: i64) -> Result<Ve
     rows.into_iter()
         .map(|n| Ok(RecentNote { path: nodes::breadcrumb(conn, &n.node_id, false)?, ..n }))
         .collect()
+}
+
+/// Ein interner Link im Notiztext: `studium:node/<id>` oder
+/// `studium:document/<id>` bzw. `studium:document/<id>#page=<n>`.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub struct Mention {
+    pub target_type: String,
+    pub target_id: String,
+    pub page: Option<i64>,
+}
+
+pub fn parse_internal_href(href: &str) -> Option<Mention> {
+    let rest = href.strip_prefix("studium:")?;
+    let (kind, rest) = rest.split_once('/')?;
+    let (id, frag) = match rest.split_once('#') {
+        Some((a, b)) => (a, Some(b)),
+        None => (rest, None),
+    };
+    if !crate::util::is_id(id) || !["node", "document"].contains(&kind) {
+        return None;
+    }
+    let page = frag
+        .and_then(|f| f.strip_prefix("page="))
+        .and_then(|p| p.parse::<i64>().ok())
+        .filter(|p| *p >= 1);
+    Some(Mention { target_type: kind.into(), target_id: id.into(), page })
+}
+
+/// Sammelt alle internen Links aus einem ProseMirror-Dokument.
+pub fn extract_mentions(content_json: &str) -> Vec<Mention> {
+    fn walk(v: &serde_json::Value, out: &mut Vec<Mention>) {
+        if let Some(marks) = v.get("marks").and_then(|m| m.as_array()) {
+            for m in marks {
+                if m.get("type").and_then(|t| t.as_str()) == Some("link") {
+                    if let Some(h) = m.pointer("/attrs/href").and_then(|h| h.as_str()) {
+                        if let Some(x) = parse_internal_href(h) {
+                            out.push(x);
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(c) = v.get("content").and_then(|c| c.as_array()) {
+            for child in c {
+                walk(child, out);
+            }
+        }
+    }
+    let mut out = Vec::new();
+    if let Ok(v) = serde_json::from_str::<serde_json::Value>(content_json) {
+        walk(&v, &mut out);
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// Hält die Verknüpfungen vom Typ `mention` mit den Links im Text synchron.
+/// Links auf nicht (mehr) vorhandene Ziele werden ignoriert.
+fn sync_mentions(conn: &Connection, node_id: &str, content_json: &str) -> Result<()> {
+    conn.execute(
+        "DELETE FROM links WHERE source_type = 'node' AND source_id = ?1 AND kind = 'mention'",
+        [node_id],
+    )?;
+    for m in extract_mentions(content_json) {
+        if m.target_type == "node" && m.target_id == node_id {
+            continue;
+        }
+        let exists: bool = if m.target_type == "node" {
+            conn.query_row("SELECT 1 FROM nodes WHERE id = ?1", [&m.target_id], |_| Ok(true)).optional()?.is_some()
+        } else {
+            conn.query_row("SELECT 1 FROM documents WHERE id = ?1", [&m.target_id], |_| Ok(true)).optional()?.is_some()
+        };
+        if !exists {
+            continue;
+        }
+        let anchor = match m.page {
+            Some(p) => serde_json::json!({ "page": p }),
+            None => serde_json::json!({}),
+        };
+        conn.execute(
+            "INSERT INTO links (id, source_type, source_id, target_type, target_id, kind, anchor, created_at)
+             VALUES (?1, 'node', ?2, ?3, ?4, 'mention', ?5, ?6)",
+            params![new_id(), node_id, m.target_type, m.target_id, anchor.to_string(), now()],
+        )?;
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_internal_links() {
+        let id = "01900000-0000-7000-8000-000000000001";
+        assert_eq!(
+            parse_internal_href(&format!("studium:document/{id}#page=7")),
+            Some(Mention { target_type: "document".into(), target_id: id.into(), page: Some(7) })
+        );
+        assert!(parse_internal_href("https://example.org").is_none());
+        assert!(parse_internal_href("studium:node/../../x").is_none());
+        assert!(parse_internal_href(&format!("studium:evil/{id}")).is_none());
+    }
 }

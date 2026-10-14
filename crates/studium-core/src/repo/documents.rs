@@ -349,3 +349,11 @@ pub fn page_text(conn: &Connection, id: &str, page: i64) -> Result<Option<String
         )
         .optional()?)
 }
+
+/// Text aller Seiten (Index 0 = Seite 1); leer, solange nichts ausgelesen wurde.
+pub fn pages_text(conn: &Connection, id: &str) -> Result<Vec<String>> {
+    require_id(id)?;
+    let mut stmt = conn.prepare("SELECT text FROM document_pages WHERE document_id = ?1 ORDER BY page_no")?;
+    let rows = stmt.query_map([id], |r| r.get(0))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
