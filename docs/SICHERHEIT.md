@@ -72,6 +72,12 @@ Externe Links in Notizen öffnen sich im Standardbrowser, nie innerhalb der App.
   Windows-Namen wie `CON`, keine führenden Punkte).
 - Beim Import werden nur reguläre Dateien bis 500 MB mit erlaubter Endung angenommen.
   Symbolische Links werden aufgelöst und als normale Datei behandelt.
+- **Bilder in Notizen** werden am Dateiinhalt erkannt (PNG, JPEG, GIF, WebP; höchstens 20 MB).
+  SVG und andere Formate mit möglichem Skriptinhalt werden abgelehnt. Bilder mit externer
+  Adresse (z. B. aus eingefügtem HTML) werden nie geladen und nur als Hinweis angezeigt.
+- **Formeln** werden mit KaTeX lokal gesetzt, mit `trust: false`: Befehle wie `\href` oder
+  `\htmlClass`, die Links oder HTML erzeugen könnten, sind deaktiviert.
+- **PDF-Markierungen** werden nur in der Datenbank gespeichert; die PDF-Datei wird nie verändert.
 - Backups werden vor dem Entpacken geprüft. ZIP-Einträge mit `..`, absoluten Pfaden oder
   unbekannten Namen werden abgelehnt (Schutz gegen „Zip Slip“).
 

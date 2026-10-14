@@ -4,10 +4,10 @@ Lokales Arbeitsinstrument für das Studium (Rechtswissenschaften, Recht & Wirtsc
 Studienstruktur, Mitschriften, Vorlesungsfolien und Skripte, Verknüpfungen, Volltextsuche
 und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, kein Tracking.
 
-> Stand: Version 0.1 (Phase 2 – erste belastbare Grundversion). Was fertig ist und was
+> Stand: Version 0.2 (Phase 3 – Dokumente und Lernen). Was fertig ist und was
 > noch fehlt, steht in [docs/ROADMAP.md](docs/ROADMAP.md) und [docs/PHASENBERICHT.md](docs/PHASENBERICHT.md).
 
-## Funktionen in Version 0.1
+## Funktionen
 
 - **Studienbereiche** mit eigener Farbe, Wechsel per Klick oder `⌘/Strg + 1/2/3`, Gesamtansicht `⌘/Strg + 0`
 - **Flexible Struktur**: Semester → Modul → Veranstaltung → Vorlesungstermin → Thema → Notiz, beliebig tief,
@@ -26,6 +26,13 @@ und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, 
 - **Word**: Export als `.docx` und Markdown, Import von `.docx`/`.md`/`.txt` als Notiz, „Mit Standardprogramm öffnen“ (Kopie)
 - **Backups**: vollständig in eine Datei, frei wählbarer Ordner (auch USB-Stick), zweite Kopie, automatisch täglich,
   Prüfung auf Vollständigkeit/Beschädigung, sichere Wiederherstellung mit Aufbewahrung des vorherigen Stands
+- **PDF-Markierungen**: Text markieren (5 Farben), kommentieren, Lesezeichen setzen; alles durchsuchbar,
+  die PDF bleibt unverändert
+- **Wissen**: Definitionen, Prüfungsschemata (Gliederungseditor A. I. 1. a) aa)), Fälle mit Gutachten-Lösung,
+  Gesetzesfundstellen; Rückverweise „Verwendet in“, Herkunftsangabe, ungeprüfte Inhalte gekennzeichnet
+- **Karteikarten** mit Wiederholungsplanung nach FSRS, aus Definitionen, Schemata, PDF-Markierungen oder Notiztext
+- **Planung**: Aufgaben, offene Fragen, Lernziele (auch je Vorlesungstermin), Prüfungstermine, ruhige Lernübersicht
+- **Bilder und Formeln** im Editor (Screenshots einfügen, LaTeX mit KaTeX), auch im Word-Export
 - **Papierkorb**, Dark/Light Mode, Schriftgröße, anpassbare Seitenleisten, Fokusmodus
 
 ## Installation und Start
@@ -54,8 +61,8 @@ npm run tauri build
 ```
 
 Ergebnis:
-- macOS: `target/release/bundle/dmg/Studium OS_0.1.0_*.dmg`
-- Windows: `target/release/bundle/msi/Studium OS_0.1.0_*.msi` und `…/nsis/*-setup.exe`
+- macOS: `target/release/bundle/dmg/Studium OS_0.2.0_*.dmg`
+- Windows: `target/release/bundle/msi/Studium OS_0.2.0_*.msi` und `…/nsis/*-setup.exe`
 
 Die App ist noch nicht signiert. macOS zeigt beim ersten Öffnen eine Warnung: Rechtsklick auf die App
 → „Öffnen“. Windows SmartScreen: „Weitere Informationen“ → „Trotzdem ausführen“.
@@ -73,17 +80,17 @@ Windows automatisch, sobald das Projekt in einem GitHub-Repository liegt.
 Details: [docs/DATENHALTUNG.md](docs/DATENHALTUNG.md). Der Pfad steht auch in der App unter
 **Einstellungen & Backup → Daten & Sicherheit**.
 
-**Wichtig:** Die Daten sind lokal, aber in Version 0.1 nicht von der App verschlüsselt. Schalte FileVault
+**Wichtig:** Die Daten sind lokal, aber in der aktuellen Version nicht von der App verschlüsselt. Schalte FileVault
 (macOS) bzw. BitLocker/Geräteverschlüsselung (Windows) ein und lege regelmäßig Backups auf einem externen
 Datenträger an. Siehe [docs/SICHERHEIT.md](docs/SICHERHEIT.md).
 
 ## Tests
 
 ```bash
-npm test                 # Oberflächenlogik (Vitest): Export, Vorlagen, Autosave, Baum …
+npm test                 # Oberflächenlogik (Vitest): Export, Vorlagen, Autosave, FSRS, Gliederung …
 npm run test:rust        # Rust-Kern: Datenbank, Migrationen, Suche, Dokumente, Backups
 npm run typecheck        # TypeScript
-tests/e2e/run.sh         # echte Desktop-App per WebDriver (nur Linux, siehe Skriptkopf)
+tests/e2e/run.sh         # echte Desktop-App per WebDriver, Phase 2 + 3 (nur Linux, siehe Skriptkopf)
 ```
 
 ## Projektstruktur

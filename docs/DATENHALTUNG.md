@@ -89,25 +89,51 @@ Papierkorb und nur nach Bestätigung. Unterknoten wandern mit in den Papierkorb 
 beim Wiederherstellen mit zurück.
 
 **Herkunft importierter Inhalte.** Importierte Dokumente haben keinen „geprüft“-Status.
-Ab Phase 3 erhalten Definitionen, Schemata und Fälle ein Feld `source_kind`
-(`eigen`, `vorlesung`, `import`, `ki-vorschlag`), damit importierte oder generierte Inhalte
-nie als geprüfte Rechtsinformation erscheinen.
+Wissensobjekte tragen ein Feld `source_kind` (`eigen`, `vorlesung`, `lehrbuch`,
+`rechtsprechung`, `import`, `ki-vorschlag`). Einträge mit `import` oder `ki-vorschlag` werden in
+der Oberfläche als „nicht geprüft“ markiert und erscheinen nie als geprüfte Rechtsinformation.
 
-### Geplant (Phase 3 und später – noch nicht in der Datenbank)
+### Phase 3 (Migration 2 – umgesetzt)
+
+| Tabelle | Zweck | Wichtige Felder |
+|---|---|---|
+| `knowledge` | Definitionen, Prüfungsschemata, Fälle, Gesetzesfundstellen | `type`, `area_id`, `node_id`, `title`, `field` (Rechts-/Fachgebiet), `source_kind`, `data` (JSON, je Typ geprüft) |
+| `flashcards` | Karteikarten mit Wiederholungsstand (FSRS) | `front`, `back`, `kind`, `tags`, `source_type/id`, `difficult`, `suspended`, `due`, `stability`, `difficulty`, `learning_steps`, `reps`, `lapses`, `state` |
+| `review_log` | jede einzelne Wiederholung | `card_id`, `rating` (1–4), `reviewed_at`, Stand davor |
+| `tasks` | Aufgaben, offene Fragen, Lernziele | `kind`, `title`, `node_id`, `due_date`, `done_at` |
+| `exams` | Prüfungstermine | `title`, `date`, `time`, `place`, `kind`, `node_id` |
+| `annotations` | PDF-Markierungen, Kommentare, Lesezeichen | `document_id`, `page`, `kind`, `color`, `rects` (relativ zur Seite, 0–1), `quote`, `comment` |
+
+**Inhalt von `knowledge.data` je Typ** (unbekannte Felder werden beim Speichern verworfen):
+
+| Typ | Felder |
+|---|---|
+| `definition` | `text`, `source`, `citation`, `example`, `notes` |
+| `schema` | `norm`, `notes`, `items`: Baum aus `{id, text, note, children}` (höchstens 12 Ebenen) |
+| `case` | `claim_basis`, `difficulty` (0–3), `status` (offen/bearbeitet/wiederholen), `facts`, `question`, `notes`, `solution_note_id` (Notiz mit dem Gutachten) |
+| `citation` | `prefix` (§ / Art.), `number`, `paragraph`, `sentence`, `num`, `alt`, `law`, `notes` – der Titel (z. B. „§ 433 Abs. 2 BGB“) wird daraus gebildet; dieselbe Norm existiert nur einmal |
+
+**Verknüpfungen** zwischen allen Inhalten laufen weiter über `links` (Typen `node`, `document`,
+`knowledge`). Interne Links im Notiztext (`studium:knowledge/<id>` usw.) werden beim Speichern
+automatisch als Verknüpfung `mention` erfasst. So zeigt jede Definition, wo sie verwendet wird.
+
+**Bilder in Notizen** liegen wie Dokumente im Dokumentenspeicher (`files/`), sind in `blobs`
+vermerkt (und damit in jedem Backup enthalten) und werden in der Notiz als
+`studium:asset/<sha256>` referenziert. Eine Datei wird beim endgültigen Löschen eines
+Dokuments nicht entfernt, solange eine Notiz oder Notizversion sie noch verwendet.
+
+**Was eine Wissensdatenbank nicht ist:** Studium OS enthält keine Gesetzestexte und prüft keine
+Gesetzesstände. Fundstellen sind strukturierte Verweise mit eigenen Notizen.
+
+### Noch nicht umgesetzt
 
 | Tabelle | Zweck |
 |---|---|
-| `definitions` | Begriff, Definitionstext, Rechtsgebiet, Quelle, Anmerkungen, `source_kind` |
-| `schemas`, `schema_items` | hierarchische Prüfungsschemata (Baum mit Position) |
-| `cases` | Fälle: Sachverhalt, Lösung (Notiz), Rechtsgebiet, Anspruchsgrundlage, Schwierigkeit |
-| `citations` | strukturierte Fundstellen: Gesetz, Paragraf/Artikel, Absatz, Satz, Nr. |
-| `flashcards`, `review_state`, `review_log` | Karteikarten und Wiederholungen (FSRS-Verfahren geplant) |
-| `annotations`, `bookmarks` | PDF-Markierungen, Kommentare, Lesezeichen (Koordinaten, nicht in der PDF) |
-| `tasks`, `exams` | Aufgaben, offene Fragen, Prüfungstermine |
-| `tags`, `taggings` | Schlagwörter |
+| `tags`, `taggings` | eigene Schlagwort-Tabelle (bisher: Schlagwörter als Text an Karteikarten, Gebiete als Feld) |
+| verknüpfte Word-Dateien | Dateien außerhalb des Speichers mit Änderungserkennung (Phase 4) |
 
-Alle verknüpfen sich über die vorhandene Tabelle `links`. Neue Tabellen kommen als neue
-Migration hinzu, bestehende Daten bleiben unverändert.
+Neue Tabellen kommen immer als neue Migration hinzu; bestehende Daten bleiben unverändert.
+Vor jeder Migration wird automatisch eine Sicherung in `pre-migration/` angelegt.
 
 ## 4. Backups
 

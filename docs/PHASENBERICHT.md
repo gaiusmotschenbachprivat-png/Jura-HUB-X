@@ -83,3 +83,65 @@ erste Version sind umgesetzt:
 3. Karteikarten mit FSRS-Wiederholung und eine ruhige Lernübersicht
 4. Aufgaben/offene Fragen und Prüfungstermine im Dashboard
 5. Bilder und Formeln im Editor
+
+## Phase 3 – Dokumente und Lernen (abgeschlossen, Version 0.2)
+
+### Umgesetzt
+
+- **PDF-Markierungen** in 5 Farben, Kommentare, Lesezeichen (eins je Seite), Seitenleiste „Markierungen“,
+  Klick auf eine Markierung öffnet Kommentar/Farbe/Löschen. Gespeichert in der Datenbank mit relativen
+  Koordinaten; die PDF-Datei bleibt unverändert. Markierungen und Kommentare sind durchsuchbar.
+- **Wissensobjekte** als eigene Datenbankeinträge: Definitionen (Begriff, Definition, Fundstelle, Quelle,
+  Merksatz, Abgrenzung), Prüfungsschemata (Gliederungseditor mit automatischer Nummerierung A. I. 1. a) aa)
+  (1) (a) (aa), Ein-/Ausrücken, Verschieben), Fälle (Sachverhalt, Lösungsnotiz mit Gutachten-Vorlage),
+  Gesetzesfundstellen (Eingabe wie „§ 433 Abs. 1 S. 2 BGB“ wird zerlegt, Dubletten werden erkannt).
+  Rückverweise „Verwendet in“, Herkunft (Notiz/PDF-Seite), Kennzeichnung „ungeprüft“ für nicht
+  geprüfte Inhalte. Die App prüft **nicht**, ob eine Norm aktuell ist, und sagt das.
+- **Karteikarten** mit FSRS-Wiederholung (ts-fsrs), Lernsitzung mit Tastatur (Leertaste, 1–4),
+  Intervallvorschau, Statistik; Karten aus Definitionen, Schemata, PDF-Markierungen oder markiertem Notiztext.
+- **Planung**: Aufgaben, offene Fragen und Lernziele (auch je Vorlesungstermin), Prüfungstermine mit
+  Countdown, ruhige Lernübersicht im Dashboard (fällige Karten, nächste Prüfungen, offene Aufgaben).
+- **Bilder** im Editor (Einfügen aus Zwischenablage, Drag-and-drop, Dialog). Bilder werden anhand ihres
+  Inhalts geprüft (PNG/JPEG/GIF/WebP), unveränderlich gespeichert, Bilder aus dem Internet nie geladen.
+- **Formeln** (LaTeX, KaTeX ohne `trust`), inline und als Block.
+- Exporte: Bilder (PNG/JPEG/GIF) im Word-Export, Formeln als lineare Formel in Cambria Math;
+  Markdown-Export mit `$…$`.
+- Suche, Papierkorb und Backup umfassen alle neuen Objekte. Datenbankmigration 0002 (additiv, mit
+  Sicherungskopie vor der Migration).
+
+### Ausgeführte Tests (zuletzt alle bestanden, Linux)
+
+- Rust: 32 Tests (Kern, Migration 0001→0002, Wissensobjekte, Fundstellen, Karteikarten, Planung,
+  Markierungen, Papierkorb, Suche, Backup inkl. neuer Tabellen), `cargo clippy` ohne Warnungen.
+- Vitest: 25 Tests (FSRS-Planung, Gliederungsnummern, Schema-Baum, PDF-Auswahl → Rechtecke,
+  Exporte mit Bildern/Formeln, Autosave).
+- TypeScript-Typprüfung ohne Fehler.
+- End-to-End mit der echten Desktop-App: 35 Prüfungen (Phase 2) + 21 Prüfungen (Phase 3: Definition
+  anlegen und finden, Schema gliedern, Karteikarte lernen, Aufgabe/Prüfung im Dashboard, PDF markieren,
+  kommentieren, Lesezeichen, Suche nach Kommentar, Neustart mit Datenprüfung).
+
+### Während der Tests gefundene und behobene Fehler
+
+1. Suche innerhalb eines Bereichs fand Dokumente ohne Zuordnung nicht – sie erscheinen jetzt in jedem Bereich.
+2. Lange Prüfungstitel wurden in der Lernübersicht abgeschnitten – Datum jetzt in eigener Zeile.
+3. ts-fsrs 5 benötigt zusätzliche Felder (`learning_steps`) – in Datenbank und Typen ergänzt.
+4. KaTeX 0.19 war mit der Formel-Erweiterung unvereinbar – auf 0.18 festgelegt.
+
+### Bekannte Einschränkungen
+
+- **Nicht auf macOS/Windows getestet** (siehe Phase 2). App nicht signiert.
+- **Keine App-eigene Verschlüsselung** (Phase 5) – Festplattenverschlüsselung des Systems nutzen.
+- **PDF-Export** und **Fußnoten** fehlen (Phase 4).
+- Formeln erscheinen in Word als lineare Formel (Text), nicht als bearbeitbare Word-Gleichung.
+- WebP-Bilder werden im Word-Export nur als Hinweis ausgegeben.
+- Schlagwörter (Tags) und Wissensgraph fehlen noch.
+- Keine OCR für gescannte PDFs (Phase 6).
+- Verknüpfte Word-Dateien mit Änderungserkennung fehlen (Phase 4).
+- `npm audit`-Hinweis zu `sprintf-js` unverändert (nicht im App-Paket enthalten).
+
+### Nächste Schritte (Phase 4)
+
+1. PDF-Export von Notizen
+2. Verknüpfte Word-Dateien mit Änderungserkennung
+3. Fußnoten im Editor und im Export
+4. Formeln als echte Word-Gleichungen

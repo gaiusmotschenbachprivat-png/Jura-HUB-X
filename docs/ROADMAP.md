@@ -25,10 +25,23 @@ Architektur, Stack, Projektstruktur, Datenmodell, Sicherheitskonzept, Risiken
 | Papierkorb | ✅ |
 | Dark/Light Mode, Schriftgröße, Tastaturkürzel, anpassbare Seitenleisten, Fokusmodus | ✅ |
 
-## Phase 3 – Dokumente und Lernen ⬜
-PDF-Lesezeichen, Markierungen, Kommentare; Bilder und Formeln im Editor; Definitionen, Prüfungsschemata,
-Fälle, Gesetzesfundstellen, Karteikarten mit FSRS, Lernübersicht, Prüfungstermine,
-Aufgaben/offene Fragen, Rückverweise („wo wird diese Definition verwendet?“).
+## Phase 3 – Dokumente und Lernen ✅
+| Funktion | Status |
+|---|---|
+| PDF-Markierungen (5 Farben) aus Textauswahl, Kommentare, Lesezeichen, Seitenleiste mit Liste | ✅ |
+| Markierungen und Kommentare durchsuchbar (mit Seite) | ✅ |
+| Definitionen mit Fundstelle, Quelle, Beispiel; Rückverweise „Verwendet in“ | ✅ |
+| Prüfungsschemata als Gliederungseditor (A. I. 1. a) aa) (1)) | ✅ |
+| Fälle mit Sachverhalt, Fallfrage, Schwierigkeit, Stand, Lösung als Gutachten-Notiz | ✅ |
+| Gesetzesfundstellen strukturiert, Schnelleingabe („§ 823 Abs. 1 BGB“), ohne Gesetzestexte | ✅ |
+| Herkunftsangabe, Kennzeichnung ungeprüfter Inhalte | ✅ |
+| Karteikarten (Frage/Antwort, Begriff/Definition, Norm), aus Definitionen, Schemata, Markierungen und Notiztext | ✅ |
+| Wiederholung mit FSRS (ts-fsrs), Statistik, schwierige Karten, Pausieren | ✅ |
+| Aufgaben, offene Fragen, Lernziele, Prüfungstermine; je Termin/Veranstaltung | ✅ |
+| Lernübersicht (fällige Karten, Prüfungen, offene Fragen, nicht zusammengefasste Termine, unbearbeitete Übungsblätter) | ✅ |
+| Bilder (Einfügen, Drag-and-drop, Screenshots) und Formeln (LaTeX/KaTeX) im Editor, auch im DOCX-Export | ✅ |
+| Eigene Schlagwort-Verwaltung | ⬜ (Schlagwörter vorerst als Text an Karteikarten) |
+| Graph-Darstellung der Verknüpfungen | ⬜ (optional; Navigation über Kontextbereich vorhanden) |
 
 ## Phase 4 – Word und Export ⬜
 PDF-Export, verknüpfte Word-Dateien mit Änderungserkennung (Hash + Änderungszeit),
