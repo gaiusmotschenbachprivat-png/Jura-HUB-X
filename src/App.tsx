@@ -1,5 +1,5 @@
 import { AlertCircle, ArrowLeft, ArrowRight, Check, Loader2, PanelLeft, PanelRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { api } from "./api";
 import { ContextPanel } from "./features/context/ContextPanel";
@@ -68,6 +68,18 @@ function Shell() {
   const focusMode = useApp((s) => s.focusMode);
   const setPref = useApp((s) => s.setPref);
   const [dropHover, setDropHover] = useState(false);
+  const [workspaceWidth, setWorkspaceWidth] = useState(1200);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = workspaceRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWorkspaceWidth(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // Die Mitschrift behält mindestens 420 px, die Folie bekommt den Rest.
+  const maxSecondary = Math.max(320, workspaceWidth - 420);
+  const effSecondary = Math.min(secondaryWidth, maxSecondary);
   const startImport = useImport();
 
   useGlobalShortcuts();
@@ -131,14 +143,14 @@ function Shell() {
       )}
       <div className="shell-main">
         <Topbar />
-        <div className="workspace">
+        <div className="workspace" ref={workspaceRef}>
           <main className="primary" key={"id" in view ? view.id : view.type}>
             <ViewSwitch view={view} />
           </main>
           {showSecondary && (
             <>
-              <Splitter value={secondaryWidth} min={320} max={1200} side="right" label="Breite der geteilten Ansicht" onChange={(v) => setPref("secondaryWidth", v)} />
-              <section className="secondary" style={{ width: secondaryWidth }} aria-label="Geteilte Ansicht">
+              <Splitter value={effSecondary} min={320} max={maxSecondary} side="right" label="Breite der geteilten Ansicht" onChange={(v) => setPref("secondaryWidth", v)} />
+              <section className="secondary" style={{ width: effSecondary }} aria-label="Geteilte Ansicht">
                 {secondary.type === "document" ? (
                   <DocumentViewer key={secondary.id} id={secondary.id} page={secondary.page} compact linkTargetNoteId={view.id} />
                 ) : (

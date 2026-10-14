@@ -58,14 +58,20 @@ pub fn schema_version(conn: &Connection) -> Result<i64> {
 
 /// Führt fehlende Migrationen aus, jede in einer eigenen Transaktion.
 pub fn migrate(conn: &Connection, data_dir: Option<&Path>) -> Result<()> {
+    migrate_with(conn, data_dir, MIGRATIONS)
+}
+
+/// Wie [`migrate`], aber mit einer frei wählbaren Migrationsliste (für Tests).
+pub fn migrate_with(conn: &Connection, data_dir: Option<&Path>, migrations: &[&str]) -> Result<()> {
+    let target = migrations.len() as i64;
     let current = schema_version(conn)?;
-    if current > SCHEMA_VERSION {
+    if current > target {
         return Err(Error::invalid(format!(
             "Die Datenbank stammt von einer neueren Version von Studium OS (Schema {current}). \
              Bitte aktualisiere die App. Deine Daten wurden nicht verändert."
         )));
     }
-    if current == SCHEMA_VERSION {
+    if current == target {
         return Ok(());
     }
     if current > 0 {
@@ -73,7 +79,7 @@ pub fn migrate(conn: &Connection, data_dir: Option<&Path>) -> Result<()> {
             snapshot_before_migration(conn, dir, current)?;
         }
     }
-    for (i, sql) in MIGRATIONS.iter().enumerate().skip(current as usize) {
+    for (i, sql) in migrations.iter().enumerate().skip(current as usize) {
         let version = i as i64 + 1;
         let tx = conn.unchecked_transaction()?;
         tx.execute_batch(sql)?;
@@ -91,6 +97,11 @@ fn snapshot_before_migration(conn: &Connection, data_dir: &Path, version: i64) -
     conn.execute("VACUUM INTO ?1", [target.to_string_lossy().as_ref()])?;
     log::info!("Sicherung vor Migration angelegt");
     Ok(())
+}
+
+/// Die eingebauten Migrationen (für Tests mit zusätzlichen Migrationen).
+pub fn builtin_migrations() -> &'static [&'static str] {
+    MIGRATIONS
 }
 
 /// `PRAGMA integrity_check` – liefert `Ok(())` nur bei „ok“.

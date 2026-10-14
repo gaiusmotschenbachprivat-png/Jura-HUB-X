@@ -6,7 +6,6 @@
   "description": "Studium OS – lokales Arbeitsinstrument für das Studium",
   "scripts": {
     "dev": "vite",
-    "dev:browser": "vite --mode mock",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

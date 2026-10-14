@@ -1,6 +1,6 @@
 # Architektur von Studium OS
 
-Stand: Phase 2 (erste lauffähige Version). Dieses Dokument beschreibt die
+Stand: Ende Phase 2 (Version 0.1). Dieses Dokument beschreibt die
 Architekturentscheidungen, die Schichten der Anwendung und die technischen Risiken.
 
 ## 1. Architekturentscheidung (ADR-001): Tauri 2 + React + Rust-Kern + SQLite

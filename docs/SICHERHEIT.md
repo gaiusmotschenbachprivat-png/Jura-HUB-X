@@ -55,6 +55,12 @@ Externe Links in Notizen öffnen sich im Standardbrowser, nie innerhalb der App.
 - **Eigene Befehle** sind die einzige Schnittstelle zu Daten. Sie prüfen alle Argumente
   (IDs, Längen, Dateiendungen).
 - **Keine Fernzugriffe:** Die App lädt keine Webseiten. `withGlobalTauri` ist aus.
+- **`freezePrototype` ist aus.** Die Option friert `Object.prototype` ein (Schutz gegen
+  „Prototype Pollution“). Sie ist mit dem Word-Importer *mammoth* (über dessen Abhängigkeit
+  underscore.js) nicht vereinbar: Die App startete damit nicht. Das fiel im End-to-End-Test der
+  echten App auf. Da die Oberfläche ausschließlich eigenen, gebündelten Code ausführt (CSP ohne
+  `unsafe-eval`, keine fremden Skripte), ist das Restrisiko gering. Prüfauftrag für Phase 5:
+  Word-Import ersetzen oder isolieren (z. B. in einem Web Worker) und die Option wieder einschalten.
 
 ## 5. Dateien und Pfade
 

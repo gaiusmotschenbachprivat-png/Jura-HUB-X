@@ -74,7 +74,7 @@ export function PdfViewer({
 
   const scale = useMemo(() => {
     if (!baseSize) return 1;
-    if (fit) return Math.max(0.3, (width - 48) / baseSize.w);
+    if (fit) return Math.max(0.3, (width - 40) / baseSize.w);
     return zoom;
   }, [fit, zoom, width, baseSize]);
 

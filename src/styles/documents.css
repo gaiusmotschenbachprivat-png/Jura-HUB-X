@@ -27,10 +27,10 @@
 .pdf-hit:hover { background: var(--bg-hover); }
 .pdf-hit > span:first-child { flex: none; width: 46px; }
 .pdf-body { flex: 1; min-height: 0; display: flex; }
-.pdf-scroll { flex: 1; overflow: auto; background: var(--bg-sunken); padding: 12px 0 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; position: relative; }
+.pdf-scroll { flex: 1; overflow-y: auto; overflow-x: auto; scrollbar-gutter: stable; background: var(--bg-sunken); padding: 12px 0 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; position: relative; }
 .pdf-page { position: relative; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / 0.15); flex: none; }
 .pdf-page canvas { display: block; }
-.pdf-page-no { position: absolute; right: -30px; top: 0; color: var(--text-3); }
+.pdf-page-no { position: absolute; right: 8px; bottom: 6px; color: #8a8f99; background: rgb(255 255 255 / 0.85); border-radius: 4px; padding: 0 5px; pointer-events: none; }
 .pdf-error { padding: 32px; color: var(--danger); }
 .pdf-thumbs { width: 150px; flex: none; overflow: auto; border-right: 1px solid var(--line); padding: 10px; display: flex; flex-direction: column; gap: 10px; background: var(--bg-side); }
 .pdf-thumb { border: 2px solid transparent; background: transparent; padding: 2px; border-radius: var(--r-sm); display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--text-3); }

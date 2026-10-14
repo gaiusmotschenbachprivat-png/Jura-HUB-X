@@ -499,3 +499,25 @@ fn internal_links_in_text_become_backlinks() {
     notes::save(&f.conn, &n.id, &doc_json("ohne Link"), "ohne Link").unwrap();
     assert!(links::for_entity(&f.conn, "node", &def.id).unwrap().is_empty());
 }
+
+#[test]
+fn migration_keeps_data_and_snapshots_first() {
+    let f = setup();
+    nodes::create(&f.conn, node(&f.jura, None, "note", "Bleibt erhalten")).unwrap();
+    // Simulierte künftige Migration (nur additiv)
+    let mut list: Vec<&str> = db::builtin_migrations().to_vec();
+    list.push("CREATE TABLE zukunft (id TEXT PRIMARY KEY); ALTER TABLE areas ADD COLUMN extra TEXT;");
+    db::migrate_with(&f.conn, Some(f.dir.path()), &list).unwrap();
+    assert_eq!(db::schema_version(&f.conn).unwrap(), list.len() as i64);
+    assert_eq!(nodes::list(&f.conn, None).unwrap().len(), 1, "Daten überstehen die Migration");
+    let snaps: Vec<_> = fs::read_dir(f.dir.path().join("pre-migration")).unwrap().collect();
+    assert_eq!(snaps.len(), 1, "Schnappschuss vor der Migration angelegt");
+
+    // Fehlerhafte Migration wird vollständig zurückgerollt
+    let mut broken = list.clone();
+    broken.push("CREATE TABLE halb (id TEXT); DAS IST KEIN SQL;");
+    assert!(db::migrate_with(&f.conn, Some(f.dir.path()), &broken).is_err());
+    assert_eq!(db::schema_version(&f.conn).unwrap(), list.len() as i64, "Version unverändert");
+    let halb: i64 = f.conn.query_row("SELECT COUNT(*) FROM sqlite_master WHERE name = 'halb'", [], |r| r.get(0)).unwrap();
+    assert_eq!(halb, 0, "keine halbe Migration");
+}

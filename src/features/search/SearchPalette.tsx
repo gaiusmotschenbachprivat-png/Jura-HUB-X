@@ -28,6 +28,12 @@ export function hitToView(h: SearchHit): View {
   }
 }
 
+/** Ergebnisse gruppieren, Reihenfolge der Gruppen fest. */
+function orderHits(hits: SearchHit[]): SearchHit[] {
+  const groups = ["note", "node", "page", "document"] as const;
+  return groups.flatMap((g) => hits.filter((h) => h.entity_type === g));
+}
+
 export function SearchPalette() {
   const open = useApp((s) => s.paletteOpen);
   const setOpen = useApp((s) => s.setPalette);
@@ -46,6 +52,9 @@ function Palette({ onClose }: { onClose: () => void }) {
   const [sel, setSel] = useState(0);
   const [busy, setBusy] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  /** Enter wurde gedrückt, bevor Ergebnisse da waren: ersten Treffer dann öffnen. */
+  const pendingEnter = useRef<string | null>(null);
+  const resultsFor = useRef("");
   const areaName = areas.find((a) => a.id === areaId)?.name;
 
   useEffect(() => {
@@ -61,6 +70,12 @@ function Palette({ onClose }: { onClose: () => void }) {
         setHits(res);
         setSel(0);
         setBusy(false);
+        resultsFor.current = q;
+        if (pendingEnter.current === q) {
+          pendingEnter.current = null;
+          const first = orderHits(res)[0];
+          if (first) choose(first);
+        }
       }
     }, 100);
     return () => {
@@ -69,11 +84,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     };
   }, [q, scopeAll, areaId]);
 
-  // Ergebnisse gruppieren, Reihenfolge der Gruppen fest
-  const ordered = useMemo(() => {
-    const groups = ["note", "node", "page", "document"] as const;
-    return groups.flatMap((g) => hits.filter((h) => h.entity_type === g));
-  }, [hits]);
+  const ordered = useMemo(() => orderHits(hits), [hits]);
 
   const choose = (h: SearchHit) => {
     onClose();
@@ -100,7 +111,8 @@ function Palette({ onClose }: { onClose: () => void }) {
               else if (e.key === "ArrowDown") setSel((s) => Math.min(s + 1, Math.max(0, (q ? ordered.length : recent.length) - 1)));
               else if (e.key === "ArrowUp") setSel((s) => Math.max(0, s - 1));
               else if (e.key === "Enter") {
-                if (q && ordered[sel]) choose(ordered[sel]);
+                if (q && resultsFor.current !== q) pendingEnter.current = q;
+                else if (q && ordered[sel]) choose(ordered[sel]);
                 else if (!q && recent[sel]) {
                   onClose();
                   openView(recent[sel].view);
