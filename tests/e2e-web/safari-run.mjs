@@ -13,12 +13,22 @@ const { Builder } = require("selenium-webdriver");
 const CHECKS = fs.readFileSync(path.join(HERE, "webkit-checks.js"), "utf8");
 const URL_ = process.env.E2E_URL ?? "http://127.0.0.1:4173/?e2e";
 
-const d = await new Builder().forBrowser("safari").build();
 const results = [];
+// Im GitHub-Workflow erscheinen Fehler so direkt als Hinweis am Lauf.
+const annotate = (kind, msg) => process.env.GITHUB_ACTIONS && console.log(`::${kind}::${String(msg).replace(/\n/g, " ").slice(0, 900)}`);
+let d;
+try {
+  d = await new Builder().forBrowser("safari").build();
+} catch (e) {
+  annotate("error", `Safari-Treiber startet nicht: ${e}`);
+  process.exit(1);
+}
 try {
   await d.manage().setTimeouts({ script: 180000 });
   await d.get(URL_);
-  console.log(await d.executeScript("return navigator.userAgent"));
+  const ua = await d.executeScript("return navigator.userAgent");
+  console.log(ua);
+  annotate("notice", `Safari: ${ua}`);
   for (const phase of [1, 2]) {
     await new Promise((r) => setTimeout(r, 2500));
     // Der Prüfcode wird direkt als Skript übergeben (kein eval – die CSP der App verbietet das).
@@ -35,7 +45,11 @@ try {
 } finally {
   await d.quit();
 }
-for (const r of results) console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.name}${r.extra ? "  – " + r.extra : ""}`);
+for (const r of results) {
+  console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.name}${r.extra ? "  – " + r.extra : ""}`);
+  if (!r.ok) annotate("error", `${r.name}${r.extra ? " – " + r.extra : ""}`);
+}
 const failed = results.filter((r) => !r.ok).length;
 console.log(`\n${results.length - failed}/${results.length} bestanden (Safari)`);
+annotate(failed ? "error" : "notice", `${results.length - failed}/${results.length} Prüfungen in Safari bestanden`);
 process.exit(failed ? 1 : 0);

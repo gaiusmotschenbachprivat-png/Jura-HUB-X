@@ -75,8 +75,9 @@ jobs:
           sudo safaridriver --enable
           mkdir -p dist-web/__fixture && cp tests/e2e/fixtures/folien.pdf dist-web/__fixture/
           (cd tests/e2e && npm ci)
-          npx vite preview --mode web --outDir dist-web --port 4173 --strictPort --host 127.0.0.1 &
-          sleep 3
+          npx vite preview --mode web --outDir dist-web --port 4173 --strictPort --host 127.0.0.1 > preview.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          curl -sf http://127.0.0.1:4173/ >/dev/null || { echo "::error::Vorschau-Server startet nicht: $(tail -5 preview.log | tr '\n' ' ')"; exit 1; }
           node tests/e2e-web/safari-run.mjs
 
   build:
