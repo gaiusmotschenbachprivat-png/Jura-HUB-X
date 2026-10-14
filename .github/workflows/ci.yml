@@ -69,7 +69,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: BGB, GG, StGB, KSchG laden und prüfen
+      - name: Gesetze herunterladen
+        run: |
+          mkdir -p eval/.cache
+          for g in bgb gg stgb kschg; do
+            curl -sS --fail --retry 3 -A "Mozilla/5.0 (Studium OS Test)" -o "eval/.cache/$g.zip" "https://www.gesetze-im-internet.de/$g/xml.zip" \
+              || { echo "::error::Download $g fehlgeschlagen"; curl -sSIv "https://www.gesetze-im-internet.de/$g/xml.zip" 2>&1 | tail -30; exit 1; }
+            ls -la "eval/.cache/$g.zip"
+          done
+      - name: BGB, GG, StGB, KSchG importieren und prüfen
         run: RUN_GII_REAL=1 npx vitest run --config eval/vitest.config.ts eval/gii-echt.eval.ts
 
   safari:

@@ -3,6 +3,9 @@
  * (läuft im GitHub-Workflow; lokal: RUN_GII_REAL=1 npm run eval).
  * Kein API-Schlüssel nötig.
  */
+import fs from "node:fs";
+import path from "node:path";
+
 import { JSDOM } from "jsdom";
 import { describe, expect, it } from "vitest";
 
@@ -15,7 +18,15 @@ import { openTestDb } from "../src/core/testing";
 const RUN = process.env.RUN_GII_REAL === "1";
 
 async function load(abbr: string) {
-  const res = await fetch(`https://www.gesetze-im-internet.de/${abbr}/xml.zip`);
+  // Vorab geladene Datei (z. B. per curl im Workflow) bevorzugen
+  const cached = path.join(import.meta.dirname, ".cache", `${abbr}.zip`);
+  if (fs.existsSync(cached)) return parseGiiArchive(new Uint8Array(fs.readFileSync(cached)), abbr);
+  let res: Response;
+  try {
+    res = await fetch(`https://www.gesetze-im-internet.de/${abbr}/xml.zip`);
+  } catch (e) {
+    throw new Error(`Abruf ${abbr} fehlgeschlagen: ${String((e as { cause?: unknown }).cause ?? e)}`);
+  }
   expect(res.status, abbr).toBe(200);
   return parseGiiArchive(new Uint8Array(await res.arrayBuffer()), abbr);
 }
