@@ -1,0 +1,8 @@
+target/
+node_modules/
+dist/
+*.partial
+.DS_Store
+src-tauri/gen/
+tests/e2e/node_modules/
+dist-web/

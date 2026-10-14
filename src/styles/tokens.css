@@ -1,0 +1,100 @@
+/* Design-Tokens. Ruhige, kühle Neutraltöne; ein tintenblauer Akzent.
+   Studienbereiche bringen ihre eigene Farbe nur als dezente Markierung ein. */
+:root {
+  --bg: #ffffff;
+  --bg-side: #f5f6f8;
+  --bg-sunken: #eceef2;
+  --bg-hover: #e9ecf1;
+  --bg-active: #e1e6f0;
+  --line: #e2e5eb;
+  --line-strong: #cfd4dd;
+  --text: #1b1f27;
+  --text-2: #485062;
+  --text-3: #7a8293;
+  --accent: #2f4a8a;
+  --accent-hover: #253c73;
+  --accent-soft: #e8edf7;
+  --accent-text: #ffffff;
+  --danger: #b3261e;
+  --danger-soft: #fbeceb;
+  --success: #2e7d5b;
+  --success-soft: #e7f3ec;
+  --warning: #9a5b13;
+  --warning-soft: #fbf1e3;
+  --mark: #fdf0a6;
+  --shadow: 0 1px 2px rgb(20 26 38 / 0.06), 0 8px 24px rgb(20 26 38 / 0.08);
+  --shadow-lg: 0 12px 48px rgb(20 26 38 / 0.18);
+
+  --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", "Inter Variable", system-ui, sans-serif;
+  --font-serif: "Source Serif 4 Variable", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 1rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.625rem;
+
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+
+  --topbar-h: 44px;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17191e;
+    --bg-side: #1c1f25;
+    --bg-sunken: #22252c;
+    --bg-hover: #262a32;
+    --bg-active: #2c3240;
+    --line: #2b2f37;
+    --line-strong: #3a3f4a;
+    --text: #e6e8ec;
+    --text-2: #b2b8c4;
+    --text-3: #7f8697;
+    --accent: #8fa7e8;
+    --accent-hover: #a8bbef;
+    --accent-soft: #252f4a;
+    --accent-text: #10131a;
+    --danger: #f0857c;
+    --danger-soft: #3a2224;
+    --success: #6cc49a;
+    --success-soft: #1d3329;
+    --warning: #e2a75c;
+    --warning-soft: #3a2d1b;
+    --mark: #5c4d14;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+    --shadow-lg: 0 12px 48px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17191e;
+  --bg-side: #1c1f25;
+  --bg-sunken: #22252c;
+  --bg-hover: #262a32;
+  --bg-active: #2c3240;
+  --line: #2b2f37;
+  --line-strong: #3a3f4a;
+  --text: #e6e8ec;
+  --text-2: #b2b8c4;
+  --text-3: #7f8697;
+  --accent: #8fa7e8;
+  --accent-hover: #a8bbef;
+  --accent-soft: #252f4a;
+  --accent-text: #10131a;
+  --danger: #f0857c;
+  --danger-soft: #3a2224;
+  --success: #6cc49a;
+  --success-soft: #1d3329;
+  --warning: #e2a75c;
+  --warning-soft: #3a2d1b;
+  --mark: #5c4d14;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  --shadow-lg: 0 12px 48px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}

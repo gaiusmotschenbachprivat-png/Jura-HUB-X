@@ -1,0 +1,9 @@
+{
+  "name": "studium-os-e2e",
+  "private": true,
+  "type": "module",
+  "description": "End-to-End-Tests der echten Desktop-App (Linux, tauri-driver + WebKitWebDriver)",
+  "dependencies": {
+    "selenium-webdriver": "^4.38.0"
+  }
+}
