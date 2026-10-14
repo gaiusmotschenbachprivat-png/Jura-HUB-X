@@ -3,10 +3,11 @@
  * Die „legacy“-Ausgabe enthält Ergänzungen für ältere Browser-Engines
  * (z. B. Safari auf älteren iPads); Funktionsumfang wie die Standardausgabe.
  */
+import "./streamPolyfill";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+// Eigener Worker-Einstieg, damit die Safari-Ergänzung auch dort geladen ist.
+if (typeof Worker !== "undefined") pdfjs.GlobalWorkerOptions.workerPort = new Worker(new URL("./pdfWorker.ts", import.meta.url), { type: "module", name: "pdf" });
 
 export type PdfDoc = pdfjs.PDFDocumentProxy;
 
