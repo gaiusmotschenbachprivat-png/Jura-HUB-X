@@ -29,6 +29,13 @@ try {
 }
 
 if (phase === 1) {
+  // Warnungen der App mitschreiben (z. B. warum PDF-Text nicht gelesen wurde)
+  window.__warnings = [];
+  const warn = console.warn.bind(console);
+  console.warn = (...a) => {
+    window.__warnings.push(a.map((x) => (x instanceof Error ? x.stack || x.message : String(x))).join(" "));
+    warn(...a);
+  };
   const btn = await wait(() => [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === "Loslegen"));
   btn?.click();
   const areas = await wait(async () => {
@@ -51,7 +58,7 @@ if (phase === 1) {
   check("PDF-Import in den Dokumentenspeicher", out1?.[0]?.document?.file_present === true, JSON.stringify(out1?.[0]?.error));
   const id = out1?.[0]?.document?.id;
   const st = await wait(async () => ((await api.documentGet(id)).document.text_status !== "pending" ? (await api.documentGet(id)).document.text_status : null), 30000);
-  check("PDF-Text wird in WebKit ausgelesen (pdf.js)", st === "ok", st);
+  check("PDF-Text wird in WebKit ausgelesen (pdf.js)", st === "ok", st === "ok" ? st : `${st}: ${window.__warnings.join(" | ").slice(0, 600)}`);
   const pageHits = await api.search("Weinversteigerung", null);
   check("Suche findet PDF-Text mit Seite 2", pageHits.some((h) => h.page === 2));
   const bytes = await api.documentBytes(id);

@@ -48,6 +48,7 @@ try {
 for (const r of results) {
   console.log(`${r.ok ? "PASS" : "FAIL"}  ${r.name}${r.extra ? "  – " + r.extra : ""}`);
   if (!r.ok) annotate("error", `${r.name}${r.extra ? " – " + r.extra : ""}`);
+  else if (r.name.startsWith("Datenspeicher")) annotate("notice", `Speicher in Safari: ${r.extra}`);
 }
 const failed = results.filter((r) => !r.ok).length;
 console.log(`\n${results.length - failed}/${results.length} bestanden (Safari)`);
