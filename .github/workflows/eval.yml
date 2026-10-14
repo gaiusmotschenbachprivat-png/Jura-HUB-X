@@ -1,0 +1,39 @@
+# Evaluation des KI-Assistenten gegen eval/fragen.yaml – nur auf Knopfdruck.
+# Voraussetzung: Repository → Settings → Secrets and variables → Actions →
+# „New repository secret“ ANTHROPIC_API_KEY. Jeder Lauf verursacht API-Kosten.
+name: KI-Evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: Name des Laufs (z. B. prompt-v2)
+        default: lauf
+      filter:
+        description: Nur Fragen, deren Kennung hierzu passt (regulärer Ausdruck, leer = alle)
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Evaluation
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          EVAL_LABEL: ${{ inputs.label }}
+          EVAL_FILTER: ${{ inputs.filter }}
+        run: npm run eval
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-ergebnisse
+          path: eval/ergebnisse/*.json

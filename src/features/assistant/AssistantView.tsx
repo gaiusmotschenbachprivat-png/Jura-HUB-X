@@ -1,0 +1,541 @@
+import { BookOpen, Download, FileUp, KeyRound, MessageSquare, RotateCcw, Scale, Send, Settings2, ShieldCheck, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+import { api, errorMessage } from "../../api";
+import type { AiStatus, LegalKind, LegalSource } from "../../api/types";
+import { DEFAULT_SYSTEM_PROMPT, type Task } from "../../ai/assistant";
+import { configFromSettings, DEFAULT_CONFIG, type AnonymizeConfig, type Category } from "../../ai/privacy/anonymize";
+import { COMMON_LAWS, importFile, importLaw, readText } from "../../ai/sources/importer";
+import { formatDateTime } from "../../lib/format";
+import { markdownToHtml } from "../../lib/docxImport";
+import { reportError, useApp } from "../../state/store";
+import { Button } from "../../ui/Button";
+import { confirmDialog } from "../../ui/Dialog";
+import { htmlToDoc } from "../editor/exportImport";
+import { createNode } from "../navigation/actions";
+import { AnswerCard } from "./Answer";
+import { useAssistant } from "./state";
+
+type Tab = "fragen" | "quellen" | "einstellungen";
+
+const TASKS: { id: Task; label: string; placeholder: string }[] = [
+  { id: "recherche", label: "Recherche & Fall", placeholder: "Frage oder Sachverhalt, z. B. „V verkauft K ein Fahrrad … Welche Ansprüche hat K?“" },
+  { id: "vertrag", label: "Vertrag prüfen", placeholder: "Worauf soll geachtet werden? z. B. „Prüfe die Klauseln auf Wirksamkeit (AGB).“" },
+  { id: "schriftsatz", label: "Schriftsatz entwerfen", placeholder: "Was soll entworfen werden? z. B. „Mängelanzeige für ein defektes Notebook, Kauf am 01.09.2026“" },
+];
+
+export function AssistantView() {
+  const [tab, setTab] = useState<Tab>("fragen");
+  const [consent, setConsent] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<AiStatus | null>(null);
+  const reload = async () => {
+    const s = await api.settingsAll();
+    setConsent(s["ai.consent"] === true);
+    setStatus(await api.aiStatus());
+  };
+  useEffect(() => {
+    void reload().catch(reportError);
+  }, []);
+
+  if (consent === null || !status) return <div className="loading">Lade …</div>;
+  if (!consent) return <Consent onDone={() => void reload()} />;
+
+  return (
+    <div className="page assistant">
+      <header className="page-head">
+        <div className="small muted">KI-Assistent (Claude)</div>
+        <h1 className="page-title-static">Juristischer Assistent</h1>
+        <div className="tabs" role="tablist">
+          {(
+            [
+              ["fragen", "Fragen", <MessageSquare key="a" size={14} />],
+              ["quellen", "Rechtsquellen", <BookOpen key="b" size={14} />],
+              ["einstellungen", "Einstellungen", <Settings2 key="c" size={14} />],
+            ] as const
+          ).map(([id, label, icon]) => (
+            <button key={id} role="tab" aria-selected={tab === id} className={`tab ${tab === id ? "is-active" : ""}`} onClick={() => setTab(id)}>
+              {icon} {label}
+            </button>
+          ))}
+        </div>
+      </header>
+      {!status.available && <KeySetup status={status} onChange={() => void reload()} />}
+      {tab === "fragen" && <Chat available={status.available} />}
+      {tab === "quellen" && <Sources status={status} />}
+      {tab === "einstellungen" && <AiSettings onRevoke={() => void reload()} />}
+    </div>
+  );
+}
+
+function Consent({ onDone }: { onDone: () => void }) {
+  const [ok, setOk] = useState(false);
+  return (
+    <div className="page">
+      <section className="card prose-ui consent" style={{ maxWidth: 720 }}>
+        <h2>
+          <Scale size={18} /> KI-Assistent einschalten?
+        </h2>
+        <p>
+          Der Assistent nutzt <strong>Claude</strong> von Anthropic. Studium OS ist sonst vollständig lokal – dieser Teil ist die einzige Funktion, die Inhalte an einen
+          externen Dienst schickt, und nur, wenn du eine Frage absendest.
+        </p>
+        <ul className="small">
+          <li>Gesendet werden: deine Frage, die dazu gefundenen Abschnitte deiner Rechtsquellen und – nur wenn du es pro Unterhaltung erlaubst – Auszüge aus deinen Notizen.</li>
+          <li>Personenbezogene Angaben werden vorher durch Platzhalter ersetzt (abschaltbar). Die Erkennung ist nicht lückenlos.</li>
+          <li>Du brauchst einen eigenen API-Schlüssel von Anthropic; die Nutzung ist kostenpflichtig (Abrechnung über dein Anthropic-Konto).</li>
+          <li>Antworten können Fehler enthalten. Zitate werden automatisch gegen deine Quellen geprüft – das ersetzt keine eigene Kontrolle und keine anwaltliche Prüfung.</li>
+          <li>Keine Mandantendaten im Klartext eingeben. Für berufliche Nutzung gelten Verschwiegenheitspflichten (§ 203 StGB, § 43a BRAO) und die DSGVO.</li>
+        </ul>
+        <label className="row small">
+          <input type="checkbox" checked={ok} onChange={(e) => setOk(e.target.checked)} />
+          Ich habe das gelesen und möchte den KI-Assistenten nutzen.
+        </label>
+        <div className="row">
+          <Button
+            variant="primary"
+            disabled={!ok}
+            onClick={async () => {
+              await api.settingSet("ai.consent", true).catch(reportError);
+              onDone();
+            }}
+          >
+            Einschalten
+          </Button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function KeySetup({ status, onChange }: { status: AiStatus; onChange: () => void }) {
+  const [key, setKey] = useState("");
+  if (api.kind === "web") {
+    return (
+      <section className="card ai-key">
+        <h3>
+          <KeyRound size={16} /> API-Schlüssel für diese Sitzung
+        </h3>
+        <p className="small muted">
+          Der Schlüssel bleibt nur im Arbeitsspeicher dieses Tabs und wird nie gespeichert. Nach dem Schließen oder Neuladen musst du ihn erneut eingeben.
+        </p>
+        <form
+          className="row"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            await api.aiSetSessionKey(key);
+            setKey("");
+            onChange();
+          }}
+        >
+          <input type="password" autoComplete="off" placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} style={{ minWidth: 280 }} />
+          <Button type="submit" variant="primary" disabled={!key.trim()}>
+            Verwenden
+          </Button>
+        </form>
+      </section>
+    );
+  }
+  return (
+    <section className="card ai-key">
+      <h3>
+        <KeyRound size={16} /> Kein API-Schlüssel gefunden
+      </h3>
+      <p className="small">
+        Lege deinen Schlüssel als Umgebungsvariable <code>ANTHROPIC_API_KEY</code> an und starte Studium OS neu. Die App liest ihn nur auf der Rust-Seite; die
+        Oberfläche sieht ihn nie, und er wird nicht gespeichert.
+      </p>
+      <ul className="xs muted">
+        <li>
+          macOS: <code>launchctl setenv ANTHROPIC_API_KEY sk-ant-…</code> und danach Studium OS neu starten (gilt bis zum Neustart des Macs).
+        </li>
+        <li>Windows: Einstellungen → „Umgebungsvariablen für dieses Konto bearbeiten“ → Neu: ANTHROPIC_API_KEY.</li>
+      </ul>
+      {status.key_source === "none" && <p className="xs muted">Rechtsquellen kannst du trotzdem schon importieren.</p>}
+    </section>
+  );
+}
+
+function Chat({ available }: { available: boolean }) {
+  const { task, setTask, entries, busy, ask, reset, ownDocs, setOwnDocs } = useAssistant();
+  const [q, setQ] = useState("");
+  const [doc, setDoc] = useState("");
+  const areaId = useApp((s) => s.areaId);
+  const areas = useApp((s) => s.areas);
+  const toast = useApp((s) => s.toast);
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [entries.length, busy]);
+  const cur = TASKS.find((t) => t.id === task)!;
+
+  const send = () => {
+    const question = q.trim();
+    if (!question) return;
+    setQ("");
+    const d = task === "vertrag" && doc.trim() ? doc : undefined;
+    void ask(question, d);
+  };
+
+  const loadContract = async () => {
+    const p = (await api.pickFiles({ multiple: false, extensions: ["pdf", "docx", "txt", "md"], title: "Vertrag laden" }))?.[0];
+    if (!p) return;
+    try {
+      setDoc(await readText(p, await api.readExternalFile(p)));
+    } catch (e) {
+      reportError(e);
+    }
+  };
+
+  const saveNote = async (text: string) => {
+    const target = areaId !== "all" ? areaId : areas.find((a) => !a.archived_at)?.id;
+    if (!target) return toast("Lege zuerst einen Studienbereich an.", "error");
+    const html = markdownToHtml(`Erstellt mit dem KI-Assistenten (ungeprüft)\n\n${text}`);
+    await createNode({ areaId: target, parentId: null, kind: "note", title: `KI: ${entries.find((e) => e.role === "user")?.text.slice(0, 60) ?? "Antwort"}`, contentJson: JSON.stringify(htmlToDoc(html)) });
+  };
+
+  return (
+    <div className="ai-chat">
+      <div className="row wrap ai-toolbar">
+        <div className="seg" role="radiogroup" aria-label="Aufgabe">
+          {TASKS.map((t) => (
+            <button key={t.id} role="radio" aria-checked={task === t.id} className={task === t.id ? "is-active" : ""} onClick={() => setTask(t.id)} disabled={busy}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <label className="row small" title="Erlaubt Claude, deine Notizen und Dokumente zu durchsuchen (Auszüge werden anonymisiert gesendet).">
+          <input type="checkbox" checked={ownDocs} onChange={(e) => setOwnDocs(e.target.checked)} disabled={busy} />
+          Eigene Notizen einbeziehen
+        </label>
+        <span className="grow" />
+        <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={reset} disabled={busy || !entries.length}>
+          Neue Unterhaltung
+        </Button>
+      </div>
+
+      <div className="ai-entries">
+        {entries.length === 0 && (
+          <p className="small muted">
+            Stelle eine Frage. Der Assistent sucht zuerst in deinen Rechtsquellen (Reiter „Rechtsquellen“), nutzt Werkzeuge wie Normabruf und Fristenrechner und prüft
+            danach jedes Zitat. Unterhaltungen werden nicht gespeichert – sichere wichtige Antworten als Notiz.
+          </p>
+        )}
+        {entries.map((e, i) =>
+          e.role === "user" ? (
+            <div key={i} className="ai-user">
+              {e.text}
+              {e.document && <div className="xs muted">+ Dokument ({e.document.length.toLocaleString("de-DE")} Zeichen)</div>}
+            </div>
+          ) : e.role === "assistant" ? (
+            <AnswerCard key={i} result={e.result} onSaveNote={(t) => void saveNote(t)} />
+          ) : (
+            <div key={i} className="card ai-error small">
+              {e.text}
+            </div>
+          ),
+        )}
+        {busy && <div className="small muted ai-busy">Claude arbeitet … (Quellen abrufen, prüfen – das kann eine Minute dauern)</div>}
+        <div ref={endRef} />
+      </div>
+
+      {task === "vertrag" && (
+        <div className="ai-doc">
+          <div className="row">
+            <span className="small">Vertragstext</span>
+            <span className="grow" />
+            <Button size="sm" variant="ghost" icon={<FileUp size={13} />} onClick={() => void loadContract()}>
+              Datei laden
+            </Button>
+          </div>
+          <textarea rows={6} value={doc} onChange={(e) => setDoc(e.target.value)} placeholder="Vertrag hier einfügen oder als Datei laden (PDF, DOCX, TXT)" />
+        </div>
+      )}
+      <form
+        className="ai-input"
+        onSubmit={(e) => {
+          e.preventDefault();
+          send();
+        }}
+      >
+        <textarea
+          rows={3}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder={cur.placeholder}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              send();
+            }
+          }}
+        />
+        <Button type="submit" variant="primary" icon={<Send size={14} />} disabled={!available || busy || !q.trim()}>
+          Senden
+        </Button>
+      </form>
+      <p className="xs muted">Ausgaben können fehlerhaft sein und ersetzen keine anwaltliche Prüfung. ⌘/Strg + Enter sendet.</p>
+    </div>
+  );
+}
+
+function Sources({ status }: { status: AiStatus }) {
+  const [list, setList] = useState<LegalSource[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [abbr, setAbbr] = useState("");
+  const [meta, setMeta] = useState({ kind: "urteil" as LegalKind, title: "", court: "", file_number: "", decision_date: "", version: "" });
+  const toast = useApp((s) => s.toast);
+  const load = () => api.legalSourcesList().then(setList).catch(reportError);
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const fetchLaw = async (a: string) => {
+    setBusy(a);
+    try {
+      const s = await importLaw(api, a);
+      toast(`${s.abbreviation || s.title}: ${s.chunk_count.toLocaleString("de-DE")} Abschnitte importiert.`, "success");
+      void load();
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const pick = async () => {
+    const p = (await api.pickFiles({ multiple: false, extensions: ["xml", "zip", "pdf", "docx", "txt", "md"], title: "Rechtsquelle importieren" }))?.[0];
+    if (!p) return;
+    setBusy("datei");
+    try {
+      const name = p.split(/[\\/]/).pop() ?? p;
+      const s = await importFile(api, name, await api.readExternalFile(p), meta);
+      toast(`„${s.title}“: ${s.chunk_count.toLocaleString("de-DE")} Abschnitte importiert.`, "success");
+      setMeta({ ...meta, title: "", court: "", file_number: "", decision_date: "" });
+      void load();
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const remove = async (s: LegalSource) => {
+    if (!(await confirmDialog({ title: "Quelle löschen?", message: `„${s.title}“ wird aus den Rechtsquellen entfernt.`, confirm: "Löschen", danger: true }))) return;
+    await api.legalSourceDelete(s.id).catch(reportError);
+    void load();
+  };
+
+  return (
+    <div className="stack settings-section">
+      <section className="card">
+        <h3>Gesetze laden</h3>
+        {status.can_fetch_laws ? (
+          <>
+            <p className="small muted">
+              Lädt die amtliche XML-Fassung von gesetze-im-internet.de – nur auf deinen Klick. Eine neue Fassung ersetzt die alte. Den Stand der Fassung siehst du in der Liste.
+            </p>
+            <div className="row wrap">
+              {COMMON_LAWS.map((l) => (
+                <Button key={l.abbr} size="sm" icon={<Download size={12} />} disabled={!!busy} onClick={() => void fetchLaw(l.abbr)}>
+                  {busy === l.abbr ? "Lade …" : l.label}
+                </Button>
+              ))}
+            </div>
+            <form
+              className="row"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (abbr.trim()) void fetchLaw(abbr);
+              }}
+            >
+              <input placeholder="andere Abkürzung, z. B. bauno_by, bdsg_2018" value={abbr} onChange={(e) => setAbbr(e.target.value)} />
+              <Button type="submit" size="sm" disabled={!!busy || !abbr.trim()}>
+                Laden
+              </Button>
+            </form>
+            <p className="xs muted">Die Abkürzung steht in der Adresse bei gesetze-im-internet.de, z. B. …/bgb/ oder …/kschg/.</p>
+          </>
+        ) : (
+          <p className="small">
+            In der Browser-Version kann Studium OS Gesetze nicht selbst laden (gesetze-im-internet.de erlaubt das technisch nicht). Lade auf gesetze-im-internet.de beim
+            jeweiligen Gesetz die „XML“-Datei herunter und importiere sie unten.
+          </p>
+        )}
+      </section>
+
+      <section className="card">
+        <h3>Datei importieren</h3>
+        <p className="small muted">XML/ZIP von gesetze-im-internet.de, Urteile, Kommentare oder eigene Texte als PDF, DOCX oder TXT.</p>
+        <div className="ai-meta">
+          <label>
+            Art
+            <select value={meta.kind} onChange={(e) => setMeta({ ...meta, kind: e.target.value as LegalKind })}>
+              <option value="urteil">Urteil / Beschluss</option>
+              <option value="kommentar">Kommentar / Aufsatz</option>
+              <option value="dokument">Eigenes Dokument</option>
+              <option value="gesetz">Gesetz (XML/ZIP)</option>
+            </select>
+          </label>
+          <label>
+            Titel
+            <input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} placeholder="leer = Dateiname" />
+          </label>
+          {meta.kind === "urteil" && (
+            <>
+              <label>
+                Gericht
+                <input value={meta.court} onChange={(e) => setMeta({ ...meta, court: e.target.value })} placeholder="z. B. BGH" />
+              </label>
+              <label>
+                Aktenzeichen
+                <input value={meta.file_number} onChange={(e) => setMeta({ ...meta, file_number: e.target.value })} placeholder="z. B. VIII ZR 123/20" />
+              </label>
+              <label>
+                Datum
+                <input type="date" value={meta.decision_date} onChange={(e) => setMeta({ ...meta, decision_date: e.target.value })} />
+              </label>
+            </>
+          )}
+          {(meta.kind === "kommentar" || meta.kind === "dokument") && (
+            <label>
+              Fassung / Stand
+              <input value={meta.version} onChange={(e) => setMeta({ ...meta, version: e.target.value })} placeholder="z. B. 2026, 85. Aufl." />
+            </label>
+          )}
+        </div>
+        <Button icon={<FileUp size={14} />} onClick={() => void pick()} disabled={!!busy}>
+          {busy === "datei" ? "Importiere …" : "Datei wählen …"}
+        </Button>
+      </section>
+
+      <section className="card">
+        <h3>Vorhandene Quellen ({list.length})</h3>
+        {list.length === 0 ? (
+          <p className="small muted">Noch keine Rechtsquellen. Ohne Quellen kann der Assistent nichts belegen.</p>
+        ) : (
+          <table className="table small">
+            <thead>
+              <tr>
+                <th>Quelle</th>
+                <th>Art</th>
+                <th>Abschnitte</th>
+                <th>Fassung / Stand</th>
+                <th>Importiert</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((s) => (
+                <tr key={s.id}>
+                  <td>
+                    <strong>{s.abbreviation || s.file_number || ""}</strong> {s.title}
+                    {s.court ? ` (${s.court}${s.decision_date ? `, ${s.decision_date}` : ""})` : ""}
+                  </td>
+                  <td>{s.kind}</td>
+                  <td className="tnum">{s.chunk_count.toLocaleString("de-DE")}</td>
+                  <td className="xs ellipsis" style={{ maxWidth: 260 }} title={s.version}>
+                    {s.version || "–"}
+                  </td>
+                  <td className="xs tnum">{formatDateTime(s.imported_at)}</td>
+                  <td>
+                    <Button size="sm" variant="ghost" icon={<Trash2 size={13} />} aria-label="Löschen" onClick={() => void remove(s)} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
+  );
+}
+
+const CATEGORY_LABEL: Record<Category, string> = {
+  person: "Namen nach Anrede/Titel (Herr, Frau, Dr. …)",
+  email: "E-Mail-Adressen",
+  telefon: "Telefonnummern",
+  iban: "IBAN",
+  adresse: "Straßen und Postleitzahl/Ort",
+  geburtsdatum: "Geburtsdaten",
+  aktenzeichen_eigen: "eigene Aktenzeichen („Unser Az.“)",
+};
+
+function AiSettings({ onRevoke }: { onRevoke: () => void }) {
+  const [cfg, setCfg] = useState<AnonymizeConfig>(DEFAULT_CONFIG);
+  const [terms, setTerms] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const reset = useAssistant((s) => s.reset);
+  const toast = useApp((s) => s.toast);
+  useEffect(() => {
+    void api.settingsAll().then((s) => {
+      const c = configFromSettings(s["ai.anonymize"]);
+      setCfg(c);
+      setTerms(c.customTerms.join("\n"));
+      setPrompt(typeof s["ai.systemPrompt"] === "string" ? (s["ai.systemPrompt"] as string) : DEFAULT_SYSTEM_PROMPT);
+    });
+  }, []);
+  const save = async () => {
+    const next = { ...cfg, customTerms: terms.split("\n").map((t) => t.trim()).filter(Boolean) };
+    try {
+      await api.settingSet("ai.anonymize", next);
+      await api.settingSet("ai.systemPrompt", prompt.trim() === DEFAULT_SYSTEM_PROMPT ? null : prompt);
+      reset();
+      toast("Gespeichert. Gilt ab der nächsten Unterhaltung.", "success");
+    } catch (e) {
+      reportError(e);
+    }
+  };
+  return (
+    <div className="stack settings-section">
+      <section className="card">
+        <h3>
+          <ShieldCheck size={16} /> Anonymisierung vor dem Senden
+        </h3>
+        <label className="row small">
+          <input type="checkbox" checked={cfg.enabled} onChange={(e) => setCfg({ ...cfg, enabled: e.target.checked })} />
+          Personenbezogene Angaben durch Platzhalter ersetzen
+        </label>
+        {(Object.keys(CATEGORY_LABEL) as Category[]).map((k) => (
+          <label key={k} className="row small" style={{ marginLeft: 20 }}>
+            <input
+              type="checkbox"
+              disabled={!cfg.enabled}
+              checked={cfg.categories[k]}
+              onChange={(e) => setCfg({ ...cfg, categories: { ...cfg.categories, [k]: e.target.checked } })}
+            />
+            {CATEGORY_LABEL[k]}
+          </label>
+        ))}
+        <label className="small">
+          Eigene Begriffe (z. B. Namen von Beteiligten, Firmen; einer pro Zeile)
+          <textarea rows={4} value={terms} onChange={(e) => setTerms(e.target.value)} />
+        </label>
+        <p className="xs muted">Die Erkennung arbeitet mit Mustern und findet nicht jeden Namen. Trage Namen von Beteiligten deshalb oben ein.</p>
+      </section>
+      <section className="card">
+        <h3>System-Prompt</h3>
+        <p className="xs muted">Regeln für den Assistenten. Standard: Datei prompts/system.md. Änderungen gelten ab der nächsten Unterhaltung.</p>
+        <textarea rows={14} value={prompt} onChange={(e) => setPrompt(e.target.value)} className="mono" />
+        <div className="row">
+          <Button size="sm" variant="ghost" onClick={() => setPrompt(DEFAULT_SYSTEM_PROMPT)}>
+            Auf Standard zurücksetzen
+          </Button>
+        </div>
+      </section>
+      <div className="row">
+        <Button variant="primary" onClick={() => void save()}>
+          Speichern
+        </Button>
+        <span className="grow" />
+        <Button
+          variant="ghost"
+          onClick={async () => {
+            await api.settingSet("ai.consent", false).catch(reportError);
+            reset();
+            onRevoke();
+          }}
+        >
+          KI-Assistent ausschalten
+        </Button>
+      </div>
+    </div>
+  );
+}

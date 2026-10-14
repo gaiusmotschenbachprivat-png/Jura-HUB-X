@@ -6,3 +6,4 @@ dist/
 src-tauri/gen/
 tests/e2e/node_modules/
 dist-web/
+eval/.cache/

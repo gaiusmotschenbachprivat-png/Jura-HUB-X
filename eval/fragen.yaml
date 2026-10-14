@@ -1,0 +1,252 @@
+# Testsammlung für den juristischen Assistenten.
+#
+# Felder je Frage:
+#   id                   eindeutige Kennung
+#   rechtsgebiet         zivilrecht | arbeitsrecht | oeffentliches_recht | strafrecht
+#   aufgabe              recherche | vertrag | schriftsatz
+#   frage                Text der Frage
+#   erwartete_normen     Normen, die eine gute Antwort zitieren muss (Absatz/Satz nur, wenn wichtig)
+#   erwartete_stichworte Begriffe, die in einer richtigen Antwort vorkommen sollten (Groß-/Kleinschreibung egal)
+#   erwartete_werkzeuge  (optional) Werkzeuge, die genutzt werden sollen
+#   falle                (optional) true = Frage nach etwas, das es nicht gibt; die Antwort darf es nicht als existent darstellen
+#
+# Die erwarteten Antworten geben verbreitetes Lehrbuchwissen wieder. Bitte vor
+# ernsthafter Nutzung fachlich prüfen und an die eigene Ausbildung anpassen.
+
+gesetze: [bgb, stgb, gg, kschg, tzbfg, vwvfg, vwgo]
+
+fragen:
+  # ---------- Zivilrecht ----------
+  - id: zr-01-kaufvertrag-pflichten
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Welche Hauptpflichten haben Verkäufer und Käufer aus einem Kaufvertrag?
+    erwartete_normen: ["§ 433 Abs. 1 BGB", "§ 433 Abs. 2 BGB"]
+    erwartete_stichworte: [Übergabe, Eigentum, Kaufpreis, frei von Sach- und Rechtsmängeln]
+
+  - id: zr-02-sachmangel
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Wann ist eine Kaufsache mangelhaft?
+    erwartete_normen: ["§ 434 BGB"]
+    erwartete_stichworte: [subjektiven Anforderungen, objektiven Anforderungen, Montageanforderungen]
+
+  - id: zr-03-maengelrechte
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Welche Rechte hat ein Käufer, wenn die gekaufte Sache mangelhaft ist? Was muss er zuerst verlangen?
+    erwartete_normen: ["§ 437 BGB", "§ 439 BGB"]
+    erwartete_stichworte: [Nacherfüllung, Rücktritt, Minderung, Schadensersatz]
+
+  - id: zr-04-verjaehrung-maengel
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: In welcher Frist verjähren Mängelansprüche beim Kauf einer gewöhnlichen beweglichen Sache und wann beginnt die Frist?
+    erwartete_normen: ["§ 438 Abs. 1 Nr. 3 BGB", "§ 438 Abs. 2 BGB"]
+    erwartete_stichworte: [zwei Jahre, Ablieferung]
+
+  - id: zr-05-regelverjaehrung
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Wie lange ist die regelmäßige Verjährungsfrist und wann beginnt sie?
+    erwartete_normen: ["§ 195 BGB", "§ 199 Abs. 1 BGB"]
+    erwartete_stichworte: [drei Jahre, Schluss des Jahres]
+
+  - id: zr-06-minderjaehrige
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Kann ein 15-Jähriger ohne Zustimmung seiner Eltern wirksam ein Handy kaufen? Gehe auf den Taschengeldparagrafen ein.
+    erwartete_normen: ["§ 106 BGB", "§ 107 BGB", "§ 108 BGB", "§ 110 BGB"]
+    erwartete_stichworte: [beschränkt geschäftsfähig, Einwilligung, schwebend unwirksam, Mitteln]
+
+  - id: zr-07-irrtumsanfechtung
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Unter welchen Voraussetzungen und in welcher Frist kann eine Willenserklärung wegen Inhalts- oder Erklärungsirrtums angefochten werden?
+    erwartete_normen: ["§ 119 Abs. 1 BGB", "§ 121 Abs. 1 BGB", "§ 143 BGB"]
+    erwartete_stichworte: [unverzüglich, Anfechtungserklärung]
+
+  - id: zr-08-arglist
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Innerhalb welcher Frist muss eine Anfechtung wegen arglistiger Täuschung erklärt werden?
+    erwartete_normen: ["§ 123 Abs. 1 BGB", "§ 124 Abs. 1 BGB"]
+    erwartete_stichworte: [ein Jahr, Entdeckung]
+
+  - id: zr-09-pflichtverletzung
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Was ist die zentrale Anspruchsgrundlage für Schadensersatz wegen Pflichtverletzung aus einem Schuldverhältnis und was sind ihre Voraussetzungen?
+    erwartete_normen: ["§ 280 Abs. 1 BGB"]
+    erwartete_stichworte: [Schuldverhältnis, Pflichtverletzung, Vertretenmüssen, Schaden]
+
+  - id: zr-10-delikt
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: A verletzt B beim Fahrradfahren fahrlässig. Hat B einen deliktischen Schadensersatzanspruch? Prüfe im Gutachtenstil.
+    erwartete_normen: ["§ 823 Abs. 1 BGB", "§ 276 Abs. 2 BGB"]
+    erwartete_stichworte: [Körper, Rechtswidrigkeit, Verschulden, Fahrlässigkeit]
+
+  - id: zr-11-leistungskondiktion
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Welche Voraussetzungen hat die Leistungskondiktion?
+    erwartete_normen: ["§ 812 Abs. 1 S. 1 BGB"]
+    erwartete_stichworte: [etwas erlangt, Leistung, ohne rechtlichen Grund]
+
+  - id: zr-12-uebereignung
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Wie wird das Eigentum an einer beweglichen Sache übertragen?
+    erwartete_normen: ["§ 929 S. 1 BGB"]
+    erwartete_stichworte: [Einigung, Übergabe, Berechtigung]
+
+  - id: zr-13-gutglaeubig
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Kann man eine gestohlene Sache gutgläubig erwerben?
+    erwartete_normen: ["§ 932 BGB", "§ 935 Abs. 1 BGB"]
+    erwartete_stichworte: [abhanden gekommen, Glauben]
+
+  - id: zr-14-widerruf
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Wie lange kann ein Verbraucher einen online geschlossenen Kaufvertrag widerrufen?
+    erwartete_normen: ["§ 312g Abs. 1 BGB", "§ 355 Abs. 2 BGB"]
+    erwartete_stichworte: [14 Tage]
+
+  # ---------- Arbeitsrecht ----------
+  - id: ar-01-kuendigungsfrist
+    rechtsgebiet: arbeitsrecht
+    aufgabe: recherche
+    frage: Welche gesetzliche Kündigungsfrist gilt für einen Arbeitnehmer, wenn im Vertrag nichts geregelt ist?
+    erwartete_normen: ["§ 622 Abs. 1 BGB"]
+    erwartete_stichworte: [vier Wochen, Fünfzehnten, Ende eines Kalendermonats]
+
+  - id: ar-02-schriftform
+    rechtsgebiet: arbeitsrecht
+    aufgabe: recherche
+    frage: Kann ein Arbeitsverhältnis per E-Mail gekündigt werden?
+    erwartete_normen: ["§ 623 BGB"]
+    erwartete_stichworte: [Schriftform, elektronische Form ist ausgeschlossen]
+
+  - id: ar-03-kschg-anwendbar
+    rechtsgebiet: arbeitsrecht
+    aufgabe: recherche
+    frage: Wann genießt ein Arbeitnehmer allgemeinen Kündigungsschutz nach dem Kündigungsschutzgesetz?
+    erwartete_normen: ["§ 1 Abs. 1 KSchG", "§ 23 Abs. 1 KSchG"]
+    erwartete_stichworte: [sechs Monate, sozial ungerechtfertigt]
+
+  - id: ar-04-klagefrist
+    rechtsgebiet: arbeitsrecht
+    aufgabe: recherche
+    frage: Innerhalb welcher Frist muss eine Kündigungsschutzklage erhoben werden und was passiert, wenn sie versäumt wird?
+    erwartete_normen: ["§ 4 S. 1 KSchG", "§ 7 KSchG"]
+    erwartete_stichworte: [drei Wochen, Zugang, von Anfang an rechtswirksam]
+
+  - id: ar-05-fristberechnung
+    rechtsgebiet: arbeitsrecht
+    aufgabe: recherche
+    frage: Einer Arbeitnehmerin in Bayreuth ging am 14.10.2026 eine Kündigung zu. Bis wann muss sie Kündigungsschutzklage erheben? Berechne das Fristende.
+    erwartete_normen: ["§ 4 S. 1 KSchG"]
+    erwartete_stichworte: ["04.11.2026"]
+    erwartete_werkzeuge: [frist_berechnen]
+
+  - id: ar-06-befristung
+    rechtsgebiet: arbeitsrecht
+    aufgabe: recherche
+    frage: Wie lange darf ein Arbeitsvertrag ohne sachlichen Grund befristet werden?
+    erwartete_normen: ["§ 14 Abs. 2 TzBfG"]
+    erwartete_stichworte: [zwei Jahre, dreimalige Verlängerung]
+
+  # ---------- Öffentliches Recht ----------
+  - id: or-01-menschenwuerde
+    rechtsgebiet: oeffentliches_recht
+    aufgabe: recherche
+    frage: Wo ist die Menschenwürde im Grundgesetz geschützt und wen verpflichtet die Norm?
+    erwartete_normen: ["Art. 1 Abs. 1 GG"]
+    erwartete_stichworte: [unantastbar, staatlichen Gewalt]
+
+  - id: or-02-handlungsfreiheit
+    rechtsgebiet: oeffentliches_recht
+    aufgabe: recherche
+    frage: Welches Grundrecht schützt die allgemeine Handlungsfreiheit und welche Schranken hat es?
+    erwartete_normen: ["Art. 2 Abs. 1 GG"]
+    erwartete_stichworte: [verfassungsmäßige Ordnung, Rechte anderer, Sittengesetz]
+
+  - id: or-03-verwaltungsakt
+    rechtsgebiet: oeffentliches_recht
+    aufgabe: recherche
+    frage: Was ist ein Verwaltungsakt? Nenne die Merkmale.
+    erwartete_normen: ["§ 35 S. 1 VwVfG"]
+    erwartete_stichworte: [Regelung, Einzelfalls, nach außen, Behörde]
+
+  - id: or-04-anfechtungsklage
+    rechtsgebiet: oeffentliches_recht
+    aufgabe: recherche
+    frage: Mit welcher Klage wendet man sich gegen einen belastenden Verwaltungsakt und welche Frist gilt für die Klage?
+    erwartete_normen: ["§ 42 Abs. 1 VwGO", "§ 74 Abs. 1 VwGO"]
+    erwartete_stichworte: [Anfechtungsklage, Monat]
+
+  # ---------- Strafrecht ----------
+  - id: sr-01-diebstahl
+    rechtsgebiet: strafrecht
+    aufgabe: recherche
+    frage: Welche Tatbestandsmerkmale hat der Diebstahl?
+    erwartete_normen: ["§ 242 Abs. 1 StGB"]
+    erwartete_stichworte: [fremde bewegliche Sache, Wegnahme, Zueignungsabsicht]
+
+  - id: sr-02-notwehr
+    rechtsgebiet: strafrecht
+    aufgabe: recherche
+    frage: Unter welchen Voraussetzungen ist eine Handlung durch Notwehr gerechtfertigt?
+    erwartete_normen: ["§ 32 StGB"]
+    erwartete_stichworte: [gegenwärtigen, rechtswidrigen Angriff, erforderlich]
+
+  - id: sr-03-betrug
+    rechtsgebiet: strafrecht
+    aufgabe: recherche
+    frage: Welche objektiven Tatbestandsmerkmale hat der Betrug?
+    erwartete_normen: ["§ 263 Abs. 1 StGB"]
+    erwartete_stichworte: [Täuschung, Irrtum, Vermögensverfügung, Vermögensschaden]
+
+  - id: sr-04-raub
+    rechtsgebiet: strafrecht
+    aufgabe: recherche
+    frage: Was unterscheidet den Raub vom Diebstahl?
+    erwartete_normen: ["§ 249 Abs. 1 StGB", "§ 242 Abs. 1 StGB"]
+    erwartete_stichworte: [Gewalt, Drohung, gegenwärtiger Gefahr für Leib oder Leben]
+
+  # ---------- Aufgaben: Vertrag und Schriftsatz ----------
+  - id: vt-01-agb-haftung
+    rechtsgebiet: zivilrecht
+    aufgabe: vertrag
+    frage: Prüfe diese Klausel aus Allgemeinen Geschäftsbedingungen eines Online-Händlers gegenüber Verbrauchern auf Wirksamkeit.
+    dokument: "§ 7 Haftung: Der Verkäufer haftet nicht für Schäden, gleich aus welchem Rechtsgrund, auch nicht für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit."
+    erwartete_normen: ["§ 309 Nr. 7 BGB", "§ 305 Abs. 1 BGB"]
+    erwartete_stichworte: [unwirksam, Gesundheit]
+
+  - id: ss-01-maengelanzeige
+    rechtsgebiet: zivilrecht
+    aufgabe: schriftsatz
+    frage: Entwirf eine Mängelanzeige mit Nacherfüllungsverlangen für ein am 01.09.2026 gekauftes Notebook, dessen Akku nach drei Wochen ausfiel.
+    erwartete_normen: ["§ 439 BGB"]
+    erwartete_stichworte: [Nacherfüllung, Frist]
+    erwartete_werkzeuge: [vorlage_laden]
+
+  # ---------- Fallen: Antworten dürfen nichts erfinden ----------
+  - id: fa-01-nicht-existente-norm
+    rechtsgebiet: strafrecht
+    aufgabe: recherche
+    frage: Was regelt § 999 StGB?
+    erwartete_normen: []
+    erwartete_stichworte: []
+    falle: true
+
+  - id: fa-02-erfundenes-urteil
+    rechtsgebiet: zivilrecht
+    aufgabe: recherche
+    frage: Fasse das Urteil des BGH vom 30.02.2021, Az. XII ZR 999/99, zur Haftung von Fahrradverleihern zusammen.
+    erwartete_normen: []
+    erwartete_stichworte: []
+    falle: true

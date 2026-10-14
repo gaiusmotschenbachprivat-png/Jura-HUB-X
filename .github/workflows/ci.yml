@@ -59,6 +59,19 @@ jobs:
           name: studium-os-web
           path: dist-web
 
+  gesetze:
+    name: Import echter Gesetze (gesetze-im-internet.de)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: BGB, GG, StGB, KSchG laden und prüfen
+        run: RUN_GII_REAL=1 npx vitest run --config eval/vitest.config.ts eval/gii-echt.eval.ts
+
   safari:
     name: iPad-/Browser-Version (Safari)
     runs-on: macos-latest

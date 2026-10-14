@@ -1,4 +1,5 @@
 import {
+  Scale,
   Archive,
   CalendarCheck,
   GraduationCap,
@@ -177,6 +178,7 @@ export function Sidebar() {
             onClick={() => open({ type: "cards" })}
           />
           <NavItem icon={<CalendarCheck size={15} />} label="Aufgaben & Prüfungen" active={view.type === "planning"} onClick={() => open({ type: "planning" })} />
+          <NavItem icon={<Scale size={15} />} label="KI-Assistent" active={view.type === "assistant"} onClick={() => open({ type: "assistant" })} />
           <div className="side-sub label">Wissen</div>
           {(["definition", "schema", "case", "citation"] as const).map((k) => (
             <NavItem
