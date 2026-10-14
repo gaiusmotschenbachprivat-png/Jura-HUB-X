@@ -10,6 +10,7 @@ import {
   BorderStyle,
   Document,
   ExternalHyperlink,
+  ImageRun,
   HeadingLevel,
   LevelFormat,
   Packer,
@@ -33,9 +34,20 @@ const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> 
   justify: AlignmentType.JUSTIFIED,
 };
 
+/** Bilddaten für den Export, vorab aus dem Speicher geladen. */
+export interface ExportAsset {
+  data: Uint8Array;
+  width: number;
+  height: number;
+  type: "png" | "jpg" | "gif";
+}
+
 interface Ctx {
   listInstance: number;
+  assets: Map<string, ExportAsset>;
 }
+
+const MATH_FONT = "Cambria Math";
 
 function hasMark(marks: PMMark[] | undefined, type: string) {
   return marks?.some((m) => m.type === type) ?? false;
@@ -46,6 +58,11 @@ function runs(nodes: PMNode[] | undefined, extra: { italics?: boolean; font?: st
   for (const n of nodes ?? []) {
     if (n.type === "hardBreak") {
       out.push(new TextRun({ text: "", break: 1 }));
+      continue;
+    }
+    if (n.type === "inlineMath") {
+      // Formeln als LaTeX-Quelltext in Formelschrift (Word-Formelobjekte: Phase 4)
+      out.push(new TextRun({ text: String(n.attrs?.latex ?? ""), font: MATH_FONT, italics: true }));
       continue;
     }
     if (n.type !== "text") continue;
@@ -159,6 +176,30 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
         );
         break;
       }
+      case "blockMath":
+        out.push(
+          new Paragraph({
+            alignment: AlignmentType.CENTER,
+            children: [new TextRun({ text: String(n.attrs?.latex ?? ""), font: MATH_FONT, italics: true })],
+          }),
+        );
+        break;
+      case "image": {
+        const a = ctx.assets.get(String(n.attrs?.src ?? ""));
+        if (a) {
+          const maxW = 600;
+          const scale = Math.min(1, maxW / Math.max(1, a.width));
+          out.push(
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [new ImageRun({ type: a.type, data: a.data, transformation: { width: Math.round(a.width * scale), height: Math.round(a.height * scale) } })],
+            }),
+          );
+        } else {
+          out.push(new Paragraph({ children: [new TextRun({ text: "[Bild]", italics: true, color: "888888" })] }));
+        }
+        break;
+      }
       case "horizontalRule":
         out.push(new Paragraph({ border: { bottom: { style: BorderStyle.SINGLE, size: 6, color: "B0B6C2", space: 1 } }, children: [] }));
         break;
@@ -189,8 +230,8 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
   return out;
 }
 
-export function buildDocx(docNode: PMNode, meta: { title: string }): Document {
-  const ctx: Ctx = { listInstance: 0 };
+export function buildDocx(docNode: PMNode, meta: { title: string }, assets: Map<string, ExportAsset> = new Map()): Document {
+  const ctx: Ctx = { listInstance: 0, assets };
   const children = blocks(docNode.content, ctx);
   return new Document({
     creator: "Studium OS",
@@ -216,7 +257,7 @@ export function buildDocx(docNode: PMNode, meta: { title: string }): Document {
   });
 }
 
-export async function exportDocx(docNode: PMNode, meta: { title: string }): Promise<Uint8Array> {
-  const buf = await Packer.toArrayBuffer(buildDocx(docNode, meta));
+export async function exportDocx(docNode: PMNode, meta: { title: string }, assets?: Map<string, ExportAsset>): Promise<Uint8Array> {
+  const buf = await Packer.toArrayBuffer(buildDocx(docNode, meta, assets));
   return new Uint8Array(buf);
 }

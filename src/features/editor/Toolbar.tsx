@@ -10,7 +10,9 @@ import {
   CheckSquare,
   Code,
   Highlighter,
+  ImagePlus,
   Italic,
+  Sigma,
   Link2,
   List,
   ListOrdered,
@@ -40,10 +42,14 @@ export function Toolbar({
   editor,
   onExternalLink,
   onInternalLink,
+  onImage,
+  onMath,
 }: {
   editor: Editor;
   onExternalLink: () => void;
   onInternalLink: () => void;
+  onImage: () => void;
+  onMath: () => void;
 }) {
   const menu = useMenu();
   const s = useEditorState({
@@ -167,6 +173,12 @@ export function Toolbar({
       </IconButton>
       <IconButton label="Trennlinie" onClick={() => c().setHorizontalRule().run()}>
         <Minus size={16} />
+      </IconButton>
+      <IconButton label="Formel (LaTeX)" onClick={onMath}>
+        <Sigma size={16} />
+      </IconButton>
+      <IconButton label="Bild einfügen (oder Screenshot einfügen/hineinziehen)" onClick={onImage}>
+        <ImagePlus size={16} />
       </IconButton>
       <IconButton
         label="Ausrichtung"

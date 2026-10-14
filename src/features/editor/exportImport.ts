@@ -2,9 +2,9 @@ import { generateJSON } from "@tiptap/core";
 
 import { api, errorMessage } from "../../api";
 import { docxToHtml, markdownToHtml, textToHtml } from "../../lib/docxImport";
-import { exportDocx } from "../../lib/docxExport";
+import { exportDocx, type ExportAsset } from "../../lib/docxExport";
 import { toMarkdown } from "../../lib/markdownExport";
-import { plainText, type PMNode } from "../../lib/pm";
+import { imageSources, plainText, type PMNode } from "../../lib/pm";
 import { reportError, useApp } from "../../state/store";
 import { createNode } from "../navigation/actions";
 import { editorExtensions } from "./extensions";
@@ -18,12 +18,32 @@ export async function exportNote(doc: PMNode, title: string, format: "docx" | "m
   try {
     const path = await api.pickSavePath(`${safeName(title)}.${format}`, format);
     if (!path) return;
-    const data = format === "docx" ? await exportDocx(doc, { title }) : new TextEncoder().encode(toMarkdown(doc));
+    const data = format === "docx" ? await exportDocx(doc, { title }, await loadAssets(doc)) : new TextEncoder().encode(toMarkdown(doc));
     await api.exportWrite(path, data);
     st.toast(`Exportiert: ${path.split(/[\\/]/).pop()}`, "success");
   } catch (e) {
     st.toast(`Export fehlgeschlagen: ${errorMessage(e)}`, "error");
   }
+}
+
+/** Lädt die Bilder einer Notiz für den Word-Export (PNG, JPEG, GIF; WebP wird als Hinweis exportiert). */
+async function loadAssets(doc: PMNode): Promise<Map<string, ExportAsset>> {
+  const out = new Map<string, ExportAsset>();
+  for (const src of imageSources(doc)) {
+    const m = /^studium:asset\/([0-9a-f]{64})$/.exec(src);
+    if (!m) continue;
+    try {
+      const data = await api.imageBytes(m[1]!);
+      const type = data[0] === 0x89 ? "png" : data[0] === 0xff ? "jpg" : data[0] === 0x47 ? "gif" : null;
+      if (!type) continue;
+      const bmp = await createImageBitmap(new Blob([data.slice().buffer as ArrayBuffer]));
+      out.set(src, { data, width: bmp.width, height: bmp.height, type });
+      bmp.close();
+    } catch {
+      /* Bild fehlt: wird als Hinweis exportiert */
+    }
+  }
+  return out;
 }
 
 /** Wandelt HTML mit dem Schema des Editors in ProseMirror-JSON um (unbekannte Elemente fallen weg). */

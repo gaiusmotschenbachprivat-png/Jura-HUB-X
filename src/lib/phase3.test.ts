@@ -116,3 +116,71 @@ describe("Prüfungsschema-Baum", () => {
     expect(toOutline(t, (d, n) => (d === 0 ? "A." : `${["I", "II"][n - 1]}.`))).toBe("A. Anspruch entstanden\n   I. Vertragsschluss\n   II. Wirksamkeit");
   });
 });
+
+import { toPageRects } from "./pdfSelection";
+
+describe("PDF-Auswahl in Seitenkoordinaten", () => {
+  const page = { left: 100, top: 50, width: 600, height: 800 };
+  it("normalisiert und fasst Zeilenstücke zusammen", () => {
+    const r = toPageRects(
+      [
+        { left: 160, top: 130, width: 100, height: 16 },
+        { left: 262, top: 130, width: 80, height: 16 },
+        { left: 160, top: 150, width: 300, height: 16 },
+        { left: 160, top: 150, width: 300, height: 16 }, // doppelt
+        { left: 0, top: 0, width: 0, height: 0 },
+      ],
+      page,
+    );
+    expect(r).toHaveLength(2);
+    expect(r[0]!.x).toBeCloseTo(0.1);
+    expect(r[0]!.w).toBeCloseTo(182 / 600, 3);
+    expect(r[1]!.y).toBeCloseTo(0.125);
+  });
+  it("ignoriert Stücke außerhalb der Seite", () => {
+    expect(toPageRects([{ left: 900, top: 100, width: 50, height: 10 }], page)).toEqual([]);
+  });
+});
+
+import { getSchema } from "@tiptap/core";
+import { Node as PMNodeClass } from "@tiptap/pm/model";
+import JSZip from "jszip";
+
+import { editorExtensions } from "../features/editor/extensions";
+import { exportDocx } from "./docxExport";
+import { toMarkdown } from "./markdownExport";
+import { doc, p, plainText } from "./pm";
+
+describe("Formeln und Bilder", () => {
+  const sha = "a".repeat(64);
+  const d = doc(
+    p("Kapitalwert: ", { type: "inlineMath", attrs: { latex: "KW = \\sum CF_t" } }),
+    { type: "blockMath", attrs: { latex: "\\sigma^2" } },
+    { type: "image", attrs: { src: `studium:asset/${sha}`, alt: "Skizze" } },
+  );
+
+  it("sind gültig im Editor-Schema", () => {
+    expect(() => PMNodeClass.fromJSON(getSchema(editorExtensions()), d).check()).not.toThrow();
+  });
+
+  it("Formeln sind durchsuchbar und im Markdown enthalten", () => {
+    expect(plainText(d)).toContain("KW = \\sum CF_t");
+    const md = toMarkdown(d);
+    expect(md).toContain("$KW = \\sum CF_t$");
+    expect(md).toContain("$$\n\\sigma^2\n$$");
+  });
+
+  it("DOCX enthält Bild und Formel", async () => {
+    // 1×1-PNG
+    const png = Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="), (c) => c.charCodeAt(0));
+    const bytes = await exportDocx(d, { title: "T" }, new Map([[`studium:asset/${sha}`, { data: png, width: 1, height: 1, type: "png" as const }]]));
+    const zip = await JSZip.loadAsync(bytes);
+    const xml = await zip.file("word/document.xml")!.async("string");
+    expect(xml).toContain("KW = \\sum CF_t");
+    expect(xml).toContain("Cambria Math");
+    expect(Object.keys(zip.files).some((f) => f.startsWith("word/media/"))).toBe(true);
+    // Fehlendes Bild wird als Hinweis exportiert
+    const without = await JSZip.loadAsync(await exportDocx(d, { title: "T" }));
+    expect(await without.file("word/document.xml")!.async("string")).toContain("[Bild]");
+  });
+});

@@ -7,6 +7,7 @@ function inline(nodes: PMNode[] | undefined): string {
   return (nodes ?? [])
     .map((n) => {
       if (n.type === "hardBreak") return "  \n";
+      if (n.type === "inlineMath") return `$${String(n.attrs?.latex ?? "")}$`;
       if (n.type !== "text") return "";
       const marks: PMMark[] = n.marks ?? [];
       const has = (t: string) => marks.some((m) => m.type === t);
@@ -35,6 +36,10 @@ function block(n: PMNode, indent = ""): string {
       return "```" + String(n.attrs?.language ?? "") + "\n" + (n.content ?? []).map((c) => c.text ?? "").join("") + "\n```";
     case "horizontalRule":
       return "---";
+    case "blockMath":
+      return `$$\n${String(n.attrs?.latex ?? "")}\n$$`;
+    case "image":
+      return "*[Bild]*";
     case "bulletList":
     case "orderedList":
     case "taskList":

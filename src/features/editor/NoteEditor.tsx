@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { ExternalLink, History, MoreHorizontal, Unlink } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
 import type { Note } from "../../api/types";
@@ -12,8 +12,10 @@ import { Dialog } from "../../ui/Dialog";
 import { useMenu } from "../../ui/Menu";
 import { EmptyState, Field, MOD } from "../../ui/misc";
 import { renameNode, trashNode } from "../navigation/actions";
+import { storeImageFile } from "./AssetImage";
 import { exportNote } from "./exportImport";
-import { editorExtensions, isAllowedHref } from "./extensions";
+import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
+import { MathDialog } from "./MathDialog";
 import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
 import { Toolbar } from "./Toolbar";
@@ -40,6 +42,18 @@ export function followHref(href: string) {
     }
   } else if (/^(https?:|mailto:)/.test(href)) {
     void api.openUrl(href).catch(reportError);
+  }
+}
+
+async function insertImages(view: import("@tiptap/pm/view").EditorView, files: File[], pos: number) {
+  for (const f of files) {
+    try {
+      const src = await storeImageFile(f);
+      const node = view.state.schema.nodes.image?.create({ src, alt: f.name });
+      if (node) view.dispatch(view.state.tr.insert(Math.min(pos, view.state.doc.content.size), node));
+    } catch (e) {
+      reportError(e);
+    }
   }
 }
 
@@ -77,6 +91,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [showHistory, setShowHistory] = useState(false);
   const [linkHref, setLinkHref] = useState<string | null>(null);
   const [cardFrom, setCardFrom] = useState<string | null>(null);
+  const [math, setMath] = useState<(MathEditDetail & { isNew?: boolean }) | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
   const nodeTitle = nodes.find((n) => n.id === note.node_id)?.title;
@@ -96,6 +112,25 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           return true;
         }
         return false;
+      },
+      handlePaste(view, event) {
+        const files = [...(event.clipboardData?.files ?? [])].filter((f) => f.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        void insertImages(view, files, view.state.selection.from);
+        return true;
+      },
+      handleDrop(view, event) {
+        const files = [...((event as DragEvent).dataTransfer?.files ?? [])].filter((f) => f.type.startsWith("image/"));
+        if (!files.length) return false;
+        event.preventDefault();
+        const pos = view.posAtCoords({ left: (event as DragEvent).clientX, top: (event as DragEvent).clientY })?.pos ?? view.state.selection.from;
+        void insertImages(view, files, pos);
+        return true;
+      },
+      // Fremde Bilder aus eingefügtem HTML nicht übernehmen (würden ohnehin nicht geladen)
+      transformPastedHTML(html) {
+        return html.replace(/<img\b[^>]*>/gi, "");
       },
       handleKeyDown(_view, event) {
         const mod = event.metaKey || event.ctrlKey;
@@ -149,6 +184,20 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     if (!t) return setTitle(note.title);
     if (t !== (nodeTitle ?? note.title)) await renameNode(note.node_id, t);
   }, [title, note, nodeTitle]);
+
+  useEffect(() => {
+    if (!editor) return;
+    const onMath = (e: Event) => {
+      const d = (e as CustomEvent<MathEditDetail>).detail;
+      const node = editor.state.doc.nodeAt(d.pos);
+      // Nur der Editor, in dem die Formel liegt, reagiert
+      if (!node || node.attrs.latex !== d.latex || !editor.view.dom.isConnected) return;
+      if (!editor.view.dom.contains(document.activeElement) && !editor.view.dom.querySelector(":hover")) return;
+      setMath(d);
+    };
+    window.addEventListener(MATH_EDIT_EVENT, onMath);
+    return () => window.removeEventListener(MATH_EDIT_EVENT, onMath);
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -245,7 +294,28 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           </IconButton>
         </div>
       </div>
-      <Toolbar editor={editor} onExternalLink={() => setLinkDialog("external")} onInternalLink={() => setLinkDialog("internal")} />
+      <Toolbar
+        editor={editor}
+        onExternalLink={() => setLinkDialog("external")}
+        onInternalLink={() => setLinkDialog("internal")}
+        onImage={() => fileInput.current?.click()}
+        onMath={() => {
+          const { from, to } = editor.state.selection;
+          setMath({ latex: editor.state.doc.textBetween(from, to), pos: from, block: false, isNew: true });
+        }}
+      />
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/png,image/jpeg,image/gif,image/webp"
+        multiple
+        hidden
+        onChange={(e) => {
+          const files = [...(e.target.files ?? [])];
+          e.target.value = "";
+          void insertImages(editor.view, files, editor.state.selection.from);
+        }}
+      />
       {linkHref && (
         <div className="link-bar small">
           <span className="ellipsis grow">
@@ -286,6 +356,41 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             setLinkDialog(null);
             if (!href) editor.chain().focus().extendMarkRange("link").unsetLink().run();
             else insertLink(href, href);
+          }}
+        />
+      )}
+      {math && (
+        <MathDialog
+          initial={math.latex}
+          block={math.block}
+          onClose={() => setMath(null)}
+          onDelete={
+            math.isNew
+              ? undefined
+              : () => {
+                  editor.chain().focus().command(({ tr }) => {
+                    const n = tr.doc.nodeAt(math.pos);
+                    if (n) tr.delete(math.pos, math.pos + n.nodeSize);
+                    return true;
+                  }).run();
+                  setMath(null);
+                }
+          }
+          onSave={(latex, block) => {
+            const chain = editor.chain().focus();
+            if (!math.isNew) {
+              chain.command(({ tr }) => {
+                const n = tr.doc.nodeAt(math.pos);
+                if (n) tr.delete(math.pos, math.pos + n.nodeSize);
+                return true;
+              });
+            } else if (!editor.state.selection.empty) {
+              chain.deleteSelection();
+            }
+            if (block) chain.insertBlockMath({ latex, pos: math.isNew ? undefined : math.pos });
+            else chain.insertInlineMath({ latex, pos: math.isNew ? undefined : math.pos });
+            chain.run();
+            setMath(null);
           }}
         />
       )}

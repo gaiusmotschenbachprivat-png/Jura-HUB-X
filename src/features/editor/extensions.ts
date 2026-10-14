@@ -5,8 +5,19 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import Typography from "@tiptap/extension-typography";
+import { Mathematics } from "@tiptap/extension-mathematics";
 import { CharacterCount, Placeholder } from "@tiptap/extensions";
 import StarterKit from "@tiptap/starter-kit";
+
+import { AssetImage } from "./AssetImage";
+
+/** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
+export const MATH_EDIT_EVENT = "studium:edit-math";
+export interface MathEditDetail {
+  latex: string;
+  pos: number;
+  block: boolean;
+}
 
 /** Erlaubte Linkziele: Web, E-Mail und interne Verweise (`studium:`). */
 export function isAllowedHref(href: string): boolean {
@@ -41,6 +52,18 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
       closeDoubleQuote: "“",
       openSingleQuote: "‚",
       closeSingleQuote: "‘",
+    }),
+    AssetImage,
+    Mathematics.configure({
+      katexOptions: { throwOnError: false, trust: false, strict: "ignore" },
+      inlineOptions: {
+        onClick: (node, pos) =>
+          window.dispatchEvent(new CustomEvent<MathEditDetail>(MATH_EDIT_EVENT, { detail: { latex: node.attrs.latex as string, pos, block: false } })),
+      },
+      blockOptions: {
+        onClick: (node, pos) =>
+          window.dispatchEvent(new CustomEvent<MathEditDetail>(MATH_EDIT_EVENT, { detail: { latex: node.attrs.latex as string, pos, block: true } })),
+      },
     }),
     CharacterCount,
     Placeholder.configure({ placeholder: opts.placeholder ?? "Schreiben …" }),

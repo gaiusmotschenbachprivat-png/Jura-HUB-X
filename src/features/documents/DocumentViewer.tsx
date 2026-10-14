@@ -2,7 +2,7 @@ import { ExternalLink, FilePlus2, Link2, MoreHorizontal, Plus, X } from "lucide-
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { api, errorMessage } from "../../api";
-import type { DocumentDetail, LinkView } from "../../api/types";
+import type { Annotation, DocumentDetail, LinkView, NewCard } from "../../api/types";
 import { DOC_TYPE_LABEL, TEXT_STATUS_LABEL } from "../../lib/kinds";
 import { buildTree, type TreeItem } from "../../lib/tree";
 import { reportError, useApp } from "../../state/store";
@@ -15,7 +15,9 @@ import { createNode } from "../navigation/actions";
 import { KindIcon } from "../navigation/icons";
 import { openExternally, saveCopyAs, trashDocument } from "./docActions";
 import { DocIcon, TextStatus } from "./DocumentList";
-import { PdfViewer } from "./PdfViewer";
+import { AnnotationPopover, SelectionToolbar } from "./AnnotationPopups";
+import { PdfViewer, type PdfSelection } from "./PdfViewer";
+import { CardDialog } from "../learn/CardDialog";
 
 /**
  * Dokumentansicht. `compact` = geteilte Ansicht neben einer Notiz.
@@ -31,6 +33,10 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
   const [picker, setPicker] = useState(false);
   const [editing, setEditing] = useState(false);
   const [placing, setPlacing] = useState(false);
+  const [annos, setAnnos] = useState<Annotation[]>([]);
+  const [selection, setSelection] = useState<PdfSelection | null>(null);
+  const [activeAnno, setActiveAnno] = useState<{ a: Annotation; x: number; y: number } | null>(null);
+  const [cardFrom, setCardFrom] = useState<Partial<NewCard> | null>(null);
   const dataVersion = useApp((s) => s.dataVersion);
   const bump = useApp((s) => s.bump);
   const open = useApp((s) => s.open);
@@ -72,7 +78,12 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
       alive = false;
     };
     // Bytes nur neu laden, wenn sich das Dokument ändert
-  }, [id, fileKind, detail?.document.file_present]); // eslint-disable-line
+  }, [id, fileKind, detail?.document.file_present]);
+
+  const loadAnnos = useCallback(() => {
+    api.annotationsList(id).then(setAnnos).catch(() => {});
+  }, [id]);
+  useEffect(loadAnnos, [loadAnnos]);
 
   const loadLinks = useCallback(() => {
     api.linksFor("document", id).then(setLinks).catch(() => {});
@@ -241,7 +252,26 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
           </EmptyState>
         ) : isPdf ? (
           bytes ? (
-            <PdfViewer bytes={bytes} page={page} onPageChange={setPage} pageTexts={texts} toolbarExtra={linkButtons} />
+            <PdfViewer
+              bytes={bytes}
+              page={page}
+              onPageChange={setPage}
+              pageTexts={texts}
+              toolbarExtra={linkButtons}
+              annotations={annos}
+              onTextSelected={setSelection}
+              onAnnotationClick={(a, x, y) => setActiveAnno({ a, x, y })}
+              onToggleBookmark={async (p) => {
+                const existing = annos.find((a) => a.kind === "bookmark" && a.page === p);
+                try {
+                  if (existing) await api.annotationDelete(existing.id);
+                  else await api.annotationCreate({ document_id: id, page: p, kind: "bookmark" });
+                  loadAnnos();
+                } catch (e) {
+                  reportError(e);
+                }
+              }}
+            />
           ) : (
             <div className="loading">Lade PDF …</div>
           )
@@ -288,6 +318,54 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
           }}
         />
       )}
+      {selection && (
+        <SelectionToolbar
+          sel={selection}
+          onClose={() => setSelection(null)}
+          onHighlight={async (color, comment) => {
+            try {
+              await api.annotationCreate({ document_id: id, page: selection.page, kind: "highlight", color, rects: selection.rects, quote: selection.quote, comment });
+              window.getSelection()?.removeAllRanges();
+              setSelection(null);
+              loadAnnos();
+            } catch (e) {
+              reportError(e);
+            }
+          }}
+          onCard={() => {
+            setCardFrom({ front: "", back: `${selection.quote}\n\n(${d.title}, S. ${selection.page})`, source_type: "document", source_id: id });
+            setSelection(null);
+          }}
+        />
+      )}
+      {activeAnno && (
+        <AnnotationPopover
+          a={activeAnno.a}
+          x={activeAnno.x}
+          y={activeAnno.y}
+          onClose={() => setActiveAnno(null)}
+          onSave={async (patch) => {
+            try {
+              const u = await api.annotationUpdate(activeAnno.a.id, patch);
+              setAnnos((xs) => xs.map((x) => (x.id === u.id ? u : x)));
+              if (patch.color) setActiveAnno((cur) => (cur ? { ...cur, a: u } : cur));
+            } catch (e) {
+              reportError(e);
+            }
+          }}
+          onDelete={async () => {
+            await api.annotationDelete(activeAnno.a.id).catch(reportError);
+            setActiveAnno(null);
+            loadAnnos();
+          }}
+          onCard={() => {
+            const a = activeAnno.a;
+            setCardFrom({ front: a.comment || "", back: `${a.quote}\n\n(${d.title}, S. ${a.page})`, source_type: "document", source_id: id });
+            setActiveAnno(null);
+          }}
+        />
+      )}
+      {cardFrom && <CardDialog initial={cardFrom} onClose={() => setCardFrom(null)} />}
       {editing && <EditDocDialog detail={detail} onClose={() => setEditing(false)} onSaved={() => bump()} />}
       {placing && <PlacementDialog detail={detail} onClose={() => setPlacing(false)} onChanged={() => bump()} />}
       {menu.el}

@@ -73,3 +73,15 @@
 .version-item:hover { background: var(--bg-hover); }
 .version-item.is-sel { background: var(--bg-active); }
 .versions-preview { overflow: auto; padding: 4px 8px; font-family: var(--font-serif); }
+
+/* Bilder und Formeln */
+.prose .asset-image { display: block; margin: 0.8em 0; text-align: center; }
+.prose .asset-image img { max-width: 100%; border-radius: var(--r-md); box-shadow: 0 0 0 1px var(--line); }
+.prose .asset-image.is-missing { padding: 12px; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--text-3); font-size: var(--fs-sm); font-family: var(--font-ui); }
+.prose .ProseMirror-selectednode img, .prose .asset-image.ProseMirror-selectednode img { box-shadow: 0 0 0 2px var(--accent); }
+.prose .tiptap-mathematics-render { cursor: pointer; border-radius: 4px; padding: 0 2px; }
+.prose .tiptap-mathematics-render:hover { background: var(--accent-soft); }
+.prose [data-type="block-math"] { display: block; text-align: center; margin: 0.8em 0; padding: 6px; }
+.prose .inline-math-error, .prose .block-math-error { color: var(--danger); }
+.math-preview { min-height: 56px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-side); padding: 10px; overflow-x: auto; }
+.mono { font-family: var(--font-mono) !important; font-size: var(--fs-sm); }

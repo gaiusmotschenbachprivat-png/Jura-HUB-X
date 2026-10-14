@@ -5,14 +5,25 @@
  */
 import "../../styles/pdf-textlayer.css";
 
-import { ChevronLeft, ChevronRight, PanelLeft, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, PanelLeft, Search, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjs from "pdfjs-dist";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
+import type { Annotation, Rect } from "../../api/types";
 import { closePdf, loadPdf, type PdfDoc } from "../../lib/pdf";
+import { HIGHLIGHT_COLORS, toPageRects } from "../../lib/pdfSelection";
 import { IconButton } from "../../ui/Button";
 
 const ZOOMS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
+
+export interface PdfSelection {
+  page: number;
+  rects: Rect[];
+  quote: string;
+  /** Bildschirmposition für die Auswahl-Werkzeugleiste */
+  x: number;
+  y: number;
+}
 
 export function PdfViewer({
   bytes,
@@ -20,6 +31,10 @@ export function PdfViewer({
   onPageChange,
   pageTexts,
   toolbarExtra,
+  annotations = [],
+  onTextSelected,
+  onAnnotationClick,
+  onToggleBookmark,
 }: {
   bytes: Uint8Array;
   page: number;
@@ -27,6 +42,10 @@ export function PdfViewer({
   /** Bereits extrahierter Text je Seite (für die Suche) */
   pageTexts?: string[];
   toolbarExtra?: React.ReactNode;
+  annotations?: Annotation[];
+  onTextSelected?: (s: PdfSelection | null) => void;
+  onAnnotationClick?: (a: Annotation, x: number, y: number) => void;
+  onToggleBookmark?: (page: number) => void;
 }) {
   const [pdf, setPdf] = useState<PdfDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +54,7 @@ export function PdfViewer({
   const [zoom, setZoom] = useState(1);
   const [width, setWidth] = useState(800);
   const [thumbs, setThumbs] = useState(false);
+  const [panelTab, setPanelTab] = useState<"seiten" | "markierungen">("seiten");
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState("");
   const [pageInput, setPageInput] = useState(String(page));
@@ -128,6 +148,52 @@ export function PdfViewer({
     onPageChange(target);
   };
 
+  const onMouseUp = (ev: React.MouseEvent) => {
+    if (!onTextSelected) return;
+    const cx = ev.clientX;
+    const cy = ev.clientY;
+    // Auswahl erst nach dem Loslassen auswerten
+    setTimeout(() => {
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed || !sel.rangeCount) {
+        // Einfacher Klick: liegt er auf einer Markierung?
+        const pageEl = document.elementFromPoint(cx, cy)?.closest<HTMLElement>("[data-page]");
+        if (pageEl && onAnnotationClick) {
+          const b = pageEl.getBoundingClientRect();
+          const px = (cx - b.left) / b.width;
+          const py = (cy - b.top) / b.height;
+          const hit = byPage.get(Number(pageEl.dataset.page))?.find((a) => a.rects.some((r) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h));
+          if (hit) {
+            onTextSelected(null);
+            return onAnnotationClick(hit, cx, cy);
+          }
+        }
+        return onTextSelected(null);
+      }
+      const range = sel.getRangeAt(0);
+      const startEl = (range.startContainer.nodeType === 1 ? (range.startContainer as Element) : range.startContainer.parentElement)?.closest<HTMLElement>("[data-page]");
+      if (!startEl || !scroller.current?.contains(startEl)) return onTextSelected(null);
+      const pageBox = startEl.getBoundingClientRect();
+      const rects = toPageRects([...range.getClientRects()], pageBox);
+      const quote = sel.toString().replace(/\s+/g, " ").trim();
+      if (!rects.length || !quote) return onTextSelected(null);
+      const last = range.getBoundingClientRect();
+      onTextSelected({ page: Number(startEl.dataset.page), rects, quote, x: last.left + last.width / 2, y: last.bottom });
+    }, 0);
+  };
+
+  const byPage = useMemo(() => {
+    const m = new Map<number, Annotation[]>();
+    for (const a of annotations) {
+      if (a.kind !== "highlight") continue;
+      const l = m.get(a.page) ?? [];
+      l.push(a);
+      m.set(a.page, l);
+    }
+    return m;
+  }, [annotations]);
+  const bookmarked = annotations.some((a) => a.kind === "bookmark" && a.page === Number(pageInput));
+
   const matches = useMemo(() => {
     const t = q.trim().toLowerCase();
     if (!t || !pageTexts) return [];
@@ -184,6 +250,11 @@ export function PdfViewer({
         <IconButton label="Im Dokument suchen" active={searchOpen} onClick={() => setSearchOpen(!searchOpen)}>
           <Search size={16} />
         </IconButton>
+        {onToggleBookmark && (
+          <IconButton label={bookmarked ? "Lesezeichen entfernen" : "Lesezeichen für diese Seite"} active={bookmarked} onClick={() => onToggleBookmark(Number(pageInput) || 1)}>
+            <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
+          </IconButton>
+        )}
         <span className="grow" />
         {toolbarExtra}
       </div>
@@ -207,13 +278,42 @@ export function PdfViewer({
         </div>
       )}
       <div className="pdf-body">
-        {thumbs && pdf && <Thumbnails pdf={pdf} current={Number(pageInput)} onPick={go} />}
-        <div className="pdf-scroll" ref={scroller} onScroll={onScroll}>
+        {thumbs && pdf && (
+          <div className="pdf-side">
+            <div className="pdf-side-tabs">
+              <button className={panelTab === "seiten" ? "is-active" : ""} onClick={() => setPanelTab("seiten")}>
+                Seiten
+              </button>
+              <button className={panelTab === "markierungen" ? "is-active" : ""} onClick={() => setPanelTab("markierungen")}>
+                Markierungen{annotations.length ? ` (${annotations.length})` : ""}
+              </button>
+            </div>
+            {panelTab === "seiten" ? (
+              <Thumbnails pdf={pdf} current={Number(pageInput)} onPick={go} />
+            ) : (
+              <div className="pdf-anno-list">
+                {annotations.length === 0 && <p className="xs muted">Noch keine Lesezeichen oder Markierungen. Markiere Text im Dokument oder setze ein Lesezeichen.</p>}
+                {[...annotations]
+                  .sort((a, b) => a.page - b.page || (a.kind === "bookmark" ? -1 : 1))
+                  .map((a) => (
+                    <button key={a.id} className="pdf-anno-item" onClick={() => go(a.page)}>
+                      <span className="xs muted tnum row">
+                        {a.kind === "bookmark" ? <Bookmark size={11} /> : <span className="anno-dot" style={{ background: HIGHLIGHT_COLORS[a.color] }} />} S. {a.page}
+                      </span>
+                      <span className="small anno-quote">{a.kind === "bookmark" ? a.comment || "Lesezeichen" : a.quote}</span>
+                      {a.kind === "highlight" && a.comment && <span className="xs muted">{a.comment}</span>}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+        )}
+        <div className="pdf-scroll" ref={scroller} onScroll={onScroll} onMouseUp={onMouseUp}>
           {!pdf || !baseSize ? (
             <div className="loading">Lade PDF …</div>
           ) : (
             Array.from({ length: pdf.numPages }, (_, i) => (
-              <PdfPage key={i + 1} pdf={pdf} n={i + 1} scale={scale} base={baseSize} root={scroller.current} />
+              <PdfPage key={i + 1} pdf={pdf} n={i + 1} scale={scale} base={baseSize} root={scroller.current} highlights={byPage.get(i + 1)} onAnnotationClick={onAnnotationClick} />
             ))
           )}
         </div>
@@ -234,7 +334,23 @@ function useVisible(ref: React.RefObject<HTMLElement | null>, root: HTMLElement 
   return vis;
 }
 
-function PdfPage({ pdf, n, scale, base, root }: { pdf: PdfDoc; n: number; scale: number; base: { w: number; h: number }; root: HTMLElement | null }) {
+function PdfPage({
+  pdf,
+  n,
+  scale,
+  base,
+  root,
+  highlights,
+  onAnnotationClick,
+}: {
+  pdf: PdfDoc;
+  n: number;
+  scale: number;
+  base: { w: number; h: number };
+  root: HTMLElement | null;
+  highlights?: Annotation[];
+  onAnnotationClick?: (a: Annotation, x: number, y: number) => void;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
@@ -279,7 +395,34 @@ function PdfPage({ pdf, n, scale, base, root }: { pdf: PdfDoc; n: number; scale:
   return (
     <div className="pdf-page" data-page={n} ref={ref} style={{ width: size.w, height: size.h }}>
       <canvas ref={canvasRef} />
+      {highlights?.map((a) =>
+        a.rects.map((r, i) => (
+          <div
+            key={`${a.id}-${i}`}
+            className={`pdf-hl ${a.comment ? "has-comment" : ""}`}
+            title={a.comment || undefined}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, background: HIGHLIGHT_COLORS[a.color] }}
+          />
+        )),
+      )}
       <div className="textLayer" ref={textRef} />
+      {highlights?.map((a) => {
+        const r = a.rects[0];
+        if (!r) return null;
+        return (
+          <button
+            key={`m-${a.id}`}
+            className={`pdf-hl-marker ${a.comment ? "has-comment" : ""}`}
+            style={{ left: `calc(${(r.x + r.w) * 100}% - 4px)`, top: `calc(${r.y * 100}% - 8px)`, background: HIGHLIGHT_COLORS[a.color] }}
+            aria-label={a.comment ? `Kommentar: ${a.comment}` : "Markierung bearbeiten"}
+            title={a.comment || "Markierung bearbeiten"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAnnotationClick?.(a, e.clientX, e.clientY);
+            }}
+          />
+        );
+      })}
       <span className="pdf-page-no xs tnum">{n}</span>
     </div>
   );

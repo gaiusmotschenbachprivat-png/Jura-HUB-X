@@ -26,7 +26,19 @@ export const BLOCK_TYPES = new Set([
   "tableCell",
   "tableHeader",
   "horizontalRule",
+  "image",
 ]);
+
+/** Alle Bildquellen (`studium:asset/…`) eines Dokuments. */
+export function imageSources(doc: PMNode): string[] {
+  const out: string[] = [];
+  const walk = (n: PMNode) => {
+    if (n.type === "image" && typeof n.attrs?.src === "string") out.push(n.attrs.src);
+    n.content?.forEach(walk);
+  };
+  walk(doc);
+  return [...new Set(out)];
+}
 
 /** Reiner Text für Suche und Wortzählung. Blöcke werden durch Zeilenumbrüche getrennt. */
 export function plainText(doc: PMNode): string {
@@ -38,6 +50,11 @@ export function plainText(doc: PMNode): string {
     }
     if (n.type === "hardBreak") {
       out.push("\n");
+      return;
+    }
+    if ((n.type === "inlineMath" || n.type === "blockMath") && typeof n.attrs?.latex === "string") {
+      out.push(` ${n.attrs.latex} `);
+      if (n.type === "blockMath") out.push("\n");
       return;
     }
     n.content?.forEach(walk);
