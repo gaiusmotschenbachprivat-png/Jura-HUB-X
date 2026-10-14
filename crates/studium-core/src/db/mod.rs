@@ -11,7 +11,10 @@ pub const DB_FILE: &str = "studium.sqlite";
 
 /// Alle Migrationen in Reihenfolge. Index + 1 = Schemaversion.
 /// Neue Migrationen werden nur hinten angehängt, bestehende nie verändert.
-const MIGRATIONS: &[&str] = &[include_str!("migrations/0001_init.sql")];
+const MIGRATIONS: &[&str] = &[
+    include_str!("migrations/0001_init.sql"),
+    include_str!("migrations/0002_wissen_lernen.sql"),
+];
 
 /// Höchste Schemaversion, die diese App-Version versteht.
 pub const SCHEMA_VERSION: i64 = MIGRATIONS.len() as i64;

@@ -3,6 +3,7 @@
 
 pub mod backup;
 pub mod documents;
+pub mod learning;
 pub mod notes;
 pub mod structure;
 pub mod system;

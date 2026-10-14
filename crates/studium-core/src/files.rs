@@ -157,6 +157,31 @@ impl BlobStore {
         result
     }
 
+    /// Speichert Bilddaten (z. B. eingefügte Screenshots). Nur PNG, JPEG, GIF und WebP,
+    /// erkannt am Dateiinhalt, höchstens 20 MB.
+    pub fn import_image(&self, bytes: &[u8]) -> Result<StoredBlob> {
+        if bytes.len() > 20 * 1024 * 1024 {
+            return Err(Error::invalid("Das Bild ist größer als 20 MB."));
+        }
+        let (ext, mime) = sniff_image(bytes).ok_or_else(|| Error::invalid("Nur PNG-, JPEG-, GIF- und WebP-Bilder können eingefügt werden."))?;
+        let mut h = Sha256::new();
+        h.update(bytes);
+        let sha = hex::encode(h.finalize());
+        let dest = self.path_for(&sha)?;
+        if !dest.is_file() {
+            fs::create_dir_all(dest.parent().expect("Pfad hat einen Ordner"))?;
+            let tmp = self.tmp.join(format!("image-{}", new_id()));
+            {
+                let mut f = File::create(&tmp)?;
+                f.write_all(bytes)?;
+                f.sync_all()?;
+            }
+            fs::rename(&tmp, &dest)?;
+            set_readonly(&dest);
+        }
+        Ok(StoredBlob { sha256: sha, size: bytes.len() as u64, mime, ext: ext.into() })
+    }
+
     pub fn read(&self, sha: &str) -> Result<Vec<u8>> {
         let p = self.path_for(sha)?;
         fs::read(&p).map_err(|e| match e.kind() {
@@ -193,6 +218,21 @@ impl BlobStore {
         perm.set_readonly(false);
         fs::set_permissions(dest, perm)?;
         Ok(())
+    }
+}
+
+/// Bildtyp anhand der ersten Bytes.
+pub fn sniff_image(b: &[u8]) -> Option<(&'static str, &'static str)> {
+    if b.starts_with(&[0x89, b'P', b'N', b'G', 0x0d, 0x0a, 0x1a, 0x0a]) {
+        Some(("png", "image/png"))
+    } else if b.starts_with(&[0xff, 0xd8, 0xff]) {
+        Some(("jpg", "image/jpeg"))
+    } else if b.starts_with(b"GIF87a") || b.starts_with(b"GIF89a") {
+        Some(("gif", "image/gif"))
+    } else if b.len() > 12 && &b[0..4] == b"RIFF" && &b[8..12] == b"WEBP" {
+        Some(("webp", "image/webp"))
+    } else {
+        None
     }
 }
 

@@ -42,6 +42,30 @@ pub fn trash_node(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
+/// Stellt einen beliebigen Eintrag aus dem Papierkorb wieder her.
+pub fn restore_any(conn: &Connection, item_type: &str, id: &str) -> Result<()> {
+    match item_type {
+        "node" => restore_node(conn, id),
+        "document" => restore_document(conn, id),
+        "knowledge" => crate::repo::knowledge::restore(conn, id),
+        "card" => crate::repo::cards::restore(conn, id),
+        "task" | "exam" => crate::repo::planning::restore(conn, item_type, id),
+        _ => Err(Error::invalid("Unbekannter Eintrag.")),
+    }
+}
+
+/// Löscht einen Eintrag aus dem Papierkorb endgültig.
+pub fn purge_any(conn: &Connection, store: &BlobStore, item_type: &str, id: &str) -> Result<()> {
+    match item_type {
+        "node" => purge_node(conn, id),
+        "document" => purge_document(conn, store, id),
+        "knowledge" => crate::repo::knowledge::purge(conn, id),
+        "card" => crate::repo::cards::purge(conn, id),
+        "task" | "exam" => crate::repo::planning::purge(conn, item_type, id),
+        _ => Err(Error::invalid("Unbekannter Eintrag.")),
+    }
+}
+
 /// Holt einen Knoten zurück. Liegt der Elternknoten selbst im Papierkorb,
 /// landet der Knoten auf der obersten Ebene seines Studienbereichs.
 pub fn restore_node(conn: &Connection, id: &str) -> Result<()> {
@@ -122,6 +146,31 @@ pub fn list(conn: &Connection) -> Result<Vec<TrashItem>> {
             path: String::new(),
         });
     }
+    // Wissensobjekte, Karteikarten, Aufgaben und Prüfungstermine
+    let extra = [
+        ("knowledge", "SELECT id, title, type, area_id, deleted_at FROM knowledge WHERE deleted_at IS NOT NULL"),
+        ("card", "SELECT id, front, 'card', area_id, deleted_at FROM flashcards WHERE deleted_at IS NOT NULL"),
+        ("task", "SELECT id, title, kind, area_id, deleted_at FROM tasks WHERE deleted_at IS NOT NULL"),
+        ("exam", "SELECT id, title, 'exam', area_id, deleted_at FROM exams WHERE deleted_at IS NOT NULL"),
+    ];
+    for (item_type, sql) in extra {
+        let mut stmt = conn.prepare(sql)?;
+        let rows: Vec<(String, String, String, Option<String>, String)> = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)))?
+            .collect::<rusqlite::Result<_>>()?;
+        for (id, title, kind, area, del) in rows {
+            out.push(TrashItem {
+                item_type: item_type.into(),
+                id,
+                title: title.chars().take(200).collect(),
+                kind: Some(kind),
+                area_id: area,
+                deleted_at: del,
+                children: 0,
+                path: String::new(),
+            });
+        }
+    }
     out.sort_by(|a, b| b.deleted_at.cmp(&a.deleted_at));
     Ok(out)
 }
@@ -160,7 +209,14 @@ pub fn purge_document(conn: &Connection, store: &BlobStore, id: &str) -> Result<
     tx.execute("DELETE FROM search_index WHERE entity_type = 'page' AND entity_id = ?1", [id])?;
     links::remove_for_entity(&tx, "document", id)?;
     tx.execute("DELETE FROM documents WHERE id = ?1", [id])?;
-    let still_used: i64 = tx.query_row("SELECT COUNT(*) FROM documents WHERE blob_sha = ?1", [&sha], |r| r.get(0))?;
+    // Datei bleibt, solange ein anderes Dokument oder ein Bild in einer Notiz sie nutzt.
+    let still_used: i64 = tx.query_row(
+        "SELECT (SELECT COUNT(*) FROM documents WHERE blob_sha = ?1)
+              + (SELECT COUNT(*) FROM notes WHERE instr(content_json, ?1) > 0)
+              + (SELECT COUNT(*) FROM note_versions WHERE instr(content_json, ?1) > 0)",
+        [&sha],
+        |r| r.get(0),
+    )?;
     if still_used == 0 {
         tx.execute("DELETE FROM blobs WHERE sha256 = ?1", [&sha])?;
     }

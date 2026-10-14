@@ -357,3 +357,26 @@ pub fn pages_text(conn: &Connection, id: &str) -> Result<Vec<String>> {
     let rows = stmt.query_map([id], |r| r.get(0))?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
+
+/// Speichert ein Bild für eine Notiz im Dokumentenspeicher und vermerkt es in `blobs`
+/// (damit es in Backups enthalten ist). Liefert den SHA-256 als Kennung.
+pub fn store_image(conn: &Connection, store: &BlobStore, bytes: &[u8]) -> Result<String> {
+    let blob = store.import_image(bytes)?;
+    conn.execute(
+        "INSERT OR IGNORE INTO blobs (sha256, size, mime, created_at) VALUES (?1, ?2, ?3, ?4)",
+        params![blob.sha256, blob.size as i64, blob.mime, now()],
+    )?;
+    Ok(blob.sha256)
+}
+
+/// Bilddaten eines in Notizen verwendeten Bildes.
+pub fn image_bytes(conn: &Connection, store: &BlobStore, sha: &str) -> Result<(Vec<u8>, String)> {
+    let mime: String = conn
+        .query_row("SELECT mime FROM blobs WHERE sha256 = ?1", [sha], |r| r.get(0))
+        .optional()?
+        .ok_or_else(|| Error::not_found("Bild nicht gefunden."))?;
+    if !mime.starts_with("image/") {
+        return Err(Error::invalid("Kein Bild."));
+    }
+    Ok((store.read(sha)?, mime))
+}

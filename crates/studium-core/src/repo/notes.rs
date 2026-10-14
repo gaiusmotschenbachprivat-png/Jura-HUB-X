@@ -258,7 +258,7 @@ pub fn parse_internal_href(href: &str) -> Option<Mention> {
         Some((a, b)) => (a, Some(b)),
         None => (rest, None),
     };
-    if !crate::util::is_id(id) || !["node", "document"].contains(&kind) {
+    if !crate::util::is_id(id) || !["node", "document", "knowledge"].contains(&kind) {
         return None;
     }
     let page = frag
@@ -308,11 +308,15 @@ fn sync_mentions(conn: &Connection, node_id: &str, content_json: &str) -> Result
         if m.target_type == "node" && m.target_id == node_id {
             continue;
         }
-        let exists: bool = if m.target_type == "node" {
-            conn.query_row("SELECT 1 FROM nodes WHERE id = ?1", [&m.target_id], |_| Ok(true)).optional()?.is_some()
-        } else {
-            conn.query_row("SELECT 1 FROM documents WHERE id = ?1", [&m.target_id], |_| Ok(true)).optional()?.is_some()
+        let table = match m.target_type.as_str() {
+            "node" => "nodes",
+            "knowledge" => "knowledge",
+            _ => "documents",
         };
+        let exists = conn
+            .query_row(&format!("SELECT 1 FROM {table} WHERE id = ?1"), [&m.target_id], |_| Ok(true))
+            .optional()?
+            .is_some();
         if !exists {
             continue;
         }

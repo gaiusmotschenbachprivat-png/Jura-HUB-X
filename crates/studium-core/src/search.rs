@@ -24,6 +24,16 @@ pub enum Entity {
     Document,
     /// Seite eines Dokuments
     Page,
+    /// Definition, Prüfungsschema, Fall oder Fundstelle
+    Knowledge,
+    /// Karteikarte
+    Card,
+    /// Aufgabe oder offene Frage
+    Task,
+    /// Prüfungstermin
+    Exam,
+    /// PDF-Markierung mit Kommentar
+    Annotation,
 }
 
 impl Entity {
@@ -33,6 +43,11 @@ impl Entity {
             Entity::Note => "note",
             Entity::Document => "document",
             Entity::Page => "page",
+            Entity::Knowledge => "knowledge",
+            Entity::Card => "card",
+            Entity::Task => "task",
+            Entity::Exam => "exam",
+            Entity::Annotation => "annotation",
         }
     }
 }
@@ -101,8 +116,10 @@ pub struct SearchHit {
     pub snippet: String,
     /// Fundort, z. B. „WS 2026/27 › BGB AT › Termin 3“
     pub path: String,
-    /// Art des Strukturknotens (bei Knoten und Notizen)
+    /// Art des Strukturknotens bzw. des Wissensobjekts
     pub kind: Option<String>,
+    /// Bei Markierungen: das zugehörige Dokument
+    pub target_id: Option<String>,
 }
 
 pub fn search(conn: &Connection, input: &str, area_id: Option<&str>, limit: i64) -> Result<Vec<SearchHit>> {
@@ -122,10 +139,18 @@ pub fn search(conn: &Connection, input: &str, area_id: Option<&str>, limit: i64)
              OR
              (s.entity_type IN ('document','page') AND EXISTS (
                 SELECT 1 FROM documents d WHERE d.id = s.entity_id AND d.deleted_at IS NULL))
+             OR (s.entity_type = 'knowledge' AND EXISTS (SELECT 1 FROM knowledge k WHERE k.id = s.entity_id AND k.deleted_at IS NULL))
+             OR (s.entity_type = 'card' AND EXISTS (SELECT 1 FROM flashcards c WHERE c.id = s.entity_id AND c.deleted_at IS NULL))
+             OR (s.entity_type = 'task' AND EXISTS (SELECT 1 FROM tasks t WHERE t.id = s.entity_id AND t.deleted_at IS NULL))
+             OR (s.entity_type = 'exam' AND EXISTS (SELECT 1 FROM exams e WHERE e.id = s.entity_id AND e.deleted_at IS NULL))
+             OR (s.entity_type = 'annotation' AND EXISTS (
+                SELECT 1 FROM annotations a JOIN documents d ON d.id = a.document_id
+                WHERE a.id = s.entity_id AND d.deleted_at IS NULL))
            )
            AND (
              ?2 IS NULL
              OR s.area_id = ?2
+             OR (s.entity_type IN ('knowledge','card','task','exam') AND s.area_id IS NULL)
              OR EXISTS (SELECT 1 FROM node_area_refs r WHERE r.node_id = s.entity_id AND r.area_id = ?2)
              OR (s.entity_type IN ('document','page') AND EXISTS (
                   SELECT 1 FROM placements p JOIN nodes n ON n.id = p.node_id
@@ -144,6 +169,7 @@ pub fn search(conn: &Connection, input: &str, area_id: Option<&str>, limit: i64)
             snippet: r.get(5)?,
             path: String::new(),
             kind: None,
+            target_id: None,
         })
     })?;
     let mut hits = Vec::new();
@@ -156,6 +182,28 @@ pub fn search(conn: &Connection, input: &str, area_id: Option<&str>, limit: i64)
                     .query_row("SELECT kind FROM nodes WHERE id = ?1", [&h.entity_id], |r| r.get(0))
                     .ok();
             }
+            "knowledge" => {
+                h.kind = conn
+                    .query_row("SELECT type FROM knowledge WHERE id = ?1", [&h.entity_id], |r| r.get(0))
+                    .ok();
+                h.path = knowledge_path(conn, &h.entity_id)?;
+            }
+            "card" | "task" | "exam" => {
+                h.kind = Some(h.entity_type.clone());
+            }
+            "annotation" => {
+                let doc: Option<(String, String)> = conn
+                    .query_row(
+                        "SELECT d.id, d.title FROM annotations a JOIN documents d ON d.id = a.document_id WHERE a.id = ?1",
+                        [&h.entity_id],
+                        |r| Ok((r.get(0)?, r.get(1)?)),
+                    )
+                    .ok();
+                if let Some((id, title)) = doc {
+                    h.path = format!("Markierung in „{title}“");
+                    h.target_id = Some(id);
+                }
+            }
             _ => {
                 h.path = crate::repo::documents::placement_summary(conn, &h.entity_id)?;
             }
@@ -163,6 +211,16 @@ pub fn search(conn: &Connection, input: &str, area_id: Option<&str>, limit: i64)
         hits.push(h);
     }
     Ok(hits)
+}
+
+fn knowledge_path(conn: &Connection, id: &str) -> Result<String> {
+    let node: Option<Option<String>> = conn
+        .query_row("SELECT node_id FROM knowledge WHERE id = ?1", [id], |r| r.get(0))
+        .ok();
+    Ok(match node.flatten() {
+        Some(n) => breadcrumb(conn, &n, true)?,
+        None => String::new(),
+    })
 }
 
 /// Baut den gesamten Index aus den Daten neu auf (z. B. nach einer Wiederherstellung).
@@ -181,6 +239,10 @@ pub fn rebuild(conn: &Connection) -> Result<()> {
          FROM document_pages p JOIN documents d ON d.id = p.document_id",
         [],
     )?;
+    crate::repo::knowledge::reindex_all(&tx)?;
+    crate::repo::cards::reindex_all(&tx)?;
+    crate::repo::planning::reindex_all(&tx)?;
+    crate::repo::annotations::reindex_all(&tx)?;
     tx.commit()?;
     Ok(())
 }

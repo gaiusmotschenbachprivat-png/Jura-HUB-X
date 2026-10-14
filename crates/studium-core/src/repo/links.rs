@@ -8,7 +8,7 @@ use serde_json::Value;
 use crate::util::{new_id, now, require_id};
 use crate::{Error, Result};
 
-pub const ENTITY_TYPES: &[&str] = &["node", "document"];
+pub const ENTITY_TYPES: &[&str] = &["node", "document", "knowledge"];
 pub const LINK_KINDS: &[&str] = &["related", "page", "mention"];
 
 #[derive(Debug, Deserialize, Clone)]
@@ -52,6 +52,7 @@ fn check_entity(conn: &Connection, t: &str, id: &str) -> Result<()> {
     require_id(id)?;
     match t {
         "node" => crate::repo::nodes::get(conn, id).map(|_| ()),
+        "knowledge" => crate::repo::knowledge::get(conn, id).map(|_| ()),
         _ => crate::repo::documents::get(conn, None, id).map(|_| ()),
     }
 }
@@ -108,6 +109,22 @@ fn describe(conn: &Connection, t: &str, id: &str) -> Result<(String, Option<Stri
         Ok(match row {
             Some((title, kind, del)) => {
                 (title, Some(kind), crate::repo::nodes::breadcrumb(conn, id, false)?, del.is_some())
+            }
+            None => ("(gelöscht)".into(), None, String::new(), true),
+        })
+    } else if t == "knowledge" {
+        let row: Option<(String, String, Option<String>, Option<String>)> = conn
+            .query_row("SELECT title, type, node_id, deleted_at FROM knowledge WHERE id = ?1", [id], |r| {
+                Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+            })
+            .optional()?;
+        Ok(match row {
+            Some((title, ty, node, del)) => {
+                let path = match node {
+                    Some(n) => crate::repo::nodes::breadcrumb(conn, &n, true)?,
+                    None => String::new(),
+                };
+                (title, Some(ty), path, del.is_some())
             }
             None => ("(gelöscht)".into(), None, String::new(), true),
         })

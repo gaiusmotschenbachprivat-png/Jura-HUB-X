@@ -4,7 +4,7 @@ use studium_core::repo::nodes::{self, NewNode, Node, NodePatch};
 use studium_core::repo::trash::{self, TrashItem};
 
 use super::St;
-use crate::state::{CmdError, CmdResult};
+use crate::state::CmdResult;
 
 #[tauri::command]
 pub async fn areas_list(state: St<'_>) -> CmdResult<Vec<Area>> {
@@ -108,21 +108,11 @@ pub async fn trash_list(state: St<'_>) -> CmdResult<Vec<TrashItem>> {
 
 #[tauri::command]
 pub async fn trash_restore(state: St<'_>, item_type: String, id: String) -> CmdResult<()> {
-    match item_type.as_str() {
-        "node" => state.with(|c| trash::restore_node(c, &id)),
-        "document" => state.with(|c| trash::restore_document(c, &id)),
-        _ => Err(CmdError::new("invalid", "Unbekannter Eintrag.")),
-    }
+    state.with(|c| trash::restore_any(c, &item_type, &id))
 }
 
 #[tauri::command]
 pub async fn trash_purge(state: St<'_>, item_type: String, id: String) -> CmdResult<()> {
-    match item_type.as_str() {
-        "node" => state.with(|c| trash::purge_node(c, &id)),
-        "document" => {
-            let store = state.store.clone();
-            state.with(|c| trash::purge_document(c, &store, &id))
-        }
-        _ => Err(CmdError::new("invalid", "Unbekannter Eintrag.")),
-    }
+    let store = state.store.clone();
+    state.with(|c| trash::purge_any(c, &store, &item_type, &id))
 }
