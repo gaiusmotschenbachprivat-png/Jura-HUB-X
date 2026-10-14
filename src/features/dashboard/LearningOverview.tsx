@@ -61,8 +61,12 @@ export function LearningOverview({ allNodes }: { allNodes: StudyNode[] }) {
             exams.map((e) => (
               <button key={e.id} className="lo-row" onClick={() => open({ type: "planning" })}>
                 <KindIcon kind="exam" size={14} />
-                <span className="grow ellipsis">{e.title}</span>
-                <span className="xs muted tnum">{formatDate(e.date + "T12:00:00")} · {relDays(daysUntil(e.date))}</span>
+                <span className="grow" style={{ minWidth: 0 }}>
+                  <span className="block lo-title">{e.title}</span>
+                  <span className="xs muted tnum block">
+                    {formatDate(e.date + "T12:00:00")} · {relDays(daysUntil(e.date))}
+                  </span>
+                </span>
               </button>
             ))
           )}

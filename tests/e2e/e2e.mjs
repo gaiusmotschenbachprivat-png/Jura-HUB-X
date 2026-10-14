@@ -149,7 +149,12 @@ try {
   await sleep(700);
   await pick.sendKeys(Key.ENTER);
   await sleep(800);
-  const links = (await invoke(d, "links_for", { entityType: "document", id: doc.id })).ok;
+  // Die Suche kann auch die zweite (nicht zugeordnete) Kopie öffnen: beide prüfen.
+  const dupId = dup.ok?.[0]?.document?.id;
+  const links = [
+    ...(await invoke(d, "links_for", { entityType: "document", id: doc.id })).ok,
+    ...(dupId ? (await invoke(d, "links_for", { entityType: "document", id: dupId })).ok : []),
+  ];
   check("Notiz mit konkreter PDF-Seite verknüpft", links.length === 1 && links[0].anchor.page === 2, JSON.stringify(links.map((l) => l.anchor)));
   const chips = await d.findElements(By.xpath("//div[contains(@class,'page-links')]//button[contains(translate(.,'MA','ma'),'mitschrift anfechtung')]"));
   check("PDF zeigt Notizen zur aktuellen Seite", chips.length === 1);

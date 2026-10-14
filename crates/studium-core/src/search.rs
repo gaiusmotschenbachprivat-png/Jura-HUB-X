@@ -152,9 +152,19 @@ pub fn search(conn: &Connection, input: &str, area_id: Option<&str>, limit: i64)
              OR s.area_id = ?2
              OR (s.entity_type IN ('knowledge','card','task','exam') AND s.area_id IS NULL)
              OR EXISTS (SELECT 1 FROM node_area_refs r WHERE r.node_id = s.entity_id AND r.area_id = ?2)
-             OR (s.entity_type IN ('document','page') AND EXISTS (
-                  SELECT 1 FROM placements p JOIN nodes n ON n.id = p.node_id
-                  WHERE p.document_id = s.entity_id AND n.area_id = ?2 AND n.deleted_at IS NULL))
+             OR (s.entity_type IN ('document','page','annotation') AND (
+                  -- Dokument im Bereich zugeordnet …
+                  EXISTS (
+                    SELECT 1 FROM placements p JOIN nodes n ON n.id = p.node_id
+                    WHERE p.document_id = (CASE WHEN s.entity_type = 'annotation'
+                            THEN (SELECT a.document_id FROM annotations a WHERE a.id = s.entity_id) ELSE s.entity_id END)
+                      AND n.area_id = ?2 AND n.deleted_at IS NULL)
+                  -- … oder noch gar nicht zugeordnet (erscheint dann in jedem Bereich)
+                  OR NOT EXISTS (
+                    SELECT 1 FROM placements p JOIN nodes n ON n.id = p.node_id
+                    WHERE p.document_id = (CASE WHEN s.entity_type = 'annotation'
+                            THEN (SELECT a.document_id FROM annotations a WHERE a.id = s.entity_id) ELSE s.entity_id END)
+                      AND n.deleted_at IS NULL)))
            )
          ORDER BY bm25(search_index, 0.0, 0.0, 0.0, 0.0, 8.0, 1.0)
          LIMIT ?5",

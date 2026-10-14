@@ -68,4 +68,5 @@
 .lo-head { font-size: var(--fs-sm); font-weight: 600; margin-bottom: 4px; }
 .lo-row { width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 4px 6px; border-radius: var(--r-sm); text-align: left; color: var(--text); font-size: var(--fs-sm); }
 .lo-row:hover { background: var(--bg-hover); }
-.lo-row svg { color: var(--text-3); flex: none; }
+.lo-row svg { color: var(--text-3); flex: none; align-self: flex-start; margin-top: 2px; }
+.lo-title { overflow-wrap: anywhere; }

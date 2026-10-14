@@ -313,7 +313,8 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
       }
       for (const d of docs.values()) {
         if (d.deleted_at) continue;
-        if (areaId && !placements.some((p) => p.document_id === d.id && getNode(p.node_id).area_id === areaId)) continue;
+        const placed = placements.filter((p) => p.document_id === d.id);
+        if (areaId && placed.length && !placed.some((p) => getNode(p.node_id).area_id === areaId)) continue;
         if (match(d.title + " " + d.original_name)) hits.push({ entity_type: "document", entity_id: d.id, area_id: null, page: null, title: highlight(d.title, terms), snippet: d.original_name, path: placementPath(d.id), kind: null, target_id: null });
         d.pages.forEach((p, i) => {
           if (match(p)) hits.push({ entity_type: "page", entity_id: d.id, area_id: null, page: i + 1, title: d.title, snippet: snippet(p, terms), path: placementPath(d.id), kind: null, target_id: null });

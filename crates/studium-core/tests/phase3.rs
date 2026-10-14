@@ -213,6 +213,12 @@ fn pdf_annotations_and_bookmarks() {
     let b2 = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 5, kind: "bookmark".into(), color: None, rects: vec![], quote: String::new(), comment: String::new() }).unwrap();
     assert_eq!(b1.id, b2.id, "ein Lesezeichen je Seite");
 
+    // Nicht zugeordnete Dokumente (und ihre Markierungen) erscheinen in jedem Bereich
+    assert_eq!(search::search(&f.conn, "klausurrelevant", Some(&f.wiwi), 5).unwrap().len(), 1);
+    let course = nodes::create(&f.conn, NewNode { area_id: f.jura.clone(), parent_id: None, kind: "course".into(), title: "Sachenrecht".into(), meta: None, content_json: None, plain_text: None, template: None }).unwrap();
+    documents::add_placement(&f.conn, &d.id, &course.id).unwrap();
+    assert!(search::search(&f.conn, "klausurrelevant", Some(&f.wiwi), 5).unwrap().is_empty(), "zugeordnet: nur im eigenen Bereich");
+    assert_eq!(search::search(&f.conn, "klausurrelevant", Some(&f.jura), 5).unwrap().len(), 1);
     let hit = &search::search(&f.conn, "klausurrelevant", None, 5).unwrap()[0];
     assert_eq!(hit.entity_type, "annotation");
     assert_eq!(hit.page, Some(3));
