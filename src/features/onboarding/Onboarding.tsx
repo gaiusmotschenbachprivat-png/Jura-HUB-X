@@ -74,7 +74,7 @@ export function Onboarding() {
           <input className="grow" value={semester} onChange={(e) => setSemester(e.target.value)} disabled={!withSemester} />
         </label>
         <div className="onb-privacy small">
-          <strong>Deine Daten bleiben auf diesem Rechner.</strong> Keine Anmeldung, keine Cloud, keine Übertragung. Lege unter „Einstellungen & Backup“ regelmäßig ein Backup an, z. B. auf einem USB-Stick.
+          <strong>Deine Daten bleiben auf diesem {api.kind === "web" ? "Gerät" : "Rechner"}.</strong> Keine Anmeldung, keine Cloud, keine Übertragung. Lege unter „Einstellungen & Backup“ regelmäßig ein Backup an, z. B. auf einem USB-Stick.
         </div>
         {error && <p className="error-text small">{error}</p>}
         <Button variant="primary" onClick={start} disabled={busy}>

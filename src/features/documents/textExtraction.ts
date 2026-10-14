@@ -49,7 +49,8 @@ async function extractOne(id: string) {
       pages = [await docxToText(bytes)];
     }
     await api.documentSetText(id, pages);
-  } catch {
+  } catch (e) {
+    console.warn("Text konnte nicht ausgelesen werden:", e instanceof Error ? e.message : e);
     // Fehler beim Auslesen: Dokument bleibt nutzbar, wird aber als „nicht lesbar“ markiert.
     await api.documentTextError(id).catch(() => {});
   }

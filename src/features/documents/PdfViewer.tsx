@@ -6,7 +6,7 @@
 import "../../styles/pdf-textlayer.css";
 
 import { Bookmark, ChevronLeft, ChevronRight, PanelLeft, Search, ZoomIn, ZoomOut } from "lucide-react";
-import * as pdfjs from "pdfjs-dist";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { Annotation, Rect } from "../../api/types";

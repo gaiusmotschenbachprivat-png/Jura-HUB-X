@@ -44,6 +44,12 @@ export function Tree({
   const [target, setTarget] = useState<DropTarget | null>(null);
   const startRef = useRef<{ id: string; x: number; y: number; pointerId: number } | null>(null);
   const justDragged = useRef(false);
+  // iPad: langes Drücken öffnet das Kontextmenü (Ziehen per Finger würde das Scrollen stören)
+  const press = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelPress = () => {
+    if (press.current) clearTimeout(press.current);
+    press.current = null;
+  };
 
   // Ziehen über das ganze Fenster verfolgen
   useEffect(() => {
@@ -146,8 +152,22 @@ export function Tree({
             tabIndex={0}
             onPointerDown={(e) => {
               if (e.button !== 0 || renamingId === n.id) return;
+              if (e.pointerType === "touch") {
+                const { clientX, clientY } = e;
+                cancelPress();
+                press.current = setTimeout(() => {
+                  press.current = null;
+                  justDragged.current = true;
+                  setTimeout(() => (justDragged.current = false), 400);
+                  onContextMenu({ clientX, clientY, preventDefault() {} } as React.MouseEvent, n);
+                }, 480);
+                return;
+              }
               startRef.current = { id: n.id, x: e.clientX, y: e.clientY, pointerId: e.pointerId };
             }}
+            onPointerMove={(e) => e.pointerType === "touch" && press.current && e.movementY !== 0 && cancelPress()}
+            onPointerUp={cancelPress}
+            onPointerCancel={cancelPress}
             onClick={() => !justDragged.current && onOpen(n)}
             onDoubleClick={() => onRename(n.id, "")}
             onContextMenu={(e) => onContextMenu(e, n)}

@@ -49,8 +49,23 @@ import type {
  * Es gibt zwei Implementierungen: Tauri (echte App) und ein In-Memory-Mock
  * für Browser-Entwicklung und Tests.
  */
+/** Nur in der Browser-/iPad-Version: Backups im App-Speicher. */
+export interface WebBackups {
+  list(): Promise<{ name: string; size: number; created_at: string }[]>;
+  file(name: string): Promise<File>;
+  remove(name: string): Promise<void>;
+  /** Teilen-Menü bzw. Download – muss direkt im Klick aufgerufen werden. */
+  save(file: File): Promise<void>;
+  persisted(): Promise<boolean>;
+  requestPersist(): Promise<boolean>;
+  estimate(): Promise<{ usage: number; quota: number } | null>;
+}
+
 export interface Backend {
-  readonly kind: "tauri" | "mock";
+  readonly kind: "tauri" | "mock" | "web";
+  /** Browser-Version: erfüllt, sobald der Datenspeicher bereit ist. */
+  readonly ready?: Promise<void>;
+  readonly webBackups?: WebBackups;
 
   appInfo(): Promise<AppInfo>;
   settingsAll(): Promise<Record<string, unknown>>;

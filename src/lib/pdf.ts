@@ -1,8 +1,10 @@
 /**
  * pdf.js lokal gebündelt (kein CDN). Skripte in PDFs werden nicht ausgeführt.
+ * Die „legacy“-Ausgabe enthält Ergänzungen für ältere Browser-Engines
+ * (z. B. Safari auf älteren iPads); Funktionsumfang wie die Standardausgabe.
  */
-import * as pdfjs from "pdfjs-dist";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
+import workerUrl from "pdfjs-dist/legacy/build/pdf.worker.min.mjs?url";
 
 pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 

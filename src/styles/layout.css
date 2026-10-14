@@ -115,3 +115,12 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .shell.is-focus .primary { background: var(--bg); }
 .boot { height: 100%; display: grid; place-items: center; color: var(--text-3); padding: 24px; }
 .loading { padding: 32px; color: var(--text-3); }
+
+/* Touch (iPad): kein Lupen-/Kopier-Menü beim langen Drücken auf Listeneinträge */
+.tree-row,
+.list-row {
+  -webkit-touch-callout: none;
+}
+@media (pointer: coarse) {
+  .tree-row { height: 36px; }
+}

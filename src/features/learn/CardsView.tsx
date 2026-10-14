@@ -8,7 +8,8 @@ import { startOfToday, STATE_LABEL } from "../../lib/fsrs";
 import { areaById, reportError, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
 import { confirmDialog } from "../../ui/Dialog";
-import { useMenu } from "../../ui/Menu";
+import { longPress } from "../../ui/longPress";
+import { type MenuItem, useMenu } from "../../ui/Menu";
 import { AreaDot, EmptyState } from "../../ui/misc";
 import { CARD_KIND_LABEL, CardDialog } from "./CardDialog";
 
@@ -36,6 +37,38 @@ export function CardsView({ focusId }: { focusId?: string }) {
   const [filter, setFilter] = useState<"alle" | "faellig" | "schwierig" | "pausiert">("alle");
   const [edit, setEdit] = useState<Card | null | "new">(null);
   const menu = useMenu();
+  const cardItems = (c: Card): MenuItem[] => [
+    { label: "Bearbeiten", onSelect: () => setEdit(c) },
+    {
+      label: c.suspended ? "Fortsetzen" : "Pausieren",
+      onSelect: async () => {
+        await api.cardUpdate(c.id, { suspended: !c.suspended }).catch(reportError);
+        bump();
+      },
+    },
+    {
+      label: c.difficult ? "Nicht mehr als schwierig markieren" : "Als schwierig markieren",
+      onSelect: async () => {
+        await api.cardUpdate(c.id, { difficult: !c.difficult }).catch(reportError);
+        bump();
+      },
+    },
+    { separator: true, label: "" },
+    {
+      label: "In den Papierkorb",
+      danger: true,
+      onSelect: async () => {
+        if (!(await confirmDialog({ title: "Karte löschen?", message: "Die Karte kommt in den Papierkorb.", confirm: "In den Papierkorb", danger: true }))) return;
+        await api.cardTrash(c.id).catch(reportError);
+        bump();
+      },
+    },
+  ];
+  // iPad: langes Drücken statt Rechtsklick
+  const pressMenu = (c: Card) => {
+    const lp = longPress((p) => menu.openAt(p, cardItems(c)));
+    return { onPointerDown: lp.onPointerDown, onPointerMove: lp.onPointerMove, onPointerUp: lp.onPointerUp, onPointerCancel: lp.onPointerCancel };
+  };
 
   useEffect(() => {
     api.cardsList({ area_id: areaId === "all" ? null : areaId }).then(setCards).catch(reportError);
@@ -117,35 +150,8 @@ export function CardsView({ focusId }: { focusId?: string }) {
                 tabIndex={0}
                 onClick={() => setEdit(c)}
                 onKeyDown={(e) => e.key === "Enter" && setEdit(c)}
-                onContextMenu={(e) =>
-                  menu.openAt(e, [
-                    { label: "Bearbeiten", onSelect: () => setEdit(c) },
-                    {
-                      label: c.suspended ? "Fortsetzen" : "Pausieren",
-                      onSelect: async () => {
-                        await api.cardUpdate(c.id, { suspended: !c.suspended }).catch(reportError);
-                        bump();
-                      },
-                    },
-                    {
-                      label: c.difficult ? "Nicht mehr als schwierig markieren" : "Als schwierig markieren",
-                      onSelect: async () => {
-                        await api.cardUpdate(c.id, { difficult: !c.difficult }).catch(reportError);
-                        bump();
-                      },
-                    },
-                    { separator: true, label: "" },
-                    {
-                      label: "In den Papierkorb",
-                      danger: true,
-                      onSelect: async () => {
-                        if (!(await confirmDialog({ title: "Karte löschen?", message: "Die Karte kommt in den Papierkorb.", confirm: "In den Papierkorb", danger: true }))) return;
-                        await api.cardTrash(c.id).catch(reportError);
-                        bump();
-                      },
-                    },
-                  ])
-                }
+                {...pressMenu(c)}
+                onContextMenu={(e) => menu.openAt(e, cardItems(c))}
               >
                 <span className="grow" style={{ minWidth: 0 }}>
                   <span className="ellipsis block">{c.front}</span>

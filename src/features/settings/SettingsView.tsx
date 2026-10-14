@@ -6,6 +6,7 @@ import { AREA_COLORS } from "../../lib/kinds";
 import { reportError, useApp, type View } from "../../state/store";
 import { Button } from "../../ui/Button";
 import { BackupSettings } from "./BackupSettings";
+import { WebBackupSettings } from "./WebBackupSettings";
 
 type Tab = NonNullable<Extract<View, { type: "settings" }>["tab"]>;
 const TABS: { id: Tab; label: string }[] = [
@@ -31,7 +32,7 @@ export function SettingsView({ tab = "allgemein" }: { tab?: Tab }) {
       </header>
       {tab === "allgemein" && <Appearance />}
       {tab === "bereiche" && <Areas />}
-      {tab === "backup" && <BackupSettings />}
+      {tab === "backup" && (api.kind === "web" ? <WebBackupSettings /> : <BackupSettings />)}
       {tab === "daten" && <DataInfo />}
     </div>
   );
@@ -191,6 +192,7 @@ function DataInfo() {
     api.appInfo().then(setInfo).catch(reportError);
   }, []);
   if (!info) return <div className="loading">Lade …</div>;
+  if (info.platform === "web") return <WebDataInfo info={info} />;
   return (
     <div className="stack settings-section">
       <section className="card">
@@ -240,6 +242,43 @@ function DataInfo() {
           </li>
           <li>
             <strong>Inhalte sind nicht geprüft:</strong> Importierte Unterlagen und Vorlagen sind keine geprüften Rechtsinformationen. Gesetzesstände bitte immer selbst prüfen.
+          </li>
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function WebDataInfo({ info }: { info: AppInfo }) {
+  return (
+    <div className="stack settings-section">
+      <section className="card">
+        <h3>Wo liegen meine Daten?</h3>
+        <p className="small">
+          Im privaten Speicher dieser Web-App auf diesem Gerät. Andere Websites und Apps können nicht darauf zugreifen. Es wird nichts an einen Server geschickt.
+        </p>
+        <p className="xs muted">
+          Version {info.version} · Datenbankschema {info.schema_version} · Browser-Version
+        </p>
+      </section>
+      <section className="card prose-ui">
+        <h3>Datenschutz und Sicherheit</h3>
+        <ul className="small">
+          <li>
+            <strong>Lokal:</strong> Keine Anmeldung, kein Konto, keine Synchronisierung. Die Website liefert nur das Programm aus; deine Inhalte verlassen das Gerät nie.
+          </li>
+          <li>
+            <strong>Offline:</strong> Nach dem ersten Öffnen funktioniert Studium OS ohne Internet. Weblinks aus Notizen öffnen sich nur auf deinen Klick.
+          </li>
+          <li>
+            <strong>Verschlüsselung:</strong> Die App verschlüsselt nicht selbst. Auf dem iPad sind die Daten durch die Geräteverschlüsselung geschützt, sobald ein Code gesetzt ist.
+          </li>
+          <li>
+            <strong>Wichtig:</strong> Wenn du die Website-Daten in Safari löschst (Einstellungen → Safari → Erweitert → Website-Daten) oder die App vom Home-Bildschirm entfernst,
+            werden auch deine Studiendaten gelöscht. Sichere deshalb regelmäßig ein Backup in der Dateien-App.
+          </li>
+          <li>
+            <strong>Importierte Dateien</strong> werden nie ausgeführt. Deine Originale bleiben unverändert; Studium OS arbeitet mit Kopien.
           </li>
         </ul>
       </section>

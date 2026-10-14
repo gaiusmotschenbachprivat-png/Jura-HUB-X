@@ -14,6 +14,11 @@ import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
 
+// Browser-/iPad-Version: App-Dateien offline vorhalten (keine Nutzerdaten im Cache).
+if (__WEB_BUILD__ && "serviceWorker" in navigator) {
+  void navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />

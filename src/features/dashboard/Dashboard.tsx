@@ -26,6 +26,7 @@ export function Dashboard() {
   const [recentNotes, setRecentNotes] = useState<RecentNote[]>([]);
   const [recentDocs, setRecentDocs] = useState<DocumentInfo[]>([]);
   const [backups, setBackups] = useState<BackupRecord[] | null>(null);
+  const [lastExport, setLastExport] = useState<string | null>(null);
   const scope = areaId === "all" ? null : areaId;
 
   useEffect(() => {
@@ -33,6 +34,11 @@ export function Dashboard() {
     void api.notesRecent(scope, 8).then(setRecentNotes).catch(() => {});
     void api.documentsRecent(scope, 6).then(setRecentDocs).catch(() => {});
     void api.backupHistory().then(setBackups).catch(() => setBackups([]));
+    if (api.kind === "web")
+      void api
+        .settingsAll()
+        .then((s) => setLastExport(typeof s["backup.last_export"] === "string" ? (s["backup.last_export"] as string) : null))
+        .catch(() => {});
   }, [scope, dataVersion]);
 
   const visibleAreas = areas.filter((a) => !a.archived_at);
@@ -88,6 +94,7 @@ export function Dashboard() {
 
   return (
     <div className="page dashboard">
+      {api.kind === "web" && <InstallHint />}
       <header className="page-head">
         <div className="small muted">{scope ? visibleAreas.find((a) => a.id === scope)?.name : "Alle Studienbereiche"}</div>
         <h1 className="page-title-static">Übersicht</h1>
@@ -222,12 +229,52 @@ export function Dashboard() {
               "Noch kein Backup."
             )}
           </p>
-          <p className="xs muted">Alle Daten liegen nur auf diesem Rechner. Ein Backup auf einem externen Datenträger schützt vor Verlust.</p>
+          {api.kind === "web" && (
+            <p className="small">{lastExport ? <>Zuletzt aus der App gesichert: <strong>{formatDateTime(lastExport)}</strong></> : "Noch kein Backup aus der App gesichert."}</p>
+          )}
+          <p className="xs muted">
+            {api.kind === "web"
+              ? "Alle Daten liegen nur auf diesem Gerät. Sichere Backups regelmäßig mit „In Dateien sichern“ – das schützt vor Verlust."
+              : "Alle Daten liegen nur auf diesem Rechner. Ein Backup auf einem externen Datenträger schützt vor Verlust."}
+          </p>
           <Button size="sm" icon={<HardDriveDownload size={14} />} onClick={() => open({ type: "settings", tab: "backup" })}>
             Backup verwalten
           </Button>
         </section>
       </div>
+    </div>
+  );
+}
+
+/** Hinweis in der Browser-Version, solange die App nicht vom Home-Bildschirm gestartet wurde. */
+function InstallHint() {
+  const [hidden, setHidden] = useState(() => {
+    try {
+      return localStorage.getItem("studium.installHint") === "aus";
+    } catch {
+      return false;
+    }
+  });
+  const standalone =
+    (navigator as Navigator & { standalone?: boolean }).standalone === true || window.matchMedia?.("(display-mode: standalone)").matches;
+  if (standalone || hidden) return null;
+  return (
+    <div className="card install-hint small">
+      <strong>Als App installieren:</strong> In Safari auf <em>Teilen</em> tippen und <em>Zum Home-Bildschirm</em> wählen. Dann startet Studium OS wie eine App, funktioniert
+      offline und Safari bewahrt deine Daten dauerhaft auf.
+      <button
+        className="link-button xs"
+        onClick={() => {
+          setHidden(true);
+          try {
+            localStorage.setItem("studium.installHint", "aus");
+          } catch {
+            /* egal */
+          }
+        }}
+      >
+        Ausblenden
+      </button>
     </div>
   );
 }

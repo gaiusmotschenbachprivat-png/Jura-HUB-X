@@ -30,6 +30,53 @@ jobs:
       - run: cargo test -p studium-core
       - run: cargo build -p studium-os
 
+  web:
+    name: iPad-/Browser-Version (Chromium)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:web
+      - name: Playwright (nur für den Test)
+        run: |
+          npm i --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Ende-zu-Ende-Test im Browser
+        run: npm run test:web
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-e2e-bilder
+          path: target/e2e-web/*.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studium-os-web
+          path: dist-web
+
+  safari:
+    name: iPad-/Browser-Version (Safari)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:web
+      - name: Test in Safari
+        run: |
+          sudo safaridriver --enable
+          mkdir -p dist-web/__fixture && cp tests/e2e/fixtures/folien.pdf dist-web/__fixture/
+          (cd tests/e2e && npm ci)
+          npx vite preview --mode web --outDir dist-web --port 4173 --strictPort --host 127.0.0.1 &
+          sleep 3
+          node tests/e2e-web/safari-run.mjs
+
   build:
     name: Installationsdatei ${{ matrix.os }}
     needs: test
