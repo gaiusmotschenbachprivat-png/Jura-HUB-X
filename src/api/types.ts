@@ -512,3 +512,73 @@ export interface NewAnnotation {
   quote?: string;
   comment?: string;
 }
+
+// ---------- KI-Assistent: Rechtsquellen ----------
+
+export type LegalKind = "gesetz" | "urteil" | "kommentar" | "dokument";
+
+export interface LegalSource {
+  id: string;
+  kind: LegalKind;
+  title: string;
+  abbreviation: string;
+  court: string;
+  file_number: string;
+  decision_date: string;
+  version: string;
+  origin: string;
+  chunk_count: number;
+  imported_at: string;
+}
+
+export interface NewLegalSource {
+  kind: LegalKind;
+  title: string;
+  abbreviation?: string;
+  court?: string;
+  file_number?: string;
+  decision_date?: string;
+  version?: string;
+  origin?: string;
+}
+
+export interface NewLegalChunk {
+  norm: string;
+  absatz: number | null;
+  heading: string;
+  text: string;
+}
+
+/** Ein Abschnitt einer Rechtsquelle samt Angaben zur Quelle. */
+export interface LegalHit {
+  chunk_id: string;
+  source_id: string;
+  kind: LegalKind;
+  title: string;
+  abbreviation: string;
+  court: string;
+  file_number: string;
+  decision_date: string;
+  version: string;
+  norm: string;
+  absatz: number | null;
+  heading: string;
+  text: string;
+  position: number;
+}
+
+export interface AiStatus {
+  /** Ist ein API-Schlüssel verfügbar? */
+  available: boolean;
+  /** Woher: Umgebungsvariable (Desktop), Eingabe in dieser Sitzung (Browser) oder keiner */
+  key_source: "env" | "session" | "none";
+  /** Kann die App Gesetze selbst abrufen (nur Desktop)? */
+  can_fetch_laws: boolean;
+}
+
+/** Rohe HTTP-Antwort der Weiterleitung an die Claude API (nur Desktop). */
+export interface AiHttpResponse {
+  status: number;
+  headers: [string, string][];
+  body: string;
+}

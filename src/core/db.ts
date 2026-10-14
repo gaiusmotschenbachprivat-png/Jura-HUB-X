@@ -6,11 +6,12 @@
  */
 import m1 from "../../crates/studium-core/src/db/migrations/0001_init.sql?raw";
 import m2 from "../../crates/studium-core/src/db/migrations/0002_wissen_lernen.sql?raw";
+import m3 from "../../crates/studium-core/src/db/migrations/0003_rechtsquellen.sql?raw";
 
 import { CoreError } from "./errors";
 
 /** Alle Migrationen in Reihenfolge – dieselben Dateien wie in der Desktop-App. */
-export const MIGRATIONS: readonly string[] = [m1, m2];
+export const MIGRATIONS: readonly string[] = [m1, m2, m3];
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
 export type SqlValue = string | number | bigint | null | Uint8Array;

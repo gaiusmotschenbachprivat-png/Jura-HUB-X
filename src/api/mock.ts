@@ -5,6 +5,7 @@
  */
 import type { Backend } from "./backend";
 import { createLearningMock } from "./mockLearning";
+import { createLegalMock } from "./mockLegal";
 import type {
   Area,
   BackupRecord,
@@ -118,6 +119,7 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
 
   const b: Backend = {
     ...learning.api,
+    ...createLegalMock(),
     kind: "mock",
     async appInfo() {
       return {

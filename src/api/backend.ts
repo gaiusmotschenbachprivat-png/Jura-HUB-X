@@ -1,4 +1,11 @@
 import type {
+  AiHttpResponse,
+  AiStatus,
+  LegalHit,
+  LegalKind,
+  LegalSource,
+  NewLegalChunk,
+  NewLegalSource,
   Annotation,
   AnnotationColor,
   AppInfo,
@@ -157,6 +164,22 @@ export interface Backend {
   backupVerify(path: string): Promise<VerifyReport>;
   backupRestore(path: string): Promise<RestoreResult>;
   backupHistory(): Promise<BackupRecord[]>;
+
+  // ---- KI-Assistent: Rechtsquellen ----
+  legalSourcesList(): Promise<LegalSource[]>;
+  legalSourceSave(source: NewLegalSource, chunks: NewLegalChunk[]): Promise<LegalSource>;
+  legalSourceDelete(id: string): Promise<void>;
+  legalSearch(terms: string[], kinds: LegalKind[] | null, limit: number): Promise<LegalHit[]>;
+  legalNorm(abbreviation: string, norm: string, absatz: number | null): Promise<LegalHit[]>;
+  legalChunks(ids: string[]): Promise<LegalHit[]>;
+  /** Ist die Claude API nutzbar (Schlüssel vorhanden)? */
+  aiStatus(): Promise<AiStatus>;
+  /** Browser-Version: API-Schlüssel nur für diese Sitzung (nur im Arbeitsspeicher). */
+  aiSetSessionKey(key: string | null): Promise<void>;
+  /** Desktop: Weiterleitung einer Anfrage an die Claude API über die Rust-Seite. */
+  aiHttp(url: string, method: string, headers: [string, string][], body: string): Promise<AiHttpResponse>;
+  /** Desktop: Gesetz als XML-Archiv von gesetze-im-internet.de laden (auf Knopfdruck). */
+  lawFetch(abbreviation: string): Promise<Uint8Array>;
 
   exportWrite(path: string, data: Uint8Array): Promise<void>;
   readExternalFile(path: string): Promise<Uint8Array>;

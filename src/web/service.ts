@@ -28,6 +28,7 @@ import * as areas from "../core/repo/areas";
 import * as cards from "../core/repo/cards";
 import * as documents from "../core/repo/documents";
 import * as knowledge from "../core/repo/knowledge";
+import * as legal from "../core/repo/legal";
 import * as links from "../core/repo/links";
 import * as nodes from "../core/repo/nodes";
 import * as notes from "../core/repo/notes";
@@ -255,6 +256,13 @@ export function createService(env: Env) {
     annotationCreate: async (input: Parameters<typeof annotations.create>[1]) => annotations.create(db(), input),
     annotationUpdate: async (id: string, patch: Parameters<typeof annotations.update>[2]) => annotations.update(db(), id, patch),
     annotationDelete: async (id: string) => annotations.remove(db(), id),
+
+    legalSourcesList: async () => legal.list(db()),
+    legalSourceSave: async (source: Parameters<typeof legal.save>[1], chunks: Parameters<typeof legal.save>[2]) => legal.save(db(), source, chunks),
+    legalSourceDelete: async (id: string) => legal.remove(db(), id),
+    legalSearch: async (terms: string[], kinds: Parameters<typeof legal.search>[2], limit: number) => legal.search(db(), terms, kinds ?? null, limit),
+    legalNorm: async (abbreviation: string, norm: string, absatz: number | null) => legal.norm(db(), abbreviation, norm, absatz ?? null),
+    legalChunks: async (ids: string[]) => legal.chunks(db(), ids),
 
     imageStore: async (data: Uint8Array) => documents.storeImage(ctx(), data),
     imageBytes: async (sha: string) => documents.imageBytes(ctx(), sha),

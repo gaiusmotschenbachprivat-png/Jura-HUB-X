@@ -121,6 +121,15 @@ pub fn run() {
             backup::backup_verify,
             backup::backup_restore,
             backup::backup_history,
+            ai::legal_sources_list,
+            ai::legal_source_save,
+            ai::legal_source_delete,
+            ai::legal_search,
+            ai::legal_norm,
+            ai::legal_chunks,
+            ai::ai_status,
+            ai::ai_http,
+            ai::law_fetch,
         ])
         .run(tauri::generate_context!())
         .expect("Studium OS konnte nicht gestartet werden");

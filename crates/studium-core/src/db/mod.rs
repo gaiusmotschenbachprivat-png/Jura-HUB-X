@@ -14,6 +14,7 @@ pub const DB_FILE: &str = "studium.sqlite";
 const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_init.sql"),
     include_str!("migrations/0002_wissen_lernen.sql"),
+    include_str!("migrations/0003_rechtsquellen.sql"),
 ];
 
 /// Höchste Schemaversion, die diese App-Version versteht.

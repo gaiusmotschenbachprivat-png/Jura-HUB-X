@@ -15,7 +15,8 @@ const CSP = [
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
   "worker-src 'self' blob:",
-  "connect-src 'self'",
+  // Claude API nur für den KI-Assistenten (ausdrücklich eingeschaltet, Schlüssel nur im Speicher)
+  "connect-src 'self' https://api.anthropic.com",
   "object-src 'none'",
   "frame-src 'none'",
   "base-uri 'none'",

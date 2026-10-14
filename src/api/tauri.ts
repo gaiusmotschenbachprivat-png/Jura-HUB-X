@@ -111,6 +111,19 @@ export function createTauriBackend(): Backend {
     backupRestore: (path) => c("backup_restore", { path }),
     backupHistory: () => c("backup_history"),
 
+    legalSourcesList: () => c("legal_sources_list"),
+    legalSourceSave: (source, chunks) => c("legal_source_save", { source, chunks }),
+    legalSourceDelete: (id) => c("legal_source_delete", { id }),
+    legalSearch: (terms, kinds, limit) => c("legal_search", { terms, kinds, limit }),
+    legalNorm: (abbreviation, norm, absatz) => c("legal_norm", { abbreviation, norm, absatz }),
+    legalChunks: (ids) => c("legal_chunks", { ids }),
+    aiStatus: () => c("ai_status"),
+    aiSetSessionKey: async () => {
+      throw { code: "invalid", message: "In der Desktop-App kommt der Schlüssel aus der Umgebungsvariable ANTHROPIC_API_KEY." };
+    },
+    aiHttp: (url, method, headers, body) => c("ai_http", { url, method, headers, body }),
+    lawFetch: async (abbreviation) => toBytes(await c("law_fetch", { abbreviation })),
+
     exportWrite: (path, data) => c("export_write", data, { headers: { "x-path-hex": toHex(path) } }),
     readExternalFile: async (path) => toBytes(await c("read_external_file", { path })),
     openUrl: (url) => c("open_url", { url }),

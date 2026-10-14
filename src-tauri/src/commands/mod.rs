@@ -1,6 +1,7 @@
 //! Tauri-Befehle. Dünne Adapter: Argumente annehmen, `studium-core` aufrufen,
 //! Fehler verständlich zurückgeben. Keine Geschäftslogik hier.
 
+pub mod ai;
 pub mod backup;
 pub mod documents;
 pub mod learning;

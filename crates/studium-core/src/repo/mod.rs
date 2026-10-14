@@ -6,6 +6,7 @@ pub mod areas;
 pub mod cards;
 pub mod documents;
 pub mod knowledge;
+pub mod legal;
 pub mod links;
 pub mod nodes;
 pub mod notes;

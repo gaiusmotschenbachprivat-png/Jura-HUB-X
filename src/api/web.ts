@@ -10,6 +10,13 @@ import type { Backend, WebBackups } from "./backend";
 import type { Ready, Request, Response } from "../web/protocol";
 
 const files = new Map<string, File>();
+
+// API-Schlüssel für die Claude API: nur im Arbeitsspeicher dieser Sitzung,
+// nie gespeichert. Beim Schließen oder Neuladen ist er weg.
+let sessionKey: string | null = null;
+export function webSessionKey(): string | null {
+  return sessionKey;
+}
 let fileSeq = 0;
 
 function register(f: File): string {
@@ -211,6 +218,23 @@ export function createWebBackend(): Backend {
     },
     async pickDirectory() {
       return null;
+    },
+    async aiStatus() {
+      return { available: !!sessionKey, key_source: sessionKey ? ("session" as const) : ("none" as const), can_fetch_laws: false };
+    },
+    async aiSetSessionKey(key: string | null) {
+      const k = key?.trim() ?? "";
+      sessionKey = k ? k : null;
+    },
+    async aiHttp() {
+      throw { code: "invalid", message: "Nicht nötig: Die Browser-Version spricht die Claude API direkt an." };
+    },
+    async lawFetch() {
+      throw {
+        code: "invalid",
+        message:
+          "Im Browser kann Studium OS Gesetze nicht selbst laden (gesetze-im-internet.de erlaubt das technisch nicht). Lade die XML-Datei dort herunter und importiere sie.",
+      };
     },
     async pickSavePath(defaultName: string) {
       return `download:${defaultName}`;

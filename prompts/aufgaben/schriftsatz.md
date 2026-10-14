@@ -1,0 +1,2 @@
+Aufgabe: Entwurf eines Schreibens oder Schriftsatzes.
+Erstelle einen Entwurf. Nutze, wenn passend, eine Vorlage über das Werkzeug `vorlage_laden`. Kennzeichne alle Stellen, die der Nutzer ergänzen oder prüfen muss, mit [[ … ]]. Begründe rechtliche Ausführungen mit Normen und Quellenkennungen. Berechne Fristen mit `frist_berechnen` und gib das Fristende ausdrücklich an. Stelle dem Entwurf eine kurze Liste der getroffenen Annahmen voran.

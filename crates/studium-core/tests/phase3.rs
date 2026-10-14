@@ -38,7 +38,7 @@ fn new_k(ty: &str, title: &str, area: Option<&str>, data: serde_json::Value) -> 
 }
 
 #[test]
-fn schema_version_is_two_and_upgrade_from_one_keeps_data() {
+fn schema_upgrade_from_one_keeps_data() {
     let dir = tempfile::tempdir().unwrap();
     {
         let conn = rusqlite::Connection::open(db::db_path(dir.path())).unwrap();
@@ -47,7 +47,7 @@ fn schema_version_is_two_and_upgrade_from_one_keeps_data() {
         conn.execute("INSERT INTO areas (id, name, color, position, created_at, updated_at) VALUES ('01900000-0000-7000-8000-000000000001','Alt','#123456',0,'x','x')", []).unwrap();
     }
     let conn = db::open(dir.path()).unwrap();
-    assert_eq!(db::schema_version(&conn).unwrap(), 2);
+    assert_eq!(db::schema_version(&conn).unwrap(), db::SCHEMA_VERSION);
     assert_eq!(areas::list(&conn).unwrap()[0].name, "Alt");
     assert_eq!(fs::read_dir(dir.path().join("pre-migration")).unwrap().count(), 1);
 }
