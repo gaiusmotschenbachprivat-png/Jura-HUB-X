@@ -59,7 +59,7 @@ export function TrashView() {
         <div className="list">
           {items.map((it) => (
             <div key={it.item_type + it.id} className="list-row">
-              {it.kind ? <KindIcon kind={it.kind} /> : <FileText size={16} />}
+              {it.kind || it.item_type !== "document" ? <KindIcon kind={["task", "card", "exam"].includes(it.item_type) ? it.item_type : (it.kind ?? it.item_type)} /> : <FileText size={16} />}
               <span className="grow" style={{ minWidth: 0 }}>
                 <span className="ellipsis block">{it.title}</span>
                 <span className="xs muted ellipsis block">

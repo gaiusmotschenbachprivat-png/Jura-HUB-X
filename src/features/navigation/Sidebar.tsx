@@ -1,5 +1,7 @@
 import {
   Archive,
+  CalendarCheck,
+  GraduationCap,
   ArchiveRestore,
   Copy,
   FilePlus2,
@@ -13,13 +15,14 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
 import type { NodeKind, StudyNode } from "../../api/types";
 import { KIND_LABEL, SUGGESTED_CHILDREN } from "../../lib/kinds";
+import { useCardStats } from "../learn/CardsView";
 import { buildTree } from "../../lib/tree";
-import { reportError, useApp } from "../../state/store";
+import { reportError, useApp, viewId } from "../../state/store";
 import { IconButton } from "../../ui/Button";
 import { useMenu, type MenuItem } from "../../ui/Menu";
 import { AreaDot, MOD } from "../../ui/misc";
@@ -27,6 +30,7 @@ import { createNode, defaultTitle, openNode, renameNode, trashNode } from "./act
 import { KindIcon } from "./icons";
 import { NewNodeDialog, type NewNodeRequest } from "./NewNodeDialog";
 import { Tree } from "./Tree";
+import { TYPE_LABEL_PLURAL } from "../knowledge/meta";
 
 export function Sidebar() {
   const areas = useApp((s) => s.areas);
@@ -44,7 +48,13 @@ export function Sidebar() {
   const [newReq, setNewReq] = useState<NewNodeRequest | null>(null);
   const menu = useMenu();
 
-  const activeId = "id" in view ? view.id : null;
+  const activeId = viewId(view);
+  const stats = useCardStats();
+  const [knowledgeType, setKnowledgeType] = useState<string | null>(null);
+  useEffect(() => {
+    if (view.type !== "knowledge") return setKnowledgeType(null);
+    api.knowledgeGet(view.id).then((k) => setKnowledgeType(k.type)).catch(() => {});
+  }, [view]);
   const visibleAreas = areas.filter((a) => !a.archived_at);
   const archivedCount = nodes.filter((n) => n.archived_at).length;
 
@@ -155,12 +165,29 @@ export function Sidebar() {
         </IconButton>
       </div>
 
-      <div className="side-nav">
-        <NavItem icon={<Home size={15} />} label="Übersicht" active={view.type === "dashboard"} onClick={() => open({ type: "dashboard" })} />
-        <NavItem icon={<FileStack size={15} />} label="Dokumente" active={view.type === "documents"} onClick={() => open({ type: "documents" })} />
-      </div>
-
       <div className="side-scroll">
+      <div className="side-nav">
+          <NavItem icon={<Home size={15} />} label="Übersicht" active={view.type === "dashboard"} onClick={() => open({ type: "dashboard" })} />
+          <NavItem icon={<FileStack size={15} />} label="Dokumente" active={view.type === "documents"} onClick={() => open({ type: "documents" })} />
+          <NavItem
+            icon={<GraduationCap size={15} />}
+            label="Karteikarten"
+            badge={stats?.due_now || undefined}
+            active={view.type === "cards" || view.type === "learn"}
+            onClick={() => open({ type: "cards" })}
+          />
+          <NavItem icon={<CalendarCheck size={15} />} label="Aufgaben & Prüfungen" active={view.type === "planning"} onClick={() => open({ type: "planning" })} />
+          <div className="side-sub label">Wissen</div>
+          {(["definition", "schema", "case", "citation"] as const).map((k) => (
+            <NavItem
+              key={k}
+              icon={<KindIcon kind={k} />}
+              label={TYPE_LABEL_PLURAL[k]}
+              active={(view.type === "knowledge-list" && view.kind === k) || (view.type === "knowledge" && knowledgeType === k)}
+              onClick={() => open({ type: "knowledge-list", kind: k })}
+            />
+          ))}
+        </div>
         {groups.map(({ area, items }) => (
           <section key={area?.id ?? "tree"} className="side-section">
             <div className="side-head">
@@ -238,11 +265,12 @@ export function Sidebar() {
   );
 }
 
-function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
+function NavItem({ icon, label, active, onClick, badge }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; badge?: number }) {
   return (
     <button className={`nav-item ${active ? "is-active" : ""}`} onClick={onClick} aria-current={active ? "page" : undefined}>
       {icon}
-      <span>{label}</span>
+      <span className="grow">{label}</span>
+      {badge ? <span className="nav-badge tnum" title="fällige Karten">{badge}</span> : null}
     </button>
   );
 }

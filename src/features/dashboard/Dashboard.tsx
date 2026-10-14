@@ -12,6 +12,7 @@ import { DocIcon } from "../documents/DocumentList";
 import { useImport } from "../documents/ImportDialog";
 import { createNode, openNode } from "../navigation/actions";
 import { KindIcon } from "../navigation/icons";
+import { LearningOverview } from "./LearningOverview";
 
 export function Dashboard() {
   const areas = useApp((s) => s.areas);
@@ -137,6 +138,7 @@ export function Dashboard() {
       </div>
 
       <div className="dash-grid">
+        <LearningOverview allNodes={allNodes} />
         <section className="card">
           <h3 className="label">Zuletzt bearbeitet</h3>
           {recentNotes.length === 0 ? (

@@ -14,7 +14,14 @@ import { KindIcon } from "../navigation/icons";
 export function ContextPanel() {
   const view = useApp((s) => s.view);
   const close = useApp((s) => s.toggleContext);
-  const entity = view.type === "note" || view.type === "node" ? { type: "node" as const, id: view.id } : view.type === "document" ? { type: "document" as const, id: view.id } : null;
+  const entity =
+    view.type === "note" || view.type === "node"
+      ? { type: "node" as const, id: view.id }
+      : view.type === "document"
+        ? { type: "document" as const, id: view.id }
+        : view.type === "knowledge"
+          ? { type: "knowledge" as const, id: view.id }
+          : null;
 
   return (
     <aside className="context" aria-label="Kontext">
@@ -31,7 +38,7 @@ export function ContextPanel() {
   );
 }
 
-function EntityContext({ entity, isNote }: { entity: { type: "node" | "document"; id: string }; isNote: boolean }) {
+function EntityContext({ entity, isNote }: { entity: { type: "node" | "document" | "knowledge"; id: string }; isNote: boolean }) {
   const [links, setLinks] = useState<LinkView[]>([]);
   const [docs, setDocs] = useState<DocumentInfo[]>([]);
   const [picker, setPicker] = useState(false);
@@ -67,6 +74,8 @@ function EntityContext({ entity, isNote }: { entity: { type: "node" | "document"
     if (l.other_type === "document") {
       if (isNote) openSecondary({ type: "document", id: l.other_id, page: l.anchor?.page });
       else open({ type: "document", id: l.other_id, page: l.anchor?.page }, { title: l.other_title });
+    } else if (l.other_type === "knowledge") {
+      open({ type: "knowledge", id: l.other_id }, { title: l.other_title });
     } else {
       open(l.other_kind === "note" ? { type: "note", id: l.other_id } : { type: "node", id: l.other_id }, { title: l.other_title });
     }
@@ -117,7 +126,7 @@ function EntityContext({ entity, isNote }: { entity: { type: "node" | "document"
       </section>
       <section>
         <h4 className="label">
-          <ArrowDownLeft size={12} /> Verwendet in
+          <ArrowDownLeft size={12} /> {entity.type === "knowledge" ? "Verwendet in (Rückverweise)" : "Verwendet in"}
         </h4>
         {incoming.length ? incoming.map(row) : <p className="muted xs">Kein anderer Inhalt verweist hierher.</p>}
       </section>

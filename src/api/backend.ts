@@ -1,5 +1,26 @@
 import type {
+  Annotation,
+  AnnotationColor,
   AppInfo,
+  Card,
+  CardFilter,
+  CardPatch,
+  CardStats,
+  CitationData,
+  Exam,
+  ExamInput,
+  Knowledge,
+  KnowledgeFilter,
+  KnowledgePatch,
+  NewAnnotation,
+  NewCard,
+  NewKnowledge,
+  NewTask,
+  ReviewInput,
+  Task,
+  TaskFilter,
+  TaskPatch,
+  TrashItemType,
   Area,
   BackupInfo,
   BackupRecord,
@@ -77,13 +98,44 @@ export interface Backend {
   documentPageText(id: string, page: number): Promise<string | null>;
   documentPagesText(id: string): Promise<string[]>;
 
-  linksFor(type: "node" | "document", id: string): Promise<LinkView[]>;
+  linksFor(type: "node" | "document" | "knowledge", id: string): Promise<LinkView[]>;
   linkAdd(link: NewLink): Promise<string>;
   linkRemove(id: string): Promise<void>;
 
   trashList(): Promise<TrashItem[]>;
-  trashRestore(itemType: "node" | "document", id: string): Promise<void>;
-  trashPurge(itemType: "node" | "document", id: string): Promise<void>;
+  trashRestore(itemType: TrashItemType, id: string): Promise<void>;
+  trashPurge(itemType: TrashItemType, id: string): Promise<void>;
+
+  knowledgeList(filter: KnowledgeFilter): Promise<Knowledge[]>;
+  knowledgeGet(id: string): Promise<Knowledge>;
+  knowledgeCreate(input: NewKnowledge): Promise<Knowledge>;
+  knowledgeUpdate(id: string, patch: KnowledgePatch): Promise<Knowledge>;
+  knowledgeTrash(id: string): Promise<void>;
+  knowledgeFields(): Promise<string[]>;
+  citationParse(text: string): Promise<CitationData | null>;
+
+  cardsList(filter: CardFilter): Promise<Card[]>;
+  cardCreate(input: NewCard): Promise<Card>;
+  cardUpdate(id: string, patch: CardPatch): Promise<Card>;
+  cardReview(id: string, review: ReviewInput): Promise<Card>;
+  cardTrash(id: string): Promise<void>;
+  cardStats(areaId: string | null, dayStart: string): Promise<CardStats>;
+
+  tasksList(filter: TaskFilter): Promise<Task[]>;
+  taskCreate(input: NewTask): Promise<Task>;
+  taskUpdate(id: string, patch: TaskPatch): Promise<Task>;
+  taskTrash(id: string): Promise<void>;
+  examsList(areaId: string | null, from: string | null): Promise<Exam[]>;
+  examSave(id: string | null, input: ExamInput): Promise<Exam>;
+  examTrash(id: string): Promise<void>;
+
+  annotationsList(documentId: string): Promise<Annotation[]>;
+  annotationCreate(input: NewAnnotation): Promise<Annotation>;
+  annotationUpdate(id: string, patch: { comment?: string; color?: AnnotationColor }): Promise<Annotation>;
+  annotationDelete(id: string): Promise<void>;
+
+  imageStore(data: Uint8Array): Promise<string>;
+  imageBytes(sha: string): Promise<Uint8Array>;
 
   backupSettings(): Promise<BackupSettings>;
   backupCreate(): Promise<BackupInfo>;

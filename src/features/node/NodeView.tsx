@@ -13,6 +13,7 @@ import { DocumentList } from "../documents/DocumentList";
 import { useImport } from "../documents/ImportDialog";
 import { importFileAsNote } from "../editor/exportImport";
 import { createNode, defaultTitle, openNode, renameNode } from "../navigation/actions";
+import { NodeTasks } from "../planning/NodeTasks";
 import { KindIcon } from "../navigation/icons";
 
 const FIELDS: Record<string, { key: keyof NodeMeta; label: string; placeholder?: string; multiline?: boolean }[]> = {
@@ -208,6 +209,7 @@ export function NodeView({ id }: { id: string }) {
         </div>
 
         <aside className="page-side">
+          <NodeTasks nodeId={id} />
           {fields.length > 0 && (
             <section className="section">
               <h3 className="label">Angaben</h3>

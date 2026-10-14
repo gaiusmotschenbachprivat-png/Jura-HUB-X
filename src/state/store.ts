@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { api, errorMessage } from "../api";
-import type { Area, StudyNode } from "../api/types";
+import type { Area, KnowledgeType, StudyNode } from "../api/types";
 
 export type View =
   | { type: "dashboard" }
@@ -11,6 +11,11 @@ export type View =
   | { type: "documents" }
   | { type: "search"; q: string }
   | { type: "trash" }
+  | { type: "knowledge"; id: string }
+  | { type: "knowledge-list"; kind: KnowledgeType }
+  | { type: "cards"; id?: string }
+  | { type: "learn" }
+  | { type: "planning" }
   | { type: "settings"; tab?: "allgemein" | "backup" | "daten" | "bereiche" };
 
 export type Secondary = { type: "document"; id: string; page?: number } | { type: "note"; id: string } | null;
@@ -31,7 +36,12 @@ interface RecentEntry {
   at: number;
 }
 
-const viewKey = (v: View) => ("id" in v ? `${v.type}:${v.id}` : v.type);
+/** ID des geöffneten Inhalts (falls die Ansicht einen hat). */
+export function viewId(v: View): string | null {
+  return "id" in v && typeof v.id === "string" ? v.id : null;
+}
+
+const viewKey = (v: View) => (viewId(v) ? `${v.type}:${viewId(v)}` : v.type === "knowledge-list" ? `${v.type}:${v.kind}` : v.type);
 
 interface State {
   ready: boolean;
@@ -213,7 +223,7 @@ export const useApp = create<State>((set, get) => ({
   },
 
   rememberTitle(view, title) {
-    if (!("id" in view)) return;
+    if (!viewId(view)) return;
     const key = viewKey(view);
     const recent = [{ key, view, title, at: Date.now() }, ...get().recent.filter((r) => r.key !== key)].slice(0, 20);
     set({ recent });

@@ -18,13 +18,16 @@ import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
+import { CardDialog } from "../learn/CardDialog";
 
 /** Öffnet einen Link aus einer Notiz: intern in der App, Weblinks im Browser. */
 export function followHref(href: string) {
   const st = useApp.getState();
-  const m = /^studium:(node|document)\/([0-9a-f-]{36})(?:#page=(\d+))?$/.exec(href);
+  const m = /^studium:(node|document|knowledge)\/([0-9a-f-]{36})(?:#page=(\d+))?$/.exec(href);
   if (m) {
-    if (m[1] === "document") {
+    if (m[1] === "knowledge") {
+      st.open({ type: "knowledge", id: m[2]! });
+    } else if (m[1] === "document") {
       // Dokumente öffnen sich neben der Notiz, damit beides sichtbar bleibt.
       const page = m[3] ? Number(m[3]) : undefined;
       if (st.view.type === "note") st.openSecondary({ type: "document", id: m[2]!, page });
@@ -73,6 +76,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [linkDialog, setLinkDialog] = useState<null | "external" | "internal">(null);
   const [showHistory, setShowHistory] = useState(false);
   const [linkHref, setLinkHref] = useState<string | null>(null);
+  const [cardFrom, setCardFrom] = useState<string | null>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
   const nodeTitle = nodes.find((n) => n.id === note.node_id)?.title;
@@ -157,8 +161,43 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     }
   };
 
+  const selectedText = () => {
+    const { from, to } = editor.state.selection;
+    return editor.state.doc.textBetween(from, to, "\n").trim();
+  };
+  const fromSelection = async (what: "card" | "definition" | "question") => {
+    const text = selectedText();
+    const nodeRow = useApp.getState().nodes.find((n) => n.id === note.node_id);
+    if (what === "card") return setCardFrom(text);
+    try {
+      if (what === "question") {
+        await api.taskCreate({ node_id: nodeRow?.parent_id ?? null, area_id: nodeRow?.parent_id ? null : note.area_id, kind: "frage", title: text.slice(0, 500) || "Offene Frage" });
+        useApp.getState().toast("Als offene Frage gespeichert.", "success");
+        useApp.getState().bump();
+      } else {
+        const [term, ...rest] = text.split(/[:\n–-]/);
+        const k = await api.knowledgeCreate({
+          type: "definition",
+          area_id: note.area_id,
+          node_id: nodeRow?.parent_id ?? null,
+          title: (term ?? "").trim().slice(0, 300) || "Neuer Begriff",
+          data: { text: rest.join(" ").trim() || text },
+        });
+        // Markierten Text gleich mit der Definition verlinken
+        if (!editor.state.selection.empty) editor.chain().focus().setLink({ href: `studium:knowledge/${k.id}` }).run();
+        useApp.getState().toast(`Definition „${k.title}“ angelegt und verlinkt.`, "success");
+      }
+    } catch (e) {
+      reportError(e);
+    }
+  };
+
   const moreMenu = (el: HTMLElement) =>
     menu.openBelow(el, [
+      { label: "Karteikarte aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("card") },
+      { label: "Definition aus Auswahl anlegen", disabled: !selectedText(), onSelect: () => void fromSelection("definition") },
+      { label: "Offene Frage aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("question") },
+      { separator: true, label: "" },
       { label: "Als Word-Datei exportieren (.docx)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "docx") },
       { label: "Als Markdown exportieren (.md)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "md") },
       { separator: true, label: "" },
@@ -248,6 +287,12 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             if (!href) editor.chain().focus().extendMarkRange("link").unsetLink().run();
             else insertLink(href, href);
           }}
+        />
+      )}
+      {cardFrom !== null && (
+        <CardDialog
+          initial={{ front: cardFrom.length < 160 ? cardFrom : "", back: cardFrom.length < 160 ? "" : cardFrom, area_id: note.area_id, source_type: "node", source_id: note.node_id }}
+          onClose={() => setCardFrom(null)}
         />
       )}
       {showHistory && <VersionHistory noteId={note.node_id} onClose={() => setShowHistory(false)} onRestored={onReload} />}

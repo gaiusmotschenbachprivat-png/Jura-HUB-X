@@ -4,6 +4,7 @@
  * nie verwendet; dort gilt ausschließlich `tauri.ts`.
  */
 import type { Backend } from "./backend";
+import { createLearningMock } from "./mockLearning";
 import type {
   Area,
   BackupRecord,
@@ -49,6 +50,7 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
   const settings: Record<string, unknown> = {};
   const backups: BackupRecord[] = [];
 
+  const learning = createLearningMock((id) => nodes.get(id)?.area_id);
   const getNode = (id: string) => {
     const n = nodes.get(id);
     if (!n) throw err("not_found", "Eintrag nicht gefunden.");
@@ -99,14 +101,14 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
       const l = links[i]!;
       if (l.source_id === nodeId && l.kind === "mention") links.splice(i, 1);
     }
-    const re = /studium:(node|document)\/([0-9a-f-]{36})(?:#page=(\d+))?/g;
+    const re = /studium:(node|document|knowledge)\/([0-9a-f-]{36})(?:#page=(\d+))?/g;
     for (const m of content.matchAll(re)) {
       links.push({
         id: uuid(),
         created_at: now(),
         source_type: "node",
         source_id: nodeId,
-        target_type: m[1] as "node" | "document",
+        target_type: m[1] as "node" | "document" | "knowledge",
         target_id: m[2]!,
         kind: "mention",
         anchor: m[3] ? { page: Number(m[3]) } : {},
@@ -115,6 +117,7 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
   };
 
   const b: Backend = {
+    ...learning.api,
     kind: "mock",
     async appInfo() {
       return {
@@ -305,17 +308,18 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
         if (areaId && n.area_id !== areaId && !refs.some((r) => r.node_id === n.id && r.area_id === areaId)) continue;
         const body = n.kind === "note" ? notes.get(n.id)?.plain_text ?? "" : Object.values(n.meta).join(" ");
         if (match(n.title + " " + body)) {
-          hits.push({ entity_type: n.kind === "note" ? "note" : "node", entity_id: n.id, area_id: n.area_id, page: null, title: highlight(n.title, terms), snippet: snippet(body, terms), path: crumb(n.id), kind: n.kind });
+          hits.push({ entity_type: n.kind === "note" ? "note" : "node", entity_id: n.id, area_id: n.area_id, page: null, title: highlight(n.title, terms), snippet: snippet(body, terms), path: crumb(n.id), kind: n.kind, target_id: null });
         }
       }
       for (const d of docs.values()) {
         if (d.deleted_at) continue;
         if (areaId && !placements.some((p) => p.document_id === d.id && getNode(p.node_id).area_id === areaId)) continue;
-        if (match(d.title + " " + d.original_name)) hits.push({ entity_type: "document", entity_id: d.id, area_id: null, page: null, title: highlight(d.title, terms), snippet: d.original_name, path: placementPath(d.id), kind: null });
+        if (match(d.title + " " + d.original_name)) hits.push({ entity_type: "document", entity_id: d.id, area_id: null, page: null, title: highlight(d.title, terms), snippet: d.original_name, path: placementPath(d.id), kind: null, target_id: null });
         d.pages.forEach((p, i) => {
-          if (match(p)) hits.push({ entity_type: "page", entity_id: d.id, area_id: null, page: i + 1, title: d.title, snippet: snippet(p, terms), path: placementPath(d.id), kind: null });
+          if (match(p)) hits.push({ entity_type: "page", entity_id: d.id, area_id: null, page: i + 1, title: d.title, snippet: snippet(p, terms), path: placementPath(d.id), kind: null, target_id: null });
         });
       }
+      hits.push(...learning.extra.search(terms, areaId));
       return hits.slice(0, 60);
     },
 
@@ -429,7 +433,11 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
 
     async linksFor(type, id) {
       const out: LinkView[] = [];
-      const describe = (t: "node" | "document", oid: string) => {
+      const describe = (t: "node" | "document" | "knowledge", oid: string) => {
+        if (t === "knowledge") {
+          const k = learning.extra.describe(oid);
+          return { title: k?.title ?? "(gelöscht)", kind: k?.kind ?? null, path: "", missing: !k || k.missing };
+        }
         if (t === "node") {
           const n = nodes.get(oid);
           return { title: n?.title ?? "(gelöscht)", kind: n?.kind ?? null, path: n ? crumb(oid) : "", missing: !n || !!n.deleted_at };
@@ -439,7 +447,7 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
       };
       for (const l of links) {
         let dir: "outgoing" | "incoming" | null = null;
-        let ot: "node" | "document" = "node";
+        let ot: "node" | "document" | "knowledge" = "node";
         let oid = "";
         if (l.source_type === type && l.source_id === id) [dir, ot, oid] = ["outgoing", l.target_type, l.target_id];
         else if (l.target_type === type && l.target_id === id) [dir, ot, oid] = ["incoming", l.source_type, l.source_id];
@@ -470,9 +478,11 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
         out.push({ item_type: "node", id: n.id, title: n.title, kind: n.kind, area_id: n.area_id, deleted_at: n.deleted_at, children: subtree(n.id).length - 1, path: crumb(n.id) });
       }
       for (const d of docs.values()) if (d.deleted_at) out.push({ item_type: "document", id: d.id, title: d.title, kind: null, area_id: null, deleted_at: d.deleted_at, children: 0, path: "" });
+      for (const x of learning.extra.trashItems()) out.push({ ...x, children: 0, path: "" });
       return out.sort((a, b) => b.deleted_at.localeCompare(a.deleted_at));
     },
     async trashRestore(t, id) {
+      if (t !== "node" && t !== "document") return learning.extra.restore(t, id);
       if (t === "document") {
         docs.get(id)!.deleted_at = null;
         return;
@@ -484,6 +494,7 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
       }
     },
     async trashPurge(t, id) {
+      if (t !== "node" && t !== "document") return learning.extra.purge(t, id);
       if (t === "document") docs.delete(id);
       else for (const s of subtree(id)) nodes.delete(s);
     },

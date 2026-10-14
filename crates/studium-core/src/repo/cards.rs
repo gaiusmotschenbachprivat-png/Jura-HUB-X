@@ -33,6 +33,7 @@ pub struct Card {
     pub difficulty: f64,
     pub elapsed_days: i64,
     pub scheduled_days: i64,
+    pub learning_steps: i64,
     pub reps: i64,
     pub lapses: i64,
     pub state: i64,
@@ -60,6 +61,7 @@ fn from_row(r: &Row) -> rusqlite::Result<Card> {
         difficulty: r.get("difficulty")?,
         elapsed_days: r.get("elapsed_days")?,
         scheduled_days: r.get("scheduled_days")?,
+        learning_steps: r.get("learning_steps")?,
         reps: r.get("reps")?,
         lapses: r.get("lapses")?,
         state: r.get("state")?,
@@ -217,6 +219,7 @@ pub struct ReviewInput {
     pub difficulty: f64,
     pub elapsed_days: i64,
     pub scheduled_days: i64,
+    pub learning_steps: i64,
     pub reps: i64,
     pub lapses: i64,
     pub state: i64,
@@ -234,6 +237,7 @@ pub fn review(conn: &Connection, id: &str, r: ReviewInput) -> Result<Card> {
         && r.reps >= 0
         && r.lapses >= 0
         && r.scheduled_days >= 0
+        && r.learning_steps >= 0
         && r.elapsed_days >= 0
         && parse_ts(&r.due) != time::OffsetDateTime::UNIX_EPOCH;
     if !valid {
@@ -258,8 +262,8 @@ pub fn review(conn: &Connection, id: &str, r: ReviewInput) -> Result<Card> {
     };
     tx.execute(
         "UPDATE flashcards SET due=?2, stability=?3, difficulty=?4, elapsed_days=?5, scheduled_days=?6, reps=?7, lapses=?8,
-                state=?9, last_review=?10, difficult=?11, updated_at=?10 WHERE id=?1",
-        params![id, r.due, r.stability, r.difficulty, r.elapsed_days, r.scheduled_days, r.reps, r.lapses, r.state, ts, difficult as i64],
+                state=?9, last_review=?10, difficult=?11, learning_steps=?12, updated_at=?10 WHERE id=?1",
+        params![id, r.due, r.stability, r.difficulty, r.elapsed_days, r.scheduled_days, r.reps, r.lapses, r.state, ts, difficult as i64, r.learning_steps],
     )?;
     let c = get(&tx, id)?;
     tx.commit()?;

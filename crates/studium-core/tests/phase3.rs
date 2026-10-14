@@ -135,7 +135,7 @@ fn definition_backlinks_from_notes_schemas_and_cases() {
 }
 
 fn review_state(due: &str, rating: i64) -> ReviewInput {
-    ReviewInput { rating, due: due.into(), stability: 3.2, difficulty: 5.1, elapsed_days: 0, scheduled_days: 3, reps: 1, lapses: 0, state: 2 }
+    ReviewInput { rating, due: due.into(), stability: 3.2, difficulty: 5.1, elapsed_days: 0, scheduled_days: 3, learning_steps: 0, reps: 1, lapses: 0, state: 2 }
 }
 
 #[test]

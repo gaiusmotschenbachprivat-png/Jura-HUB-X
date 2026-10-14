@@ -12,7 +12,7 @@ import { KindIcon } from "../navigation/icons";
 export interface PickedTarget {
   href: string;
   title: string;
-  type: "node" | "document";
+  type: "node" | "document" | "knowledge";
   id: string;
   page?: number;
 }
@@ -39,7 +39,7 @@ export function LinkPicker({
     const t = setTimeout(async () => {
       const res = q.trim() ? await api.search(q, null).catch(() => []) : [];
       if (alive) {
-        setHits(res.filter((h) => h.entity_id !== excludeId));
+        setHits(res.filter((h) => h.entity_id !== excludeId && !["card", "task", "exam"].includes(h.entity_type)));
         setSel(0);
       }
     }, 120);
@@ -50,9 +50,16 @@ export function LinkPicker({
   }, [q, excludeId]);
 
   const pick = (h: SearchHit) => {
+    const base = stripHighlight(h.title);
+    if (h.entity_type === "knowledge") {
+      return onPick({ type: "knowledge", id: h.entity_id, title: base, href: `studium:knowledge/${h.entity_id}` });
+    }
+    if (h.entity_type === "annotation" && h.target_id) {
+      const pg = h.page ?? 1;
+      return onPick({ type: "document", id: h.target_id, page: pg, title: `${base}, S. ${pg}`, href: `studium:document/${h.target_id}#page=${pg}` });
+    }
     const isDoc = h.entity_type === "document" || h.entity_type === "page";
     const page = h.entity_type === "page" ? (h.page ?? undefined) : undefined;
-    const base = stripHighlight(h.title);
     onPick({
       type: isDoc ? "document" : "node",
       id: h.entity_id,
@@ -66,7 +73,7 @@ export function LinkPicker({
     .filter((r) => "id" in r.view && r.view.id !== excludeId)
     .slice(0, 6)
     .map((r) => ({
-      entity_type: r.view.type === "document" ? "document" : r.view.type === "note" ? "note" : "node",
+      entity_type: r.view.type === "document" ? "document" : r.view.type === "note" ? "note" : r.view.type === "knowledge" ? "knowledge" : "node",
       entity_id: (r.view as { id: string }).id,
       area_id: null,
       page: null,
@@ -74,6 +81,7 @@ export function LinkPicker({
       snippet: "",
       path: "",
       kind: null,
+      target_id: null,
     })) as SearchHit[];
   const list = q.trim() ? hits : recentHits;
 
@@ -82,7 +90,7 @@ export function LinkPicker({
       <input
         className="picker-input"
         autoFocus
-        placeholder="Notiz, Veranstaltung, Dokument oder Text suchen …"
+        placeholder="Notiz, Definition, Schema, Fall, Norm, Dokument oder Text suchen …"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         onKeyDown={(e) => {

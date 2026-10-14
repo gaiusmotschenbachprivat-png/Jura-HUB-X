@@ -3,7 +3,7 @@ import type { NodeKind, StudyNode } from "../../api/types";
 import { plainText } from "../../lib/pm";
 import { templateById } from "../../lib/templates";
 import { ancestors } from "../../lib/tree";
-import { reportError, useApp } from "../../state/store";
+import { reportError, useApp, viewId } from "../../state/store";
 
 /** Legt einen Knoten an, lädt den Baum neu und öffnet ihn. */
 export async function createNode(opts: {
@@ -79,8 +79,8 @@ export async function trashNode(node: StudyNode) {
   try {
     await api.nodeTrash(node.id);
     await st.reloadNodes();
-    const v = st.view;
-    if ("id" in v && (v.id === node.id || ancestors(st.nodes, v.id).includes(node.id))) st.open({ type: "dashboard" });
+    const vid = viewId(st.view);
+    if (vid && (vid === node.id || ancestors(st.nodes, vid).includes(node.id))) st.open({ type: "dashboard" });
     st.toast(`„${node.title}“ liegt jetzt im Papierkorb.`, "info");
   } catch (e) {
     reportError(e);

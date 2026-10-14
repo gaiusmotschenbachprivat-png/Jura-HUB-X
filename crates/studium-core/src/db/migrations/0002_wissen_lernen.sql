@@ -40,6 +40,7 @@ CREATE TABLE flashcards (
   difficulty     REAL NOT NULL DEFAULT 0,
   elapsed_days   INTEGER NOT NULL DEFAULT 0,
   scheduled_days INTEGER NOT NULL DEFAULT 0,
+  learning_steps INTEGER NOT NULL DEFAULT 0,
   reps           INTEGER NOT NULL DEFAULT 0,
   lapses         INTEGER NOT NULL DEFAULT 0,
   state          INTEGER NOT NULL DEFAULT 0,

@@ -10,7 +10,7 @@ import StarterKit from "@tiptap/starter-kit";
 
 /** Erlaubte Linkziele: Web, E-Mail und interne Verweise (`studium:`). */
 export function isAllowedHref(href: string): boolean {
-  return /^(https?:\/\/|mailto:|studium:(node|document)\/[0-9a-f-]{36}(#page=\d+)?$)/i.test(href);
+  return /^(https?:\/\/|mailto:|studium:(node|document|knowledge)\/[0-9a-f-]{36}(#page=\d+)?$)/i.test(href);
 }
 
 /**

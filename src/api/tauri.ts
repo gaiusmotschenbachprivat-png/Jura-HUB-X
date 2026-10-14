@@ -74,6 +74,37 @@ export function createTauriBackend(): Backend {
     trashRestore: (itemType, id) => c("trash_restore", { itemType, id }),
     trashPurge: (itemType, id) => c("trash_purge", { itemType, id }),
 
+    knowledgeList: (filter) => c("knowledge_list", { filter }),
+    knowledgeGet: (id) => c("knowledge_get", { id }),
+    knowledgeCreate: (input) => c("knowledge_create", { input }),
+    knowledgeUpdate: (id, patch) => c("knowledge_update", { id, patch }),
+    knowledgeTrash: (id) => c("knowledge_trash", { id }),
+    knowledgeFields: () => c("knowledge_fields"),
+    citationParse: (text) => c("citation_parse", { text }),
+
+    cardsList: (filter) => c("cards_list", { filter }),
+    cardCreate: (input) => c("card_create", { input }),
+    cardUpdate: (id, patch) => c("card_update", { id, patch }),
+    cardReview: (id, review) => c("card_review", { id, review }),
+    cardTrash: (id) => c("card_trash", { id }),
+    cardStats: (areaId, dayStart) => c("card_stats", { areaId, dayStart }),
+
+    tasksList: (filter) => c("tasks_list", { filter }),
+    taskCreate: (input) => c("task_create", { input }),
+    taskUpdate: (id, patch) => c("task_update", { id, patch }),
+    taskTrash: (id) => c("task_trash", { id }),
+    examsList: (areaId, from) => c("exams_list", { areaId, from }),
+    examSave: (id, input) => c("exam_save", { id, input }),
+    examTrash: (id) => c("exam_trash", { id }),
+
+    annotationsList: (documentId) => c("annotations_list", { documentId }),
+    annotationCreate: (input) => c("annotation_create", { input }),
+    annotationUpdate: (id, patch) => c("annotation_update", { id, patch }),
+    annotationDelete: (id) => c("annotation_delete", { id }),
+
+    imageStore: (data) => c("image_store", data),
+    imageBytes: async (sha) => toBytes(await c("image_bytes", { sha })),
+
     backupSettings: () => c("backup_settings"),
     backupCreate: () => c("backup_create"),
     backupVerify: (path) => c("backup_verify", { path }),

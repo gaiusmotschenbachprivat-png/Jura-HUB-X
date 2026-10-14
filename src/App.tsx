@@ -3,6 +3,11 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { api } from "./api";
 import { ContextPanel } from "./features/context/ContextPanel";
+import { KnowledgeEditor } from "./features/knowledge/KnowledgeEditor";
+import { KnowledgeList } from "./features/knowledge/KnowledgeList";
+import { CardsView } from "./features/learn/CardsView";
+import { LearnSession } from "./features/learn/LearnSession";
+import { PlanningView } from "./features/planning/PlanningView";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { DocumentsView } from "./features/documents/DocumentsView";
 import { DocumentViewer } from "./features/documents/DocumentViewer";
@@ -19,7 +24,7 @@ import { SettingsView } from "./features/settings/SettingsView";
 import { TrashView } from "./features/settings/TrashView";
 import { formatRelative } from "./lib/format";
 import { ancestors } from "./lib/tree";
-import { useApp, type View } from "./state/store";
+import { useApp, viewId, type View } from "./state/store";
 import { IconButton } from "./ui/Button";
 import { MOD, Toasts } from "./ui/misc";
 import { Splitter } from "./ui/Splitter";
@@ -87,13 +92,13 @@ function Shell() {
   // Geöffneten Eintrag im Baum sichtbar machen
   const nodes = useApp((s) => s.nodes);
   const expandPath = useApp((s) => s.expandPath);
-  const viewId = "id" in view && (view.type === "note" || view.type === "node") ? view.id : null;
+  const treeId = view.type === "note" || view.type === "node" ? view.id : null;
   useEffect(() => {
-    if (!viewId) return;
-    const anc = ancestors(nodes, viewId);
+    if (!treeId) return;
+    const anc = ancestors(nodes, treeId);
     const expanded = useApp.getState().expanded;
     if (anc.some((id) => !expanded[id])) expandPath(anc);
-  }, [viewId, nodes, expandPath]);
+  }, [treeId, nodes, expandPath]);
 
   // Dateien ins Fenster ziehen → Import
   useEffect(() => api.onFileDrop((paths) => void startImport({ paths }), setDropHover), [startImport]);
@@ -129,7 +134,7 @@ function Shell() {
   }, []);
 
   const showSecondary = view.type === "note" && secondary;
-  const showContext = contextOpen && !focusMode && ["note", "node", "document"].includes(view.type);
+  const showContext = contextOpen && !focusMode && ["note", "node", "document", "knowledge"].includes(view.type);
 
   return (
     <div className={`shell ${focusMode ? "is-focus" : ""}`}>
@@ -144,7 +149,7 @@ function Shell() {
       <div className="shell-main">
         <Topbar />
         <div className="workspace" ref={workspaceRef}>
-          <main className="primary" key={"id" in view ? view.id : view.type}>
+          <main className="primary" key={viewId(view) ?? (view.type === "knowledge-list" ? `kl-${view.kind}` : view.type)}>
             <ViewSwitch view={view} />
           </main>
           {showSecondary && (
@@ -199,6 +204,16 @@ function ViewSwitch({ view }: { view: View }) {
       return <SettingsView tab={view.tab} />;
     case "search":
       return <Dashboard />;
+    case "knowledge":
+      return <KnowledgeEditor id={view.id} />;
+    case "knowledge-list":
+      return <KnowledgeList type={view.kind} />;
+    case "cards":
+      return <CardsView focusId={view.id} />;
+    case "learn":
+      return <LearnSession />;
+    case "planning":
+      return <PlanningView />;
   }
 }
 
@@ -210,7 +225,7 @@ function Topbar() {
   const view = useApp((s) => s.view);
   const saveStatus = useApp((s) => s.saveStatus);
   const saveError = useApp((s) => s.saveError);
-  const lastSavedAt = useApp((s) => ("id" in s.view && s.lastSavedId === s.view.id ? s.lastSavedAt : null));
+  const lastSavedAt = useApp((s) => (viewId(s.view) && s.lastSavedId === viewId(s.view) ? s.lastSavedAt : null));
   const contextOpen = useApp((s) => s.contextOpen);
   const toggleContext = useApp((s) => s.toggleContext);
   const focusMode = useApp((s) => s.focusMode);
@@ -256,7 +271,7 @@ function Topbar() {
           )}
         </span>
       )}
-      {["note", "node", "document"].includes(view.type) && !focusMode && (
+      {["note", "node", "document", "knowledge"].includes(view.type) && !focusMode && (
         <IconButton label={`Kontextbereich (${MOD}+.)`} active={contextOpen} onClick={toggleContext}>
           <PanelRight size={16} />
         </IconButton>

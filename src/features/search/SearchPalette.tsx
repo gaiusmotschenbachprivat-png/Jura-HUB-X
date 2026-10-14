@@ -10,9 +10,14 @@ import { KindIcon } from "../navigation/icons";
 
 const GROUP_LABEL: Record<string, string> = {
   note: "Notizen",
+  knowledge: "Definitionen, Schemata, Fälle, Normen",
   node: "Studienstruktur",
   document: "Dokumente",
   page: "Fundstellen in Dokumenten",
+  annotation: "Markierungen in Dokumenten",
+  card: "Karteikarten",
+  task: "Aufgaben und Fragen",
+  exam: "Prüfungen",
 };
 
 export function hitToView(h: SearchHit): View {
@@ -25,12 +30,21 @@ export function hitToView(h: SearchHit): View {
       return { type: "document", id: h.entity_id };
     case "page":
       return { type: "document", id: h.entity_id, page: h.page ?? 1 };
+    case "annotation":
+      return { type: "document", id: h.target_id ?? h.entity_id, page: h.page ?? 1 };
+    case "knowledge":
+      return { type: "knowledge", id: h.entity_id };
+    case "card":
+      return { type: "cards", id: h.entity_id };
+    case "task":
+    case "exam":
+      return { type: "planning" };
   }
 }
 
 /** Ergebnisse gruppieren, Reihenfolge der Gruppen fest. */
 function orderHits(hits: SearchHit[]): SearchHit[] {
-  const groups = ["note", "node", "page", "document"] as const;
+  const groups = ["note", "knowledge", "node", "page", "annotation", "document", "card", "task", "exam"] as const;
   return groups.flatMap((g) => hits.filter((h) => h.entity_type === g));
 }
 

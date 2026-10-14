@@ -40,4 +40,32 @@ export async function seedDemo(b: Backend) {
   });
   const gesr = await b.nodeCreate({ area_id: rw.id, parent_id: null, kind: "course", title: "Gesellschaftsrecht (Beispiel)" });
   await b.nodeAreaRefAdd(gesr.id, jura.id);
+
+  // Wissensobjekte (Beispiele)
+  await b.knowledgeCreate({ type: "definition", area_id: jura.id, node_id: bgb.id, title: "Willenserklärung (Beispiel)", field: "BGB AT", data: { text: "Äußerung eines auf die Herbeiführung einer Rechtsfolge gerichteten Willens.", citation: "§§ 116 ff. BGB", source: "Beispielquelle" } });
+  await b.knowledgeCreate({
+    type: "schema",
+    area_id: jura.id,
+    title: "Anspruch aus Kaufvertrag (Beispiel)",
+    field: "Schuldrecht",
+    data: {
+      norm: "§ 433 Abs. 2 BGB",
+      items: [
+        { id: "a", text: "Anspruch entstanden", note: "", children: [
+          { id: "b", text: "Wirksamer Kaufvertrag", note: "", children: [
+            { id: "c", text: "Angebot", note: "", children: [] },
+            { id: "d", text: "Annahme", note: "", children: [] },
+          ] },
+          { id: "e", text: "Keine rechtshindernden Einwendungen", note: "z. B. §§ 104 ff., 125, 134, 138 BGB", children: [] },
+        ] },
+        { id: "f", text: "Anspruch nicht erloschen", note: "", children: [] },
+        { id: "g", text: "Anspruch durchsetzbar", note: "", children: [] },
+      ],
+    },
+  });
+  await b.knowledgeCreate({ type: "case", area_id: jura.id, title: "Trierer Weinversteigerung (Beispiel)", field: "BGB AT", data: { claim_basis: "§ 433 Abs. 2 BGB", difficulty: 2, status: "offen", facts: "Beispiel-Sachverhalt.", question: "Hat V gegen K einen Anspruch auf Zahlung?" } });
+  await b.knowledgeCreate({ type: "citation", title: "", field: "Schuldrecht", data: { prefix: "§", number: "433", paragraph: "2", law: "BGB" } });
+  await b.cardCreate({ area_id: jura.id, kind: "definition", front: "Willenserklärung", back: "Äußerung eines auf die Herbeiführung einer Rechtsfolge gerichteten Willens.", tags: "BGB AT" });
+  await b.cardCreate({ area_id: jura.id, kind: "frage", front: "Welche Elemente hat der subjektive Tatbestand der Willenserklärung?", back: "Handlungswille, Erklärungsbewusstsein, Geschäftswille" });
+  await b.taskCreate({ node_id: t1.id, kind: "frage", title: "Fehlendes Erklärungsbewusstsein: Folgen? (Beispiel)" });
 }
