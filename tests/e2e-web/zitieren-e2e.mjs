@@ -105,7 +105,10 @@ try {
   await editor.locator("p").first().click();
   await page.keyboard.press("End");
   await page.getByRole("button", { name: /^Fußnote einfügen/ }).click();
-  check("Mit vorhandenen Quellen startet „Quelle zitieren“", (await dlg.getByRole("tab", { name: "Quelle zitieren" }).getAttribute("aria-selected")) === "true");
+  const citeFirst = await page
+    .waitForFunction(() => document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.includes("Quelle zitieren"), null, { timeout: 5000 })
+    .then(() => true, () => false);
+  check("Mit vorhandenen Quellen startet „Quelle zitieren“", citeFirst);
   await dlg.getByRole("button", { name: "Neue Quelle" }).click();
   await dlg.getByLabel("Art der Quelle").selectOption("urteil");
   await dlg.getByLabel("Gericht").fill("BGH");
