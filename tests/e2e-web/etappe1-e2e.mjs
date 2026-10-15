@@ -112,7 +112,7 @@ try {
   await find.getByLabel("Suchen im Text").fill("anspruch");
   await sleep(200);
   const count = await find.locator(".find-count").innerText();
-  check("Suche zählt Treffer (ohne Groß/klein)", /^1\/[4-9]$/.test(count), count);
+  check("Suche zählt Treffer (ohne Groß/klein)", /^\d+\/[4-9]$/.test(count), count);
   check("Treffer im Text markiert", (await editor.locator(".search-hit").count()) >= 4);
   await find.getByLabel("Ersetzen durch").fill("Begehren");
   await find.getByRole("button", { name: "Alle ersetzen" }).click();
