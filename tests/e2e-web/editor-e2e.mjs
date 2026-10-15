@@ -21,6 +21,8 @@ const results = [];
 const check = (name, ok, extra = "") => {
   results.push({ name, ok });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  – " + extra : ""}`);
+  // Im GitHub-Workflow erscheinen Fehler direkt als Hinweis am Lauf
+  if (!ok && process.env.GITHUB_ACTIONS) console.log(`::error::${name} – ${String(extra).replace(/\n/g, " ").slice(0, 600)}`);
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
