@@ -125,6 +125,10 @@ try {
   await page.getByLabel("Text der Fußnote").fill("BGH NJW 2020, 123 (125).");
   await page.getByRole("button", { name: "Übernehmen" }).click();
   check("Fußnote per Antippen bearbeitet", (await page.locator(".footnotes").innerText()).includes("(125)"));
+  const focused = await page
+    .waitForFunction(() => document.activeElement?.closest?.(".ProseMirror"), null, { timeout: 3000 })
+    .then(() => true, () => false);
+  check("Nach dem Dialog hat der Text wieder den Fokus", focused, await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 120)));
   await page.keyboard.type("!");
   check("Nach Bearbeiten steht der Cursor hinter der Fußnote", /class="footnote-ref"[^>]*><\/sup>!/.test(await html()), (await html()).slice(-300));
 
