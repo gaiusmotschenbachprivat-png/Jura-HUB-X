@@ -62,6 +62,10 @@ interface State {
   secondary: Secondary;
 
   contextOpen: boolean;
+  /** Schmales Fenster (iPad hochkant): Kontextbereich schwebt über dem Text statt daneben. */
+  narrow: boolean;
+  contextOverlay: boolean;
+  setNarrow(v: boolean): void;
   sidebarWidth: number;
   contextWidth: number;
   secondaryWidth: number;
@@ -130,6 +134,9 @@ function persist(key: string, value: unknown) {
 
 let toastId = 0;
 
+/** Unterhalb dieser Fensterbreite (iPad hochkant) liegt der Kontextbereich über dem Text. */
+export const NARROW_WIDTH = 1000;
+
 export const useApp = create<State>((set, get) => ({
   ready: false,
   bootError: null,
@@ -145,6 +152,8 @@ export const useApp = create<State>((set, get) => ({
   recent: [],
   secondary: null,
   contextOpen: true,
+  narrow: typeof window !== "undefined" && window.innerWidth < NARROW_WIDTH,
+  contextOverlay: false,
   sidebarWidth: 280,
   contextWidth: 300,
   secondaryWidth: 560,
@@ -248,7 +257,12 @@ export const useApp = create<State>((set, get) => ({
     persist(PREF_KEYS.expanded!, expanded);
   },
 
+  setNarrow(v) {
+    if (v !== get().narrow) set({ narrow: v, contextOverlay: false });
+  },
+
   toggleContext() {
+    if (get().narrow) return set({ contextOverlay: !get().contextOverlay });
     const v = !get().contextOpen;
     set({ contextOpen: v });
     persist(PREF_KEYS.contextOpen!, v);

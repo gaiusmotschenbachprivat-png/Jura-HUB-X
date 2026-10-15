@@ -1,15 +1,19 @@
 import type { Extensions } from "@tiptap/core";
 import Highlight from "@tiptap/extension-highlight";
+import Subscript from "@tiptap/extension-subscript";
+import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
 import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
+import { Color, FontFamily, FontSize, TextStyle } from "@tiptap/extension-text-style";
 import Typography from "@tiptap/extension-typography";
 import { Mathematics } from "@tiptap/extension-mathematics";
 import { CharacterCount, Placeholder } from "@tiptap/extensions";
 import StarterKit from "@tiptap/starter-kit";
 
 import { AssetImage } from "./AssetImage";
+import { Footnote, PageBreak, ParagraphFormat } from "./formatting";
 
 /** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
 export const MATH_EDIT_EVENT = "studium:edit-math";
@@ -42,7 +46,16 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
         HTMLAttributes: { rel: "noopener noreferrer nofollow", target: null },
       },
     }),
-    Highlight.configure({ multicolor: false }),
+    Highlight.configure({ multicolor: true }),
+    TextStyle,
+    FontFamily,
+    FontSize,
+    Color,
+    Subscript,
+    Superscript,
+    ParagraphFormat,
+    Footnote,
+    PageBreak,
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: true, cellMinWidth: 60 } }),

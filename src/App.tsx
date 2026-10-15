@@ -26,7 +26,7 @@ import { SettingsView } from "./features/settings/SettingsView";
 import { TrashView } from "./features/settings/TrashView";
 import { formatRelative } from "./lib/format";
 import { ancestors } from "./lib/tree";
-import { useApp, viewId, type View } from "./state/store";
+import { NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
 import { IconButton } from "./ui/Button";
 import { MOD, Toasts } from "./ui/misc";
 import { Splitter } from "./ui/Splitter";
@@ -69,6 +69,9 @@ function Shell() {
   const view = useApp((s) => s.view);
   const secondary = useApp((s) => s.secondary);
   const contextOpen = useApp((s) => s.contextOpen);
+  const narrow = useApp((s) => s.narrow);
+  const contextOverlay = useApp((s) => s.contextOverlay);
+  const setNarrow = useApp((s) => s.setNarrow);
   const sidebarWidth = useApp((s) => s.sidebarWidth);
   const contextWidth = useApp((s) => s.contextWidth);
   const secondaryWidth = useApp((s) => s.secondaryWidth);
@@ -136,7 +139,13 @@ function Shell() {
   }, []);
 
   const showSecondary = view.type === "note" && secondary;
-  const showContext = contextOpen && !focusMode && ["note", "node", "document", "knowledge"].includes(view.type);
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < NARROW_WIDTH);
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [setNarrow]);
+  const showContext = (narrow ? contextOverlay : contextOpen) && !focusMode && ["note", "node", "document", "knowledge"].includes(view.type);
 
   return (
     <div className={`shell ${focusMode ? "is-focus" : ""}`}>
@@ -168,7 +177,12 @@ function Shell() {
           )}
         </div>
       </div>
-      {showContext && (
+      {showContext && narrow && (
+        <div className="shell-context is-overlay" style={{ width: Math.min(contextWidth, 380) }}>
+          <ContextPanel />
+        </div>
+      )}
+      {showContext && !narrow && (
         <>
           <Splitter value={contextWidth} min={240} max={480} side="right" label="Breite des Kontextbereichs" onChange={(v) => setPref("contextWidth", v)} />
           <div className="shell-context" style={{ width: contextWidth }}>
@@ -231,7 +245,7 @@ function Topbar() {
   const saveStatus = useApp((s) => s.saveStatus);
   const saveError = useApp((s) => s.saveError);
   const lastSavedAt = useApp((s) => (viewId(s.view) && s.lastSavedId === viewId(s.view) ? s.lastSavedAt : null));
-  const contextOpen = useApp((s) => s.contextOpen);
+  const contextOpen = useApp((s) => (s.narrow ? s.contextOverlay : s.contextOpen));
   const toggleContext = useApp((s) => s.toggleContext);
   const focusMode = useApp((s) => s.focusMode);
   const setPref = useApp((s) => s.setPref);
@@ -302,7 +316,7 @@ function useGlobalShortcuts() {
         const parent = v.type === "node" ? st.nodes.find((n) => n.id === v.id) : undefined;
         const areaId = parent?.area_id ?? (st.areaId !== "all" ? st.areaId : st.areas[0]?.id);
         if (areaId) void createNode({ areaId, parentId: parent?.id ?? null, kind: "note", title: "Neue Notiz" });
-      } else if (k === ".") {
+      } else if (k === "." && !inEditor) {
         e.preventDefault();
         st.toggleContext();
       } else if (k === "\\") {

@@ -16,6 +16,8 @@ import { storeImageFile } from "./AssetImage";
 import { exportNote } from "./exportImport";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
+import { FootnoteDialog, FootnoteList } from "./Footnotes";
+import { FOOTNOTE_EDIT_EVENT, footnotesOf, type FootnoteEditDetail } from "./formatting";
 import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
 import { Toolbar } from "./Toolbar";
@@ -92,6 +94,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [linkHref, setLinkHref] = useState<string | null>(null);
   const [cardFrom, setCardFrom] = useState<string | null>(null);
   const [math, setMath] = useState<(MathEditDetail & { isNew?: boolean }) | null>(null);
+  const [footnote, setFootnote] = useState<(FootnoteEditDetail & { isNew?: boolean }) | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
@@ -141,6 +144,12 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         if (mod && !event.shiftKey && event.key.toLowerCase() === "k") {
           // Im Text: Weblink; die globale Suche liegt auf ⌘K außerhalb des Editors.
           setLinkDialog("external");
+          return true;
+        }
+        if (mod && event.altKey && event.code === "KeyF") {
+          // Wie in Word: Fußnote einfügen
+          event.preventDefault();
+          setFootnote({ text: "", pos: -1, isNew: true });
           return true;
         }
         if (mod && event.key.toLowerCase() === "s") {
@@ -195,8 +204,18 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       if (!editor.view.dom.contains(document.activeElement) && !editor.view.dom.querySelector(":hover")) return;
       setMath(d);
     };
+    const onFootnote = (e: Event) => {
+      const d = (e as CustomEvent<FootnoteEditDetail>).detail;
+      if (editor.state.doc.nodeAt(d.pos)?.type.name !== "footnote" || !editor.view.dom.isConnected) return;
+      if (!editor.view.dom.contains(document.activeElement) && !editor.view.dom.querySelector(":hover")) return;
+      setFootnote(d);
+    };
     window.addEventListener(MATH_EDIT_EVENT, onMath);
-    return () => window.removeEventListener(MATH_EDIT_EVENT, onMath);
+    window.addEventListener(FOOTNOTE_EDIT_EVENT, onFootnote);
+    return () => {
+      window.removeEventListener(MATH_EDIT_EVENT, onMath);
+      window.removeEventListener(FOOTNOTE_EDIT_EVENT, onFootnote);
+    };
   }, [editor]);
 
   if (!editor) return null;
@@ -303,6 +322,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           const { from, to } = editor.state.selection;
           setMath({ latex: editor.state.doc.textBetween(from, to), pos: from, block: false, isNew: true });
         }}
+        onFootnote={() => setFootnote({ text: "", pos: -1, isNew: true })}
       />
       <input
         ref={fileInput}
@@ -331,7 +351,10 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         </div>
       )}
       <div className="note-scroll">
-        <EditorContent editor={editor} className="note-body" />
+        <div className="note-body">
+          <EditorContent editor={editor} />
+          <FootnoteList editor={editor} onEdit={setFootnote} />
+        </div>
       </div>
       <div className="note-foot xs muted tnum">
         <span>{words} Wörter</span>
@@ -391,6 +414,47 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             else chain.insertInlineMath({ latex, pos: math.isNew ? undefined : math.pos });
             chain.run();
             setMath(null);
+          }}
+        />
+      )}
+      {footnote && (
+        <FootnoteDialog
+          initial={footnote.text}
+          number={footnote.isNew ? undefined : footnotesOf(editor).findIndex((f) => f.pos === footnote.pos) + 1 || undefined}
+          onClose={() => {
+            if (!footnote.isNew && editor.state.doc.nodeAt(footnote.pos)?.type.name === "footnote") editor.chain().focus().setTextSelection(footnote.pos + 1).run();
+            else editor.commands.focus();
+            setFootnote(null);
+          }}
+          onDelete={
+            footnote.isNew
+              ? undefined
+              : () => {
+                  editor.chain().focus().command(({ tr }) => {
+                    const n = tr.doc.nodeAt(footnote.pos);
+                    if (n?.type.name === "footnote") tr.delete(footnote.pos, footnote.pos + n.nodeSize);
+                    return true;
+                  }).run();
+                  setFootnote(null);
+                }
+          }
+          onSave={(text) => {
+            if (footnote.isNew) {
+              editor.chain().focus().insertFootnote(text).run();
+            } else {
+              editor
+                .chain()
+                .focus()
+                .command(({ tr }) => {
+                  const n = tr.doc.nodeAt(footnote.pos);
+                  if (n?.type.name === "footnote") tr.setNodeMarkup(footnote.pos, undefined, { ...n.attrs, text });
+                  return true;
+                })
+                // Cursor hinter die Fußnote, damit weitergeschrieben werden kann
+                .setTextSelection(footnote.pos + 1)
+                .run();
+            }
+            setFootnote(null);
           }}
         />
       )}

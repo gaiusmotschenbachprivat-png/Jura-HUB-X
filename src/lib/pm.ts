@@ -27,6 +27,7 @@ export const BLOCK_TYPES = new Set([
   "tableHeader",
   "horizontalRule",
   "image",
+  "pageBreak",
 ]);
 
 /** Alle Bildquellen (`studium:asset/…`) eines Dokuments. */
@@ -40,10 +41,16 @@ export function imageSources(doc: PMNode): string[] {
   return [...new Set(out)];
 }
 
-/** Reiner Text für Suche und Wortzählung. Blöcke werden durch Zeilenumbrüche getrennt. */
+/** Reiner Text für Suche und Wortzählung. Blöcke werden durch Zeilenumbrüche getrennt; Fußnoten stehen am Ende. */
 export function plainText(doc: PMNode): string {
   const out: string[] = [];
+  const notes: string[] = [];
   const walk = (n: PMNode) => {
+    if (n.type === "footnote") {
+      notes.push(String(n.attrs?.text ?? ""));
+      out.push(`[${notes.length}]`);
+      return;
+    }
     if (n.type === "text") {
       out.push(n.text ?? "");
       return;
@@ -61,6 +68,7 @@ export function plainText(doc: PMNode): string {
     if (BLOCK_TYPES.has(n.type)) out.push("\n");
   };
   walk(doc);
+  if (notes.length) out.push("\n\nFußnoten:\n", ...notes.map((t, i) => `${i + 1} ${t}\n`));
   return out
     .join("")
     .replace(/[ \t]+\n/g, "\n")

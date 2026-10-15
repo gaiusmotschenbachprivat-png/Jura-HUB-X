@@ -14,6 +14,21 @@
 }
 .note.is-compact .toolbar { padding: 4px 12px; }
 .tb-sep { width: 1px; height: 18px; background: var(--line); margin: 0 5px; }
+.tb-group { display: flex; flex-wrap: wrap; align-items: center; gap: 1px; padding: 0 5px; min-width: 0; }
+.tb-group + .tb-group { border-left: 1px solid var(--line); }
+.tb-group:first-child { padding-left: 0; }
+.tb-font { width: 150px; }
+.tb-size { width: 70px; }
+.tb-style { width: 132px; }
+.tb-color { position: relative; display: inline-flex; }
+.tb-color-btn { position: relative; width: 36px; grid-template-columns: 1fr auto; padding: 0 2px 0 6px; gap: 0; }
+.tb-color-bar { position: absolute; left: 7px; bottom: 3px; width: 16px; height: 3px; border-radius: 1px; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.tb-caret { opacity: 0.6; }
+.color-pop { position: fixed; z-index: 120; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 8px; min-width: 196px; }
+.color-grid { display: grid; grid-template-columns: repeat(6, 26px); gap: 6px; margin-bottom: 6px; }
+.swatch { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgb(0 0 0 / 0.15); cursor: pointer; padding: 0; }
+.swatch.is-active { outline: 2px solid var(--accent); outline-offset: 1px; }
+.color-pop .menu-item { width: 100%; }
 .tb-select { min-height: 28px !important; height: 28px; padding: 0 6px !important; font-size: var(--fs-sm); border-color: transparent !important; background: transparent !important; }
 .tb-select:hover { background: var(--bg-hover) !important; }
 .link-bar { display: flex; align-items: center; gap: 6px; padding: 4px 40px; background: var(--bg-side); border-bottom: 1px solid var(--line); }
@@ -85,3 +100,43 @@
 .prose .inline-math-error, .prose .block-math-error { color: var(--danger); }
 .math-preview { min-height: 56px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-side); padding: 10px; overflow-x: auto; }
 .mono { font-family: var(--font-mono) !important; font-size: var(--fs-sm); }
+
+/* Word-ähnliche Formatierung */
+.prose mark[data-color] { color: #1d2433; }
+.prose sup, .prose sub { font-size: 0.72em; line-height: 0; }
+.prose { counter-reset: footnote; }
+.prose .footnote-ref { counter-increment: footnote; cursor: pointer; color: var(--accent); font-weight: 600; padding: 0 1px; user-select: none; }
+.prose .footnote-ref::after { content: counter(footnote); }
+.prose .footnote-ref.ProseMirror-selectednode { background: var(--accent-soft); border-radius: 3px; }
+.prose .page-break { position: relative; margin: 1.6em 0; border-top: 2px dashed var(--line-strong); height: 0; }
+.prose .page-break::after {
+  content: "Seitenumbruch"; position: absolute; left: 50%; top: -0.75em; transform: translateX(-50%);
+  background: var(--bg); color: var(--text-3); font: 500 0.72rem var(--font-ui); padding: 0 8px; letter-spacing: 0.04em;
+}
+.prose .page-break.ProseMirror-selectednode { border-top-color: var(--accent); }
+.footnotes { margin-top: 2.2em; padding-top: 0.6em; border-top: 1px solid var(--line-strong); }
+.footnotes ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.footnote-item { display: flex; gap: 6px; text-align: left; border: 0; background: transparent; padding: 3px 4px; border-radius: var(--r-sm); font-size: 0.85rem; color: var(--text-2); cursor: pointer; width: 100%; }
+.footnote-item:hover { background: var(--bg-hover); }
+.footnote-num { font-size: 0.75em; vertical-align: super; color: var(--accent); font-weight: 600; min-width: 1em; }
+@media (pointer: coarse) {
+  .toolbar .icon-btn { width: 36px; height: 36px; }
+  .toolbar .tb-color-btn { width: 44px; }
+  .toolbar .tb-select { height: 36px; min-height: 36px !important; font-size: 15px; }
+  .swatch { width: 32px; height: 32px; }
+  .color-grid { grid-template-columns: repeat(6, 32px); }
+}
+@media print {
+  .prose .page-break { border: 0; margin: 0; break-after: page; }
+  .prose .page-break::after { content: none; }
+}
+
+/* Schmale Ansicht (iPad hochkant, geteilte Ansicht): eine wischbare Zeile wie in Pages */
+.note { container-type: inline-size; }
+@container (max-width: 520px) {
+  .toolbar { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 4px 12px; -webkit-overflow-scrolling: touch; }
+  .toolbar::-webkit-scrollbar { display: none; }
+  .toolbar .tb-group { flex-wrap: nowrap; flex: none; }
+  .toolbar .tb-font { width: 128px; }
+  .toolbar .tb-style { width: 118px; }
+}

@@ -2,7 +2,9 @@
  * Export einer Notiz (ProseMirror-JSON) als Word-Datei (.docx).
  * Unterstützt: Überschriften, Absätze, Ausrichtung, fett/kursiv/unterstrichen/
  * durchgestrichen/markiert/Code, Links, Aufzählungen, nummerierte Listen,
- * Checklisten, Zitate, Code-/Formelblöcke, Tabellen, Trennlinien.
+ * Checklisten, Zitate, Code-/Formelblöcke, Tabellen, Trennlinien, Schriftart,
+ * Schriftgröße, Schriftfarbe, farbige Hervorhebung, hoch-/tiefgestellt,
+ * Zeilenabstand, Einzug, Fußnoten und Seitenumbrüche.
  * Interne Links (studium:…) werden als normaler Text exportiert.
  */
 import {
@@ -10,10 +12,12 @@ import {
   BorderStyle,
   Document,
   ExternalHyperlink,
+  FootnoteReferenceRun,
   ImageRun,
   HeadingLevel,
   LevelFormat,
   Packer,
+  PageBreak,
   Paragraph,
   ShadingType,
   Table,
@@ -25,6 +29,7 @@ import {
 } from "docx";
 
 import type { PMMark, PMNode } from "./pm";
+import { fontSizePt, primaryFont } from "./textFormat";
 
 const HEADINGS = [HeadingLevel.HEADING_1, HeadingLevel.HEADING_2, HeadingLevel.HEADING_3, HeadingLevel.HEADING_4] as const;
 const ALIGN: Record<string, (typeof AlignmentType)[keyof typeof AlignmentType]> = {
@@ -45,6 +50,8 @@ export interface ExportAsset {
 interface Ctx {
   listInstance: number;
   assets: Map<string, ExportAsset>;
+  footnotes: Record<number, { children: Paragraph[] }>;
+  nextFootnote: number;
 }
 
 const MATH_FONT = "Cambria Math";
@@ -53,9 +60,32 @@ function hasMark(marks: PMMark[] | undefined, type: string) {
   return marks?.some((m) => m.type === type) ?? false;
 }
 
-function runs(nodes: PMNode[] | undefined, extra: { italics?: boolean; font?: string } = {}): ParagraphChild[] {
+/** "#rrggbb"/"#rgb"/"rgb(r, g, b)" → "RRGGBB" für Word. */
+export function hexColor(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  let m = /^#([0-9a-f]{6})$/i.exec(s);
+  if (m) return m[1]!.toUpperCase();
+  m = /^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(s);
+  if (m) return (m[1]! + m[1]! + m[2]! + m[2]! + m[3]! + m[3]!).toUpperCase();
+  const r = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec(s);
+  if (r) return [r[1], r[2], r[3]].map((x) => Math.min(255, Number(x)).toString(16).padStart(2, "0")).join("").toUpperCase();
+  return undefined;
+}
+
+function markAttr(marks: PMMark[] | undefined, type: string, attr: string): unknown {
+  return marks?.find((m) => m.type === type)?.attrs?.[attr];
+}
+
+function runs(nodes: PMNode[] | undefined, ctx: Ctx, extra: { italics?: boolean; font?: string } = {}): ParagraphChild[] {
   const out: ParagraphChild[] = [];
   for (const n of nodes ?? []) {
+    if (n.type === "footnote") {
+      const id = ctx.nextFootnote++;
+      ctx.footnotes[id] = { children: [new Paragraph({ children: [new TextRun(String(n.attrs?.text ?? ""))] })] };
+      out.push(new FootnoteReferenceRun(id));
+      continue;
+    }
     if (n.type === "hardBreak") {
       out.push(new TextRun({ text: "", break: 1 }));
       continue;
@@ -68,14 +98,22 @@ function runs(nodes: PMNode[] | undefined, extra: { italics?: boolean; font?: st
     if (n.type !== "text") continue;
     const m = n.marks;
     const code = hasMark(m, "code");
+    const family = markAttr(m, "textStyle", "fontFamily");
+    const size = markAttr(m, "textStyle", "fontSize");
+    const pt = typeof size === "string" ? fontSizePt(size) : null;
+    const hl = hasMark(m, "highlight") ? (hexColor(markAttr(m, "highlight", "color")) ?? "FFF59D") : undefined;
     const run = new TextRun({
       text: n.text ?? "",
       bold: hasMark(m, "bold"),
       italics: hasMark(m, "italic") || extra.italics,
       underline: hasMark(m, "underline") ? {} : undefined,
       strike: hasMark(m, "strike"),
-      highlight: hasMark(m, "highlight") ? "yellow" : undefined,
-      font: code ? "Consolas" : extra.font,
+      superScript: hasMark(m, "superscript") || undefined,
+      subScript: hasMark(m, "subscript") || undefined,
+      shading: hl ? { type: ShadingType.CLEAR, fill: hl, color: "auto" } : undefined,
+      color: hexColor(markAttr(m, "textStyle", "color")),
+      size: pt ? Math.round(pt * 2) : undefined,
+      font: code ? "Consolas" : typeof family === "string" && family ? primaryFont(family) : extra.font,
     });
     const link = m?.find((x) => x.type === "link");
     const href = typeof link?.attrs?.href === "string" ? link.attrs.href : null;
@@ -98,6 +136,19 @@ function alignment(n: PMNode) {
   return typeof a === "string" ? ALIGN[a] : undefined;
 }
 
+/** Zeilenabstand (z. B. "1.5") als Word-Abstand in 240stel. */
+function spacing(n: PMNode) {
+  const lh = Number(n.attrs?.lineHeight);
+  return lh > 0 && lh <= 5 ? { line: Math.round(lh * 240) } : undefined;
+}
+
+/** Absatzeinzug: 720 Twips (1,27 cm) je Stufe. */
+function indentOf(n: PMNode, base?: { left: number }) {
+  const lvl = Math.max(0, Math.min(8, Number(n.attrs?.indent) || 0));
+  const left = (base?.left ?? 0) + lvl * 720;
+  return left > 0 ? { left } : undefined;
+}
+
 type Block = Paragraph | Table;
 
 /** `depth`: aktuelle Listentiefe (-1 = außerhalb einer Liste). */
@@ -107,13 +158,16 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
   for (const n of nodes ?? []) {
     switch (n.type) {
       case "paragraph":
-        out.push(new Paragraph({ children: runs(n.content), alignment: alignment(n), indent: contIndent }));
+        out.push(new Paragraph({ children: runs(n.content, ctx), alignment: alignment(n), indent: indentOf(n, contIndent), spacing: spacing(n) }));
         break;
       case "heading": {
         const level = Math.min(4, Math.max(1, Number(n.attrs?.level ?? 1)));
-        out.push(new Paragraph({ heading: HEADINGS[level - 1], children: runs(n.content), alignment: alignment(n) }));
+        out.push(new Paragraph({ heading: HEADINGS[level - 1], children: runs(n.content, ctx), alignment: alignment(n), indent: indentOf(n), spacing: spacing(n) }));
         break;
       }
+      case "pageBreak":
+        out.push(new Paragraph({ children: [new PageBreak()] }));
+        break;
       case "bulletList":
       case "orderedList": {
         const level = Math.min(depth + 1, 8);
@@ -123,8 +177,9 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
           if (first?.type === "paragraph") {
             out.push(
               new Paragraph({
-                children: runs(first.content),
+                children: runs(first.content, ctx),
                 alignment: alignment(first),
+                spacing: spacing(first),
                 ...(n.type === "bulletList"
                   ? { bullet: { level } }
                   : { numbering: { reference: "ordered", level, instance } }),
@@ -145,7 +200,7 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
           out.push(
             new Paragraph({
               indent: { left: 720 * level + 360 },
-              children: [new TextRun({ text: checked ? "☒ " : "☐ " }), ...runs(first?.content)],
+              children: [new TextRun({ text: checked ? "☒ " : "☐ " }), ...runs(first?.content, ctx)],
             }),
           );
           out.push(...blocks(rest, ctx, level));
@@ -157,7 +212,7 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
           if (child.type === "paragraph") {
             out.push(
               new Paragraph({
-                children: runs(child.content, { italics: true }),
+                children: runs(child.content, ctx, { italics: true }),
                 indent: { left: 567 + (contIndent?.left ?? 0) },
                 border: { left: { style: BorderStyle.SINGLE, size: 12, color: "9AA3B2", space: 8 } },
               }),
@@ -231,11 +286,12 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
 }
 
 export function buildDocx(docNode: PMNode, meta: { title: string }, assets: Map<string, ExportAsset> = new Map()): Document {
-  const ctx: Ctx = { listInstance: 0, assets };
+  const ctx: Ctx = { listInstance: 0, assets, footnotes: {}, nextFootnote: 1 };
   const children = blocks(docNode.content, ctx);
   return new Document({
     creator: "Studium OS",
     title: meta.title,
+    footnotes: ctx.footnotes,
     styles: {
       default: { document: { run: { font: "Calibri", size: 23 }, paragraph: { spacing: { after: 120, line: 300 } } } },
     },

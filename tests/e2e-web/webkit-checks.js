@@ -80,6 +80,24 @@ if (phase === 1) {
   const file = await api.webBackups.file(info.path);
   const rep = await api.__verifyBlob(file);
   check("Backup-Datei aus dem App-Speicher ist gültig", rep.ok, rep.problems.join("; "));
+  // Word-ähnlich formatierte Notiz (wird in Phase 2 im Editor geöffnet)
+  const fmt = await api.nodeCreate({ area_id: area.id, parent_id: null, kind: "note", title: "Formatiert" });
+  const fmtDoc = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        attrs: { textAlign: "justify", lineHeight: "1.5", indent: 1 },
+        content: [
+          { type: "text", text: "Times-Text", marks: [{ type: "textStyle", attrs: { fontFamily: '"Times New Roman", Times, serif', fontSize: "14pt", color: "#c00000" } }] },
+          { type: "footnote", attrs: { text: "BGH NJW 2020, 123." } },
+        ],
+      },
+      { type: "pageBreak" },
+      { type: "paragraph", content: [{ type: "text", text: "Seite zwei" }] },
+    ],
+  };
+  await api.noteSave(fmt.id, JSON.stringify(fmtDoc), "Times-Text Seite zwei");
   window.__phase1 = { noteId: note.id, docId: id, backup: info.path, cardId: card.id };
   localStorage.setItem("e2e", JSON.stringify(window.__phase1));
   await api.noteSave(note.id, JSON.stringify({ type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Versehentlich überschrieben" }] }] }), "x");
@@ -88,6 +106,24 @@ if (phase === 1) {
 
 // Phase 2: nach dem Neuladen
 const p1 = JSON.parse(localStorage.getItem("e2e") || "{}");
+
+// Formatierte Notiz im Editor (Schrift, Fußnote, Seitenumbruch, Werkzeugleiste)
+const row = await wait(() => [...document.querySelectorAll(".tree-row")].find((r) => r.textContent.includes("Formatiert")));
+row?.click();
+const pm = await wait(() => document.querySelector(".ProseMirror .footnote-ref") && document.querySelector(".ProseMirror"));
+check("Formatierte Notiz öffnet im Editor (WebKit)", !!pm);
+if (pm) {
+  const span = pm.querySelector("span[style]");
+  const cs = span ? getComputedStyle(span) : null;
+  check("Schriftart, -größe und -farbe werden angezeigt", !!cs && cs.fontFamily.includes("Times") && Math.abs(parseFloat(cs.fontSize) - 18.667) < 0.05 && cs.color === "rgb(192, 0, 0)", cs ? `${cs.fontFamily} ${cs.fontSize} ${cs.color}` : "");
+  const para = pm.querySelector("p");
+  check("Zeilenabstand, Einzug, Blocksatz", para.style.lineHeight === "1.5" && para.dataset.indent === "1" && getComputedStyle(para).textAlign === "justify");
+  check("Fußnote mit Liste unter dem Text", document.querySelector(".footnotes")?.textContent.includes("BGH NJW 2020, 123."));
+  check("Seitenumbruch sichtbar", !!pm.querySelector(".page-break"));
+  check("Werkzeugleiste mit Schriftauswahl", document.querySelector('.toolbar select[aria-label="Schriftart"]')?.value.includes("Times New Roman"));
+  check("Container-Abfragen (schmale Werkzeugleiste) unterstützt", CSS.supports("container-type: inline-size"));
+}
+
 const n = await api.noteGet(p1.noteId);
 check("Nach Neuladen: Daten sind dauerhaft gespeichert", n.content_json.includes("Versehentlich"));
 check("Nach Neuladen: Dokument vorhanden", (await api.documentGet(p1.docId)).document.file_present === true);

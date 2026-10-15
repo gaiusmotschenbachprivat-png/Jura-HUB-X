@@ -3,11 +3,18 @@ import type { PMMark, PMNode } from "./pm";
 
 const escapeMd = (s: string) => s.replace(/([\\`*_[\]#|<>])/g, "\\$1");
 
+/** Fußnoten des gerade exportierten Dokuments (toMarkdown läuft synchron). */
+let footnotes: string[] = [];
+
 function inline(nodes: PMNode[] | undefined): string {
   return (nodes ?? [])
     .map((n) => {
       if (n.type === "hardBreak") return "  \n";
       if (n.type === "inlineMath") return `$${String(n.attrs?.latex ?? "")}$`;
+      if (n.type === "footnote") {
+        footnotes.push(String(n.attrs?.text ?? "").replace(/\s*\n\s*/g, " "));
+        return `[^${footnotes.length}]`;
+      }
       if (n.type !== "text") return "";
       const marks: PMMark[] = n.marks ?? [];
       const has = (t: string) => marks.some((m) => m.type === t);
@@ -16,6 +23,8 @@ function inline(nodes: PMNode[] | undefined): string {
       if (has("italic")) s = `*${s}*`;
       if (has("strike")) s = `~~${s}~~`;
       if (has("highlight")) s = `==${s}==`;
+      if (has("superscript")) s = `<sup>${s}</sup>`;
+      if (has("subscript")) s = `<sub>${s}</sub>`;
       const link = marks.find((m) => m.type === "link");
       const href = typeof link?.attrs?.href === "string" ? link.attrs.href : null;
       if (href && /^(https?:|mailto:)/.test(href)) s = `[${s}](${href})`;
@@ -36,6 +45,8 @@ function block(n: PMNode, indent = ""): string {
       return "```" + String(n.attrs?.language ?? "") + "\n" + (n.content ?? []).map((c) => c.text ?? "").join("") + "\n```";
     case "horizontalRule":
       return "---";
+    case "pageBreak":
+      return "<div style=\"page-break-after: always\"></div>";
     case "blockMath":
       return `$$\n${String(n.attrs?.latex ?? "")}\n$$`;
     case "image":
@@ -68,5 +79,9 @@ function block(n: PMNode, indent = ""): string {
 }
 
 export function toMarkdown(doc: PMNode): string {
-  return (doc.content ?? []).map((n) => block(n)).filter((s) => s !== undefined).join("\n\n").replace(/\n{3,}/g, "\n\n").trim() + "\n";
+  footnotes = [];
+  const body = (doc.content ?? []).map((n) => block(n)).filter((s) => s !== undefined).join("\n\n").replace(/\n{3,}/g, "\n\n").trim();
+  const notes = footnotes.map((t, i) => `[^${i + 1}]: ${t}`).join("\n");
+  footnotes = [];
+  return body + (notes ? "\n\n" + notes : "") + "\n";
 }

@@ -22,7 +22,33 @@ export async function docxToHtml(data: Uint8Array): Promise<DocxImportResult> {
   const warnings = res.messages.filter((m) => m.type === "warning").map((m) => m.message);
   const hadImages = /<img\b/.test(res.value);
   if (hadImages) warnings.unshift("Bilder aus der Word-Datei wurden nicht übernommen.");
-  return { html: res.value.replace(/<img\b[^>]*>/g, ""), warnings };
+  return { html: convertFootnotes(res.value.replace(/<img\b[^>]*>/g, "")), warnings };
+}
+
+/**
+ * mammoth gibt Fuß-/Endnoten als Verweis-Links und Liste am Ende aus. Hier werden
+ * daraus echte Fußnoten des Editors (`<sup data-footnote="…">`).
+ */
+export function convertFootnotes(html: string): string {
+  if (!/id="(foot|end)note-\d+"/.test(html) || typeof DOMParser === "undefined") return html;
+  const dom = new DOMParser().parseFromString(`<body>${html}</body>`, "text/html");
+  const texts = new Map<string, string>();
+  const lists = new Set<Element>();
+  for (const li of dom.querySelectorAll('li[id^="footnote-"], li[id^="endnote-"]')) {
+    li.querySelectorAll('a[href^="#footnote-ref-"], a[href^="#endnote-ref-"]').forEach((a) => a.remove());
+    texts.set(li.id, (li.textContent ?? "").replace(/\s+/g, " ").trim());
+    if (li.parentElement) lists.add(li.parentElement);
+  }
+  for (const a of dom.querySelectorAll('a[href^="#footnote-"], a[href^="#endnote-"]')) {
+    const id = (a.getAttribute("href") ?? "").slice(1);
+    if (!texts.has(id)) continue;
+    const fn = dom.createElement("sup");
+    fn.setAttribute("data-footnote", texts.get(id)!);
+    const host = a.parentElement?.tagName === "SUP" && a.parentElement.childNodes.length === 1 ? a.parentElement : a;
+    host.replaceWith(fn);
+  }
+  lists.forEach((l) => l.remove());
+  return dom.body.innerHTML;
 }
 
 export async function docxToText(data: Uint8Array): Promise<string> {

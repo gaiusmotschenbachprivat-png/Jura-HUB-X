@@ -15,6 +15,31 @@ Warum Home-Bildschirm? Safari löscht Website-Daten, die länger nicht genutzt w
 Websites im Browser-Tab – nicht bei Apps auf dem Home-Bildschirm. Außerdem startet die App
 dann im Vollbild und funktioniert offline.
 
+## Schreiben wie in Word
+
+Die Werkzeugleiste über jeder Notiz bietet:
+
+| Bereich | Funktionen |
+|---|---|
+| Schrift | Absatzformat (Fließtext, Überschrift 1–4), **Schriftart** (Arial, Times New Roman, Georgia, Palatino, Helvetica Neue, Avenir Next, Verdana u. a. – alle auf dem iPad vorhanden), **Schriftgröße** 8–72 pt |
+| Zeichen | fett, kursiv, unterstrichen, durchgestrichen, hochgestellt (⌘.), tiefgestellt (⌘,), **Schriftfarbe**, **Hervorhebung in Farben**, Code, **Formatierung löschen** |
+| Absatz | linksbündig, zentriert, rechtsbündig, Blocksatz, **Zeilenabstand** (1,0–3,0), **Einzug** vergrößern/verkleinern (auch Tab / ⇧Tab), Aufzählung, Nummerierung, Checkliste, Zitat, Textblock |
+| Einfügen | **Fußnote** (⌥⌘F), Tabelle, Bild, Formel, Trennlinie, **Seitenumbruch** (⌘Enter), Weblink, interne Verknüpfung |
+
+**Fußnoten** werden automatisch nummeriert und unter dem Text aufgelistet. Antippen einer
+Fußnotenzahl (im Text oder in der Liste) öffnet sie zum Bearbeiten oder Entfernen. Die Suche
+findet auch Text in Fußnoten.
+
+**Word-Export** (… → „Als Word-Datei exportieren“) übernimmt Schriftart, -größe, -farbe,
+Hervorhebungen, hoch-/tiefgestellt, Ausrichtung, Zeilenabstand, Einzug, echte Word-Fußnoten
+und Seitenumbrüche. Beim **Word-Import** werden Fußnoten übernommen; Schriftarten und Farben
+liest der Import (noch) nicht. Beim **Einfügen** aus Word oder Pages bleiben Schrift, Größe,
+Farbe und Einzug erhalten.
+
+Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
+daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
+sich seitlich wischen lässt.
+
 ## Updates
 
 Neue Versionen lädt die App beim Öffnen bzw. beim Zurückwechseln selbst und startet dann kurz neu

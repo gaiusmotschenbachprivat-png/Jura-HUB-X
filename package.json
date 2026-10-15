@@ -1,7 +1,7 @@
 {
   "name": "studium-os",
   "private": true,
-  "version": "0.4.1",
+  "version": "0.5.0",
   "type": "module",
   "description": "Studium OS – lokales Arbeitsinstrument für das Studium",
   "scripts": {
@@ -13,6 +13,7 @@
     "tauri": "tauri",
     "build:web": "tsc --noEmit && vite build --mode web",
     "test:web": "node tests/e2e-web/web-e2e.mjs",
+    "test:editor": "node tests/e2e-web/editor-e2e.mjs",
     "eval": "RUN_EVAL=1 vitest run --config eval/vitest.config.ts",
     "eval:vergleich": "node eval/vergleich.mjs",
     "test:gesetze": "RUN_GII_REAL=1 vitest run --config eval/vitest.config.ts eval/gii-echt.eval.ts"
@@ -29,10 +30,13 @@
     "@tiptap/extension-image": "^3.32.0",
     "@tiptap/extension-mathematics": "^3.32.0",
     "@tiptap/extension-placeholder": "^3.32.0",
+    "@tiptap/extension-subscript": "^3.32.0",
+    "@tiptap/extension-superscript": "^3.32.0",
     "@tiptap/extension-table": "^3.32.0",
     "@tiptap/extension-task-item": "^3.32.0",
     "@tiptap/extension-task-list": "^3.32.0",
     "@tiptap/extension-text-align": "^3.32.0",
+    "@tiptap/extension-text-style": "^3.32.0",
     "@tiptap/extension-typography": "^3.32.0",
     "@tiptap/extensions": "^3.32.0",
     "@tiptap/pm": "^3.32.0",
