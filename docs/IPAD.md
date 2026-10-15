@@ -15,6 +15,29 @@ Warum Home-Bildschirm? Safari löscht Website-Daten, die länger nicht genutzt w
 Websites im Browser-Tab – nicht bei Apps auf dem Home-Bildschirm. Außerdem startet die App
 dann im Vollbild und funktioniert offline.
 
+## Gutachtenstil, Suchen, Inhaltsverzeichnis, Drucken
+
+- **Gutachtenstil** (Waage-Symbol in der Werkzeugleiste): Bausteine für Obersatz (Zivilrecht,
+  Strafrecht, Öffentliches Recht), Voraussetzung, Definition, Subsumtion, Streitstand mit
+  Stellungnahme, Zwischenergebnis und Ergebnis. Platzhalter „…“ – der erste ist nach dem
+  Einfügen markiert und wird beim Tippen überschrieben.
+- **Prüfungsschema einfügen** (im selben Menü): Schemata aus „Wissen → Prüfungsschemata“
+  werden als Gliederung A. / I. / 1. / a) eingefügt, auf Wunsch mit Leerzeilen zum Ausformulieren.
+- **Suchen und Ersetzen** (Lupe oder ⌘F): Treffer werden markiert, Enter springt weiter,
+  „Alle ersetzen“ ersetzt im ganzen Text.
+- **Inhaltsverzeichnis** (Symbol neben dem Titel): alle Überschriften – Antippen springt hin.
+- **Drucken / als PDF** (Drucker-Symbol neben dem Titel): Druckansicht mit echten A4-Seiten,
+  Seitenzahlen und **Fußnoten unten auf der jeweiligen Seite**; wahlweise Inhaltsverzeichnis mit
+  Seitenzahlen, Korrekturrand 7 cm und „Hausarbeit“-Satz (Times 12 pt, 1,5-zeilig, Blocksatz).
+  Auf dem iPad im Druckdialog auf Teilen tippen → „In Dateien sichern“ ergibt ein PDF.
+
+## Backup-Erinnerung
+
+Backups entstehen täglich automatisch im App-Speicher. Einmal pro Woche erinnert eine Leiste
+daran, das neueste Backup **in die Dateien-App** (iCloud Drive oder „Auf meinem iPad“) zu
+sichern – erst dann übersteht es Verlust oder Defekt des iPads. „In 3 Tagen“ verschiebt die
+Erinnerung; abschalten unter Einstellungen → Daten & Sicherheit.
+
 ## Vorlesungen und andere Schreibarten
 
 Jede Notiz hat eine **Art**, erkennbar an Symbol und Farbe:

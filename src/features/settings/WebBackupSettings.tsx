@@ -26,6 +26,7 @@ export function WebBackupSettings() {
   const [cfg, setCfg] = useState<BS | null>(null);
   const [list, setList] = useState<StoredBackup[]>([]);
   const [lastExport, setLastExport] = useState<string | null>(null);
+  const [remind, setRemind] = useState(true);
   const [persisted, setPersisted] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [report, setReport] = useState<{ path: string; label: string; report: VerifyReport; forRestore: boolean } | null>(null);
@@ -36,6 +37,7 @@ export function WebBackupSettings() {
       const [c, files, settings] = await Promise.all([api.backupSettings(), wb.list(), api.settingsAll()]);
       setCfg(c);
       setLastExport(typeof settings["backup.last_export"] === "string" ? (settings["backup.last_export"] as string) : null);
+      setRemind(settings["backup.remind"] !== false);
       // Dateien vorab holen: Das Teilen-Menü muss direkt im Tippen geöffnet werden.
       setList(await Promise.all(files.map(async (f) => ({ ...f, file: await wb.file(f.name).catch(() => null) }))));
       setPersisted(await wb.persisted());
@@ -220,6 +222,10 @@ export function WebBackupSettings() {
           automatischen Backups
         </label>
         <p className="xs muted">{cfg.last_auto ? `Letztes automatisches Backup: ${formatDateTime(cfg.last_auto)}. ` : ""}Manuelle Backups werden nie automatisch gelöscht.</p>
+        <label className="row small">
+          <input type="checkbox" checked={remind} onChange={(e) => void set("backup.remind", e.target.checked)} />
+          Wöchentlich erinnern, das neueste Backup in die Dateien-App zu sichern
+        </label>
       </section>
 
       <section className="card">

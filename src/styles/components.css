@@ -239,3 +239,11 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .form-row > .field { flex: 1 1 160px; min-width: 0; }
 .form-row > .field:first-child:has(input[inputmode="numeric"]) { flex: 0 0 auto; }
+
+/* Backup-Erinnerung (iPad) */
+.backup-reminder {
+  position: fixed; z-index: 58; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: min(640px, calc(100vw - 120px));
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px;
+  background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--r-lg); box-shadow: var(--shadow);
+}

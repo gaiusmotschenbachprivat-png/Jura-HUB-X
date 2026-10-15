@@ -1,7 +1,7 @@
 {
   "name": "studium-os",
   "private": true,
-  "version": "0.6.0",
+  "version": "0.7.0",
   "type": "module",
   "description": "Studium OS – lokales Arbeitsinstrument für das Studium",
   "scripts": {
@@ -47,6 +47,7 @@
     "katex": "^0.18.10",
     "lucide-react": "^1.57.0",
     "mammoth": "^1.13.0",
+    "pagedjs": "^0.4.3",
     "pdfjs-dist": "^6.4.299",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

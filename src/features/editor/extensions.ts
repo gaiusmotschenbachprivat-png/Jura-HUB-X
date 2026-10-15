@@ -14,6 +14,7 @@ import StarterKit from "@tiptap/starter-kit";
 
 import { AssetImage } from "./AssetImage";
 import { Footnote, PageBreak, ParagraphFormat } from "./formatting";
+import { SearchReplace } from "./searchReplace";
 
 /** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
 export const MATH_EDIT_EVENT = "studium:edit-math";
@@ -56,6 +57,7 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
     ParagraphFormat,
     Footnote,
     PageBreak,
+    SearchReplace,
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: true, cellMinWidth: 60 } }),

@@ -30,6 +30,7 @@ import { NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
 import { IconButton } from "./ui/Button";
 import { MOD, Toasts } from "./ui/misc";
 import { Splitter } from "./ui/Splitter";
+import { BackupReminder } from "./features/settings/BackupReminder";
 
 export function App() {
   const ready = useApp((s) => s.ready);
@@ -197,6 +198,7 @@ function Shell() {
       )}
       <SearchPalette />
       <AssistantFab />
+      {api.kind === "web" && <BackupReminder />}
       <ImportHost />
       <Toasts />
     </div>

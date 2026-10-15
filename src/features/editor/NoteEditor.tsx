@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { ExternalLink, History, MoreHorizontal, Unlink } from "lucide-react";
+import { ExternalLink, History, ListTree, MoreHorizontal, Printer, Unlink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -20,7 +20,10 @@ import { FootnoteDialog, FootnoteList } from "./Footnotes";
 import { FOOTNOTE_EDIT_EVENT, footnotesOf, type FootnoteEditDetail } from "./formatting";
 import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
+import { FindBar } from "./FindBar";
+import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
+import { PrintView } from "./PrintView";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
 import { CardDialog } from "../learn/CardDialog";
@@ -96,6 +99,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [cardFrom, setCardFrom] = useState<string | null>(null);
   const [math, setMath] = useState<(MathEditDetail & { isNew?: boolean }) | null>(null);
   const [footnote, setFootnote] = useState<(FootnoteEditDetail & { isNew?: boolean }) | null>(null);
+  const [findOpen, setFindOpen] = useState(false);
+  const [schemaOpen, setSchemaOpen] = useState(false);
+  const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
@@ -146,6 +152,11 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         if (mod && !event.shiftKey && event.key.toLowerCase() === "k") {
           // Im Text: Weblink; die globale Suche liegt auf ⌘K außerhalb des Editors.
           setLinkDialog("external");
+          return true;
+        }
+        if (mod && !event.altKey && !event.shiftKey && event.key.toLowerCase() === "f") {
+          event.preventDefault();
+          setFindOpen(true);
           return true;
         }
         if (mod && event.altKey && event.code === "KeyF") {
@@ -262,12 +273,35 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     }
   };
 
+  /** Überschriften der Notiz – Antippen springt hin. */
+  const tocMenu = (el: HTMLElement) => {
+    const heads: { pos: number; level: number; text: string }[] = [];
+    editor.state.doc.descendants((n, pos) => {
+      if (n.type.name === "heading") heads.push({ pos, level: Number(n.attrs.level) || 1, text: n.textContent });
+      return !n.isTextblock;
+    });
+    menu.openBelow(
+      el,
+      heads.length
+        ? heads.map((h) => ({
+            label: `${"\u2003".repeat(h.level - 1)}${h.text || "(ohne Text)"}`,
+            onSelect: () => {
+              editor.chain().focus().setTextSelection(h.pos + 1).run();
+              const dom = editor.view.nodeDOM(h.pos) as HTMLElement | null;
+              dom?.scrollIntoView({ block: "start", behavior: "smooth" });
+            },
+          }))
+        : [{ label: "Noch keine Überschriften – Absatzformat „Überschrift“ wählen.", disabled: true }],
+    );
+  };
+
   const moreMenu = (el: HTMLElement) =>
     menu.openBelow(el, [
       { label: "Karteikarte aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("card") },
       { label: "Definition aus Auswahl anlegen", disabled: !selectedText(), onSelect: () => void fromSelection("definition") },
       { label: "Offene Frage aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("question") },
       { separator: true, label: "" },
+      { label: "Drucken / als PDF …", icon: <Printer size={14} />, onSelect: () => setPrintDoc(editor.getJSON() as PMNode) },
       { label: "Als Word-Datei exportieren (.docx)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "docx") },
       { label: "Als Markdown exportieren (.md)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "md") },
       { separator: true, label: "" },
@@ -307,6 +341,12 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               }
             }}
           />
+          <IconButton label="Inhaltsverzeichnis" onClick={(e) => tocMenu(e.currentTarget)}>
+            <ListTree size={16} />
+          </IconButton>
+          <IconButton label="Drucken / als PDF" onClick={() => setPrintDoc(editor.getJSON() as PMNode)}>
+            <Printer size={16} />
+          </IconButton>
           <IconButton label="Versionshistorie" onClick={() => setShowHistory(true)}>
             <History size={16} />
           </IconButton>
@@ -326,7 +366,10 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           setMath({ latex: editor.state.doc.textBetween(from, to), pos: from, block: false, isNew: true });
         }}
         onFootnote={() => setFootnote({ text: "", pos: -1, isNew: true })}
+        onSchema={() => setSchemaOpen(true)}
+        onFind={() => setFindOpen(true)}
       />
+      {findOpen && <FindBar editor={editor} onClose={() => setFindOpen(false)} />}
       <input
         ref={fileInput}
         type="file"
@@ -420,6 +463,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           }}
         />
       )}
+      {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} />}
+      {printDoc && <PrintView doc={printDoc} title={title} onClose={() => setPrintDoc(null)} />}
       {footnote && (
         <FootnoteDialog
           initial={footnote.text}

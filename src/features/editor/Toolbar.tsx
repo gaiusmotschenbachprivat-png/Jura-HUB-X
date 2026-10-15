@@ -4,6 +4,8 @@ import {
   AlignCenter,
   Baseline,
   Asterisk,
+  Scale,
+  Search,
   ChevronDown,
   ListIndentDecrease,
   ListIndentIncrease,
@@ -43,7 +45,9 @@ import { fontSizePt } from "../../lib/textFormat";
 import { IconButton } from "../../ui/Button";
 import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
+import { BAUSTEINE } from "../../lib/gutachten";
 import { FONT_SIZES, FONTS, HIGHLIGHT_COLORS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
+import { insertWithPlaceholder } from "./Gutachten";
 
 const STYLES = [
   { value: "p", label: "Fließtext" },
@@ -60,6 +64,8 @@ export function Toolbar({
   onImage,
   onMath,
   onFootnote,
+  onSchema,
+  onFind,
 }: {
   editor: Editor;
   onExternalLink: () => void;
@@ -67,6 +73,8 @@ export function Toolbar({
   onImage: () => void;
   onMath: () => void;
   onFootnote: () => void;
+  onSchema: () => void;
+  onFind: () => void;
 }) {
   const menu = useMenu();
   const s = useEditorState({
@@ -319,6 +327,24 @@ export function Toolbar({
         </IconButton>
       </div>
       <div className="tb-group">
+        <IconButton
+          label="Gutachtenstil: Bausteine und Prüfungsschemata"
+          onClick={(e) =>
+            menu.openBelow(e.currentTarget, [
+              ...(["Obersatz", "Prüfung", "Abschluss"] as const).flatMap((g, gi) => [
+                ...(gi ? [{ separator: true, label: "" }] : []),
+                ...BAUSTEINE.filter((x) => x.group === g).map((x) => ({ label: x.label, onSelect: () => insertWithPlaceholder(editor, x.build()) })),
+              ]),
+              { separator: true, label: "" },
+              { label: "Prüfungsschema einfügen …", icon: <Scale size={14} />, onSelect: onSchema },
+            ])
+          }
+        >
+          <Scale size={16} />
+        </IconButton>
+        <IconButton label={`Suchen und Ersetzen (${MOD}+F)`} onClick={onFind}>
+          <Search size={16} />
+        </IconButton>
         <IconButton label="Fußnote einfügen (⌥+⌘+F)" onClick={onFootnote}>
           <Asterisk size={16} />
         </IconButton>
