@@ -7,6 +7,7 @@ import "./styles/components.css";
 import "./styles/editor.css";
 import "./styles/documents.css";
 import "./styles/learning.css";
+import "./styles/glossar.css";
 import "katex/dist/katex.min.css";
 
 import { StrictMode } from "react";

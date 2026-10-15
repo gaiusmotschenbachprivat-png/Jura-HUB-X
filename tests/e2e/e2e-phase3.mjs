@@ -47,12 +47,12 @@ try {
   const jura = areas[0].id;
 
   // 1. Definition über die Oberfläche anlegen
-  await nav("Definitionen");
-  await d.findElement(By.xpath("//button[contains(.,'Definition anlegen')]")).click();
-  const title = await d.wait(until.elementLocated(By.css(".page-title")), 5000);
-  await title.sendKeys(Key.chord(Key.CONTROL, "a"));
-  await title.sendKeys("willenserklaerung");
-  await d.findElement(By.css("textarea.kn-def")).sendKeys("aeusserung eines rechtsbindungswillens");
+  await nav("Glossar");
+  await d.findElement(By.xpath("//button[contains(.,'Begriff')]")).click();
+  const term = await d.wait(until.elementLocated(By.css("#g-term")), 5000);
+  await term.sendKeys("willenserklaerung");
+  await d.findElement(By.css("#g-def")).sendKeys("aeusserung eines rechtsbindungswillens");
+  await d.findElement(By.xpath("//button[normalize-space()='Speichern']")).click();
   await sleep(1500);
   let defs = (await invoke("knowledge_list", { filter: { type: "definition" } })).ok;
   check("Definition wird angelegt und automatisch gespeichert", defs.length === 1 && defs[0].data.text.includes("rechtsbindungswillens"), defs[0]?.title);

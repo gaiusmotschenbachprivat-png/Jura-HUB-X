@@ -57,6 +57,20 @@ verteilt (ein lernfreier Tag wählbar), danach Probeklausur und Schlusswiederhol
 erscheinen als Lernziele mit Datum; der Fortschrittsbalken zeigt, wie viel erledigt ist. Ab vier
 Wochen vor einer Klausur zeigt die Übersicht die **Klausurenphase** mit Countdown.
 
+## Juristisches Glossar
+
+**Wissen → Glossar** zeigt alle Definitionen wie das eigenständige Glossar vom Projektbeginn:
+alphabetisch mit großen Buchstaben-Überschriften und A–Z-Register am Rand (im Hochformat oben),
+Suche über Begriff, Norm und Definition (Treffer markiert, „/“ springt in die Suche), Filter nach
+Rechtsgebiet und „+ Begriff“. Pro Eintrag: **Kopieren** („Begriff (Norm): Definition“),
+**Karteikarte** und **Bearbeiten** im Dialog (Löschen mit „Wirklich?“, „Alle Angaben“ für
+Quelle, Beispiel und Rückverweise). Die Norm eines Begriffs lässt sich antippen und zeigt den
+Wortlaut. Doppelte Begriffe werden abgelehnt.
+
+Das Glossar sind dieselben Einträge wie bisher die „Definitionen“: Auch „Definition aus Auswahl
+anlegen“ in einer Notiz und Verknüpfungen aus Notizen landen hier. Ein gemeinsames Glossar mit
+anderen gibt es bewusst nicht – Studium OS arbeitet ohne Cloud.
+
 ## Normen antippen
 
 Normzitate im Text wie „§ 119 Abs. 1 BGB“ oder „Art. 12 I GG“ werden automatisch erkannt und

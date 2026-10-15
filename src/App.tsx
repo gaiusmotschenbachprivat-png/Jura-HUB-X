@@ -9,6 +9,7 @@ import { CardsView } from "./features/learn/CardsView";
 import { LearnSession } from "./features/learn/LearnSession";
 import { PlanningView } from "./features/planning/PlanningView";
 import { TimetableView } from "./features/planning/TimetableView";
+import { GlossaryView } from "./features/knowledge/GlossaryView";
 import { AssistantView } from "./features/assistant/AssistantView";
 import { AssistantFab } from "./features/assistant/AssistantPanel";
 import { Dashboard } from "./features/dashboard/Dashboard";
@@ -227,7 +228,7 @@ function ViewSwitch({ view }: { view: View }) {
     case "knowledge":
       return <KnowledgeEditor id={view.id} />;
     case "knowledge-list":
-      return <KnowledgeList type={view.kind} />;
+      return view.kind === "definition" ? <GlossaryView /> : <KnowledgeList type={view.kind} />;
     case "cards":
       return <CardsView focusId={view.id} />;
     case "learn":

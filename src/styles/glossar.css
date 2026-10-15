@@ -1,0 +1,90 @@
+/* Juristisches Glossar – Gestaltung wie das eigenständige Glossar vom Projektbeginn,
+   Farben aus den App-Tokens (Hell/Dunkel). */
+.glossar {
+  --g-serif: "Literata", Georgia, "Times New Roman", serif;
+  --g-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --g-surface: var(--bg);
+  --g-bg: var(--bg-side);
+  background: var(--g-bg); padding-top: 0;
+}
+.g-wrap { max-width: 980px; margin: 0 auto; }
+.g-head { position: sticky; top: -28px; z-index: 5; background: var(--g-bg); padding: 28px 0 16px; display: flex; flex-direction: column; gap: 16px; }
+.g-titlerow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.g-titlerow h1 { font-family: var(--g-serif); font-weight: 600; font-size: 1.75rem; margin: 0; letter-spacing: -0.01em; color: var(--text); }
+.g-count { color: var(--text-3); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.g-tools { display: flex; gap: 10px; }
+.g-search { flex: 1; min-width: 0; position: relative; }
+.g-search svg { position: absolute; left: 13px; top: 13px; color: var(--text-3); }
+.g-search input { width: 100%; height: 44px; padding: 0 14px 0 40px !important; border-radius: 10px; border: 1px solid var(--line); background: var(--g-surface); font-size: 0.95rem; }
+.g-btn { height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid transparent; font: 500 0.95rem var(--font-ui); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.g-btn-primary { background: var(--accent); color: var(--bg); }
+.g-btn-primary:hover { filter: brightness(1.08); }
+.g-btn-primary:disabled { opacity: 0.6; }
+.g-btn-ghost { background: transparent; color: var(--text); border-color: var(--line); }
+.g-btn-ghost:hover { background: var(--g-surface); }
+.g-btn-danger { background: transparent; color: var(--danger, #b3261e); border-color: var(--line); }
+.g-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.g-chip { border: 1px solid var(--line); background: transparent; color: var(--text-2); padding: 4px 11px; border-radius: 999px; font: 500 0.8rem var(--font-ui); cursor: pointer; }
+.g-chip[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+
+.g-layout { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 28px; }
+.g-register { position: sticky; top: 170px; align-self: start; display: flex; flex-direction: column; gap: 1px; }
+.g-register button, .g-register span { display: block; text-align: center; font: 500 0.78rem var(--g-mono); padding: 2px 0; border-radius: 4px; border: 0; background: none; }
+.g-register button { color: var(--accent); cursor: pointer; }
+.g-register button:hover { background: var(--accent-soft); }
+.g-register span { color: var(--line-strong); }
+.g-main { min-width: 0; }
+.g-group { display: flex; flex-direction: column; }
+.g-letter { font-family: var(--g-serif); font-size: 2rem; font-weight: 400; color: var(--accent); margin: 0; padding: 18px 0 6px; border-bottom: 1px solid var(--line); scroll-margin-top: 190px; }
+.g-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.g-entry-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; min-width: 0; }
+.g-term { font-family: var(--g-serif); font-size: 1.2rem; font-weight: 600; margin: 0; overflow-wrap: anywhere; color: var(--text); }
+.g-norm { font: 500 0.78rem var(--g-mono); color: var(--accent); border: 0; background: none; padding: 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.g-area { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
+.g-def { grid-column: 1 / -1; margin: 0; font-family: var(--g-serif); font-size: 1rem; line-height: 1.65; max-width: 68ch; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+.g-actions { display: flex; gap: 4px; opacity: 0.55; transition: opacity 0.15s; }
+.g-entry:hover .g-actions, .g-entry:focus-within .g-actions { opacity: 1; }
+@media (pointer: coarse) { .g-actions { opacity: 1; } }
+.g-icon { width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: var(--text-3); cursor: pointer; display: grid; place-items: center; }
+.g-icon:hover { background: var(--g-surface); color: var(--text); }
+.glossar mark { background: var(--accent-soft); color: inherit; border-radius: 3px; padding: 0 1px; }
+.g-meta { grid-column: 1 / -1; font-size: 0.78rem; color: var(--text-3); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.g-badge { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 1px 7px; border-radius: 999px; }
+.g-example { font-family: var(--g-serif); font-style: italic; }
+.g-empty { padding: 64px 0; color: var(--text-2); max-width: 46ch; }
+.g-empty strong { display: block; font-family: var(--g-serif); font-size: 1.25rem; color: var(--text); font-weight: 600; margin-bottom: 6px; }
+.g-status { font-size: 0.8rem; color: var(--text-3); padding: 12px 0 0; }
+
+.g-dialog { border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(560px, calc(100vw - 32px)); background: var(--bg); color: var(--text); }
+.g-dialog::backdrop { background: rgb(10 14 24 / 0.45); }
+.g-editor { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
+.g-editor h2 { font-family: var(--g-serif, "Literata", serif); font-size: 1.3rem; margin: 0; font-weight: 600; }
+.g-field { display: flex; flex-direction: column; gap: 5px; }
+.g-field label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
+.g-opt { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.g-field input, .g-field textarea { font: inherit; color: var(--text); background: var(--bg-side); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%; }
+.g-field textarea { min-height: 150px; resize: vertical; font-family: "Literata", Georgia, serif; line-height: 1.6; }
+.g-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.g-row2 > * { min-width: 0; }
+.g-form-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding-top: 4px; }
+.g-spacer { flex: 1; }
+.g-err { color: var(--danger, #b3261e); font-size: 0.85rem; min-height: 1.2em; margin: 0; }
+
+@container (max-width: 640px) {
+  .g-head { padding: 18px 0 12px; }
+  .g-titlerow h1 { font-size: 1.4rem; }
+  .g-layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .g-register { position: static; flex-direction: row; flex-wrap: wrap; gap: 2px; padding: 4px 0 8px; }
+  .g-register button, .g-register span { width: 24px; }
+  .g-btn-label { display: none; }
+}
+@media (max-width: 640px) { .g-row2 { grid-template-columns: 1fr; } }
+@media (pointer: coarse) { .g-field input, .g-field textarea, .g-search input { font-size: 16px; } }
+
+/* Kurzmeldung wie im ursprünglichen Glossar: eine Pille unten, ersetzt die vorige */
+.g-toast {
+  position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 140;
+  background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 999px; font-size: 0.88rem;
+  opacity: 0; pointer-events: none; transition: opacity 0.2s;
+}
+.g-toast.show { opacity: 1; }

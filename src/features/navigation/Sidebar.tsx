@@ -226,7 +226,7 @@ export function Sidebar() {
             <NavItem
               key={k}
               icon={<KindIcon kind={k} />}
-              label={TYPE_LABEL_PLURAL[k]}
+              label={k === "definition" ? "Glossar" : TYPE_LABEL_PLURAL[k]}
               active={(view.type === "knowledge-list" && view.kind === k) || (view.type === "knowledge" && knowledgeType === k)}
               onClick={() => open({ type: "knowledge-list", kind: k })}
             />
