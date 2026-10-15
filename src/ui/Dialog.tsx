@@ -17,6 +17,8 @@ export function Dialog({
   width?: number;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null;
     const first = ref.current?.querySelector<HTMLElement>("input, textarea, select, button.btn-primary, button");
@@ -24,15 +26,17 @@ export function Dialog({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        closeRef.current();
       }
     };
     window.addEventListener("keydown", onKey, true);
     return () => {
       window.removeEventListener("keydown", onKey, true);
-      prev?.focus?.();
+      // Fokus nur zurückgeben, wenn ihn niemand sonst übernommen hat (z. B. der Editor beim Speichern)
+      const now = document.activeElement;
+      if (!now || now === document.body || ref.current?.contains(now)) prev?.focus?.();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div className="overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="dialog" role="dialog" aria-modal="true" aria-label={title} ref={ref} style={{ width }}>

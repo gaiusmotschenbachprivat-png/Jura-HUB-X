@@ -43,6 +43,11 @@ const browser = await pw.chromium.launch({ executablePath: process.env.CHROMIUM 
 // iPad Air quer
 const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2, hasTouch: true, acceptDownloads: true });
 const page = await ctx.newPage();
+// Optional langsamere CPU (wie ein älteres iPad oder ein ausgelasteter CI-Rechner)
+if (process.env.CPU_THROTTLE) {
+  const cdp = await ctx.newCDPSession(page);
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.CPU_THROTTLE) });
+}
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const shot = (name) => page.screenshot({ path: path.join(OUT, `${name}.png`) });
@@ -125,6 +130,7 @@ try {
 
   // 5. Seitenumbruch
   await tb.getByRole("button", { name: /^Seitenumbruch/ }).click();
+  check("Knöpfe der Werkzeugleiste lassen den Fokus im Text", await editor.evaluate((el) => el.contains(document.activeElement) || el === document.activeElement));
   await page.keyboard.type("Zweite Seite");
   check("Seitenumbruch eingefügt, Weiterschreiben auf neuer Seite", (await editor.locator(".page-break").count()) === 1 && (await editor.locator(".page-break + p").innerText()).startsWith("Zweite Seite"), await editor.locator(".page-break + p").innerText().catch(() => ""));
   await shot("editor-ipad-quer");

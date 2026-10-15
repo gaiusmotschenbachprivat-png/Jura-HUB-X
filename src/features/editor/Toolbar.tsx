@@ -147,7 +147,15 @@ export function Toolbar({
       .run();
 
   return (
-    <div className="toolbar" role="toolbar" aria-label="Formatierung">
+    <div
+      className="toolbar"
+      role="toolbar"
+      aria-label="Formatierung"
+      // Knöpfe nehmen dem Text nicht den Fokus: Cursor bleibt, Bildschirmtastatur auf dem iPad bleibt offen
+      onMouseDown={(e) => {
+        if (!(e.target as HTMLElement).closest("select, input")) e.preventDefault();
+      }}
+    >
       <div className="tb-group">
         <IconButton label={`Rückgängig (${MOD}+Z)`} disabled={!s.canUndo} onClick={() => c().undo().run()}>
           <Undo2 size={16} />
