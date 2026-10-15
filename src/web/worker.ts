@@ -32,14 +32,20 @@ interface Pool {
 async function acquireLock(): Promise<void> {
   const locks = (navigator as Navigator & { locks?: LockManager }).locks;
   if (!locks) return;
-  const got = await new Promise<boolean>((resolve) => {
-    void locks.request("studium-os-daten", { ifAvailable: true }, (lock) => {
-      resolve(!!lock);
-      // Sperre halten, solange der Worker lebt
-      return lock ? new Promise<void>(() => {}) : undefined;
+  const tryOnce = () =>
+    new Promise<boolean>((resolve) => {
+      void locks.request("studium-os-daten", { ifAvailable: true }, (lock) => {
+        resolve(!!lock);
+        // Sperre halten, solange der Worker lebt
+        return lock ? new Promise<void>(() => {}) : undefined;
+      });
     });
-  });
-  if (!got) throw new CoreError("busy", BUSY);
+  // Beim Neuladen gibt die vorige Seite die Sperre erst kurz danach frei – etwas warten.
+  for (let i = 0; i < 12; i++) {
+    if (await tryOnce()) return;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new CoreError("busy", BUSY);
 }
 
 /** Nach jeder Änderung zu sichernde Datenbank (nur IndexedDB-Modus). */

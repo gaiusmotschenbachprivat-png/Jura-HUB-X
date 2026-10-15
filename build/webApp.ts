@@ -72,7 +72,12 @@ function serviceWorker(version: string, files: string[]): string {
 const CACHE = "studium-os-${version}";
 const FILES = ${JSON.stringify(files)};
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)));
+  // Neue Version sofort aktivieren (iPad-Apps auf dem Home-Bildschirm werden sonst nie neu geladen)
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" }))))
+      .then(() => self.skipWaiting()),
+  );
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(

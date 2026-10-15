@@ -15,8 +15,27 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 
 // Browser-/iPad-Version: App-Dateien offline vorhalten (keine Nutzerdaten im Cache).
+// Neue Version: Der Service Worker übernimmt sofort; die Seite speichert offene
+// Änderungen und lädt einmal neu. Beim Zurückkehren zur App wird nach Updates gesucht.
 if (__WEB_BUILD__ && "serviceWorker" in navigator) {
-  void navigator.serviceWorker.register("./sw.js").catch(() => {});
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    void import("./features/editor/saveQueue")
+      .then((m) => m.flushAll())
+      .catch(() => {})
+      .finally(() => location.reload());
+  });
+  navigator.serviceWorker
+    .register("./sw.js")
+    .then((reg) => {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") void reg.update().catch(() => {});
+      });
+    })
+    .catch(() => {});
 }
 
 createRoot(document.getElementById("root")!).render(

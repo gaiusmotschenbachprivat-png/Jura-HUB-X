@@ -85,6 +85,9 @@ const script = [
       "end_turn",
     ),
 ];
+script.push(() =>
+  message([{ type: "text", text: "Die Notiz behandelt die Zahlungspflicht von Herrn [PERSON_1]." }], "end_turn"),
+);
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "*", "access-control-allow-methods": "POST, OPTIONS" };
 await page.route("https://api.anthropic.com/**", async (route) => {
   const req = route.request();
@@ -107,7 +110,7 @@ try {
   await page.locator(".area-tab").first().waitFor();
 
   // 1. Zustimmung
-  await page.getByRole("button", { name: "KI-Assistent" }).click();
+  await page.getByRole("button", { name: "KI-Assistent", exact: true }).click();
   await page.getByText("KI-Assistent einschalten?").waitFor();
   check("Assistent ist ohne Zustimmung gesperrt", await page.getByRole("button", { name: "Einschalten" }).isDisabled());
   await page.getByLabel(/Ich habe das gelesen/).check();
@@ -115,14 +118,18 @@ try {
 
   // 2. Schlüssel nur für die Sitzung
   await page.getByPlaceholder("sk-ant-…").fill("sk-ant-test-schluessel");
+  // auf dem iPad merken, verschlüsselt mit PIN
+  await page.getByPlaceholder(/PIN \(mind/).fill("246810");
+  await page.getByPlaceholder("PIN wiederholen").fill("246810");
   await page.getByRole("button", { name: "Verwenden" }).click();
-  await page.getByText("API-Schlüssel für diese Sitzung").waitFor({ state: "detached" });
+  await page.getByPlaceholder("sk-ant-…").waitFor({ state: "detached", timeout: 20000 });
+  await page.waitForFunction(async () => JSON.stringify(await window.__STUDIUM_API__.settingsAll()).includes("keyVault"), null, { timeout: 20000 }).catch(() => {});
   const stored = await page.evaluate(async () => {
     const ls = JSON.stringify(localStorage);
     const s = JSON.stringify(await window.__STUDIUM_API__.settingsAll());
-    return ls.includes("sk-ant") || s.includes("sk-ant");
+    return ls.includes("sk-ant") || s.includes("sk-ant") || !s.includes("keyVault");
   });
-  check("Schlüssel wird nicht gespeichert", !stored);
+  check("Schlüssel nur verschlüsselt gespeichert (PIN)", !stored);
 
   // 3. Rechtsquelle importieren
   await page.getByRole("tab", { name: /Rechtsquellen/ }).click();
@@ -166,6 +173,39 @@ try {
   await sleep(800);
   const notes = await page.evaluate(async () => (await window.__STUDIUM_API__.nodesList(null)).filter((n) => n.kind === "note").map((n) => n.title));
   check("Antwort als Notiz gespeichert", notes.some((t) => t.startsWith("KI:")), notes.join(", "));
+
+  // 6. KI-Symbol auf einer Notizseite, aktuelle Notiz einbeziehen
+  await page.locator(".tree-row", { hasText: "KI:" }).first().click();
+  await page.locator(".ProseMirror").waitFor();
+  await page.locator(".ai-fab").click();
+  const panel = page.locator(".ai-panel");
+  await panel.waitFor();
+  check("KI-Symbol öffnet die Seitenleiste von jeder Seite", await panel.isVisible());
+  await panel.getByRole("button", { name: "Neue Unterhaltung" }).click();
+  await panel.getByLabel(/Aktuelle Notiz einbeziehen/).check();
+  await panel.locator(".ai-input textarea").fill("Fasse die Notiz zusammen.");
+  await panel.getByRole("button", { name: "Senden" }).click();
+  await panel.locator(".ai-card").waitFor({ timeout: 30000 });
+  const ctxBody = JSON.stringify(requests[3]?.body.messages ?? "");
+  check("Notiztext wird (anonymisiert) mitgeschickt", ctxBody.includes("Aktuelle Notiz") && ctxBody.includes("Musterpreis") && !ctxBody.includes("Müller"));
+  check("Antwort in der Seitenleiste mit Originalnamen", (await panel.locator(".ai-card").innerText()).includes("Herrn Müller"));
+  await shot("ki-seitenleiste");
+  await panel.getByRole("button", { name: "Schließen" }).click();
+
+  // 7. Neustart: PIN statt Schlüssel
+  await page.reload();
+  await page.locator(".area-tab").first().waitFor({ timeout: 20000 });
+  await page.locator(".ai-fab").click();
+  await page.getByPlaceholder("PIN").waitFor();
+  await page.getByPlaceholder("PIN").fill("000000");
+  await page.getByRole("button", { name: "Entsperren" }).click();
+  await page.locator(".toast", { hasText: "Falsche PIN" }).waitFor({ timeout: 15000 });
+  check("Falsche PIN wird abgelehnt", true);
+  await page.getByPlaceholder("PIN").fill("246810");
+  await page.getByRole("button", { name: "Entsperren" }).click();
+  await page.getByPlaceholder("PIN").waitFor({ state: "detached", timeout: 20000 });
+  await page.locator(".ai-panel .ai-input textarea").fill("Test");
+  check("Nach Neustart mit PIN entsperrt", await page.locator(".ai-panel").getByRole("button", { name: "Senden" }).isEnabled());
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Testlauf ohne Abbruch", false, e.message);

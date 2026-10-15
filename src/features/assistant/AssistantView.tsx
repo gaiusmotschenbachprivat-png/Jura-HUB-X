@@ -13,6 +13,7 @@ import { Button } from "../../ui/Button";
 import { confirmDialog } from "../../ui/Dialog";
 import { htmlToDoc } from "../editor/exportImport";
 import { createNode } from "../navigation/actions";
+import { isVault, MIN_PIN, openKey, sealKey, type KeyVault } from "../../ai/keyVault";
 import { AnswerCard } from "./Answer";
 import { useAssistant } from "./state";
 
@@ -67,10 +68,10 @@ export function AssistantView() {
   );
 }
 
-function Consent({ onDone }: { onDone: () => void }) {
+export function Consent({ onDone, compact }: { onDone: () => void; compact?: boolean }) {
   const [ok, setOk] = useState(false);
   return (
-    <div className="page">
+    <div className={compact ? "" : "page"}>
       <section className="card prose-ui consent" style={{ maxWidth: 720 }}>
         <h2>
           <Scale size={18} /> KI-Assistent einschalten?
@@ -107,34 +108,8 @@ function Consent({ onDone }: { onDone: () => void }) {
   );
 }
 
-function KeySetup({ status, onChange }: { status: AiStatus; onChange: () => void }) {
-  const [key, setKey] = useState("");
-  if (api.kind === "web") {
-    return (
-      <section className="card ai-key">
-        <h3>
-          <KeyRound size={16} /> API-Schlüssel für diese Sitzung
-        </h3>
-        <p className="small muted">
-          Der Schlüssel bleibt nur im Arbeitsspeicher dieses Tabs und wird nie gespeichert. Nach dem Schließen oder Neuladen musst du ihn erneut eingeben.
-        </p>
-        <form
-          className="row"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await api.aiSetSessionKey(key);
-            setKey("");
-            onChange();
-          }}
-        >
-          <input type="password" autoComplete="off" placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} style={{ minWidth: 280 }} />
-          <Button type="submit" variant="primary" disabled={!key.trim()}>
-            Verwenden
-          </Button>
-        </form>
-      </section>
-    );
-  }
+export function KeySetup({ status, onChange }: { status: AiStatus; onChange: () => void }) {
+  if (api.kind === "web") return <WebKeySetup onChange={onChange} />;
   return (
     <section className="card ai-key">
       <h3>
@@ -155,10 +130,17 @@ function KeySetup({ status, onChange }: { status: AiStatus; onChange: () => void
   );
 }
 
-function Chat({ available }: { available: boolean }) {
+/** Inhalt der gerade geöffneten Seite, den der Nutzer optional einbeziehen kann. */
+export interface ContextSource {
+  label: string;
+  load(): Promise<string>;
+}
+
+export function Chat({ available, compact, context }: { available: boolean; compact?: boolean; context?: ContextSource | null }) {
   const { task, setTask, entries, busy, ask, reset, ownDocs, setOwnDocs } = useAssistant();
   const [q, setQ] = useState("");
   const [doc, setDoc] = useState("");
+  const [useContext, setUseContext] = useState(false);
   const areaId = useApp((s) => s.areaId);
   const areas = useApp((s) => s.areas);
   const toast = useApp((s) => s.toast);
@@ -166,12 +148,21 @@ function Chat({ available }: { available: boolean }) {
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [entries.length, busy]);
   const cur = TASKS.find((t) => t.id === task)!;
 
-  const send = () => {
+  const send = async () => {
     const question = q.trim();
     if (!question) return;
     setQ("");
-    const d = task === "vertrag" && doc.trim() ? doc : undefined;
-    void ask(question, d);
+    const parts: string[] = [];
+    if (task === "vertrag" && doc.trim()) parts.push(doc.trim());
+    if (context && useContext) {
+      try {
+        const text = (await context.load()).trim();
+        if (text) parts.push(`[${context.label}]\n${text}`);
+      } catch (e) {
+        reportError(e);
+      }
+    }
+    void ask(question, parts.length ? parts.join("\n\n") : undefined);
   };
 
   const loadContract = async () => {
@@ -192,23 +183,41 @@ function Chat({ available }: { available: boolean }) {
   };
 
   return (
-    <div className="ai-chat">
+    <div className={`ai-chat ${compact ? "is-compact" : ""}`}>
       <div className="row wrap ai-toolbar">
-        <div className="seg" role="radiogroup" aria-label="Aufgabe">
-          {TASKS.map((t) => (
-            <button key={t.id} role="radio" aria-checked={task === t.id} className={task === t.id ? "is-active" : ""} onClick={() => setTask(t.id)} disabled={busy}>
-              {t.label}
-            </button>
-          ))}
-        </div>
+        {compact ? (
+          <select aria-label="Aufgabe" value={task} onChange={(e) => setTask(e.target.value as Task)} disabled={busy}>
+            {TASKS.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="seg" role="radiogroup" aria-label="Aufgabe">
+            {TASKS.map((t) => (
+              <button key={t.id} role="radio" aria-checked={task === t.id} className={task === t.id ? "is-active" : ""} onClick={() => setTask(t.id)} disabled={busy}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
         <label className="row small" title="Erlaubt Claude, deine Notizen und Dokumente zu durchsuchen (Auszüge werden anonymisiert gesendet).">
           <input type="checkbox" checked={ownDocs} onChange={(e) => setOwnDocs(e.target.checked)} disabled={busy} />
-          Eigene Notizen einbeziehen
+          Eigene Notizen durchsuchen
         </label>
+        {context && (
+          <label className="row small ai-context-toggle" title="Der Text dieser Seite wird (anonymisiert) mitgeschickt.">
+            <input type="checkbox" checked={useContext} onChange={(e) => setUseContext(e.target.checked)} disabled={busy} />
+            {context.label} einbeziehen
+          </label>
+        )}
         <span className="grow" />
-        <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={reset} disabled={busy || !entries.length}>
-          Neue Unterhaltung
-        </Button>
+        {!compact && (
+          <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={reset} disabled={busy || !entries.length}>
+            Neue Unterhaltung
+          </Button>
+        )}
       </div>
 
       <div className="ai-entries">
@@ -252,23 +261,23 @@ function Chat({ available }: { available: boolean }) {
         className="ai-input"
         onSubmit={(e) => {
           e.preventDefault();
-          send();
+          void send();
         }}
       >
         <textarea
-          rows={3}
+          rows={compact ? 2 : 3}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={cur.placeholder}
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               e.preventDefault();
-              send();
+              void send();
             }
           }}
         />
-        <Button type="submit" variant="primary" icon={<Send size={14} />} disabled={!available || busy || !q.trim()}>
-          Senden
+        <Button type="submit" variant="primary" icon={<Send size={14} />} disabled={!available || busy || !q.trim()} aria-label="Senden">
+          {compact ? "" : "Senden"}
         </Button>
       </form>
       <p className="xs muted">Ausgaben können fehlerhaft sein und ersetzen keine anwaltliche Prüfung. ⌘/Strg + Enter sendet.</p>
@@ -537,5 +546,114 @@ function AiSettings({ onRevoke }: { onRevoke: () => void }) {
         </Button>
       </div>
     </div>
+  );
+}
+
+function WebKeySetup({ onChange }: { onChange: () => void }) {
+  const [vault, setVault] = useState<KeyVault | null | undefined>(undefined);
+  const [key, setKey] = useState("");
+  const [remember, setRemember] = useState(true);
+  const [pin, setPin] = useState("");
+  const [pin2, setPin2] = useState("");
+  const [busy, setBusy] = useState(false);
+  const toast = useApp((s) => s.toast);
+  useEffect(() => {
+    void api.settingsAll().then((s) => setVault(isVault(s["ai.keyVault"]) ? (s["ai.keyVault"] as KeyVault) : null));
+  }, []);
+  if (vault === undefined) return null;
+
+  if (vault) {
+    return (
+      <section className="card ai-key">
+        <h3>
+          <KeyRound size={16} /> PIN eingeben
+        </h3>
+        <p className="small muted">Dein API-Schlüssel ist auf diesem iPad mit deiner PIN verschlüsselt gespeichert.</p>
+        <form
+          className="row wrap"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            try {
+              await api.aiSetSessionKey(await openKey(vault, pin));
+              setPin("");
+              onChange();
+            } catch (err) {
+              toast(errorMessage(err), "error");
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <input type="password" inputMode="text" autoComplete="off" placeholder="PIN" value={pin} onChange={(e) => setPin(e.target.value)} />
+          <Button type="submit" variant="primary" disabled={!pin || busy}>
+            {busy ? "Prüfe …" : "Entsperren"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={async () => {
+              if (!(await confirmDialog({ title: "Gespeicherten Schlüssel löschen?", message: "Der verschlüsselte Schlüssel wird von diesem iPad entfernt.", confirm: "Löschen", danger: true })))
+                return;
+              await api.settingSet("ai.keyVault", null).catch(reportError);
+              setVault(null);
+            }}
+          >
+            Anderen Schlüssel verwenden
+          </Button>
+        </form>
+      </section>
+    );
+  }
+
+  const pinOk = !remember || (pin.length >= MIN_PIN && pin === pin2);
+  return (
+    <section className="card ai-key">
+      <h3>
+        <KeyRound size={16} /> API-Schlüssel eingeben
+      </h3>
+      <form
+        className="stack"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          try {
+            if (remember) await api.settingSet("ai.keyVault", await sealKey(key, pin));
+            await api.aiSetSessionKey(key);
+            setKey("");
+            setPin("");
+            setPin2("");
+            onChange();
+          } catch (err) {
+            toast(errorMessage(err), "error");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <input type="password" autoComplete="off" placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} />
+        <label className="row small">
+          <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
+          Auf diesem iPad merken – verschlüsselt mit einer PIN
+        </label>
+        {remember && (
+          <div className="row wrap">
+            <input type="password" autoComplete="new-password" placeholder={`PIN (mind. ${MIN_PIN} Zeichen)`} value={pin} onChange={(e) => setPin(e.target.value)} />
+            <input type="password" autoComplete="new-password" placeholder="PIN wiederholen" value={pin2} onChange={(e) => setPin2(e.target.value)} />
+          </div>
+        )}
+        <p className="xs muted">
+          {remember
+            ? "Gespeichert wird nur der verschlüsselte Schlüssel. Beim nächsten Start gibst du nur die PIN ein. Wähle eine PIN, die nicht leicht zu erraten ist."
+            : "Der Schlüssel bleibt nur im Arbeitsspeicher und ist nach dem Schließen der App weg."}
+        </p>
+        <div>
+          <Button type="submit" variant="primary" disabled={!key.trim() || !pinOk || busy}>
+            {busy ? "Verschlüssele …" : "Verwenden"}
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }

@@ -15,6 +15,13 @@ Warum Home-Bildschirm? Safari löscht Website-Daten, die länger nicht genutzt w
 Websites im Browser-Tab – nicht bei Apps auf dem Home-Bildschirm. Außerdem startet die App
 dann im Vollbild und funktioniert offline.
 
+## Updates
+
+Neue Versionen lädt die App beim Öffnen bzw. beim Zurückwechseln selbst und startet dann kurz neu
+(ungespeicherte Änderungen werden vorher gesichert). **Einmalig** nach dem Update von Version 0.4.0
+oder älter: die App am iPad ganz schließen (in der App-Übersicht nach oben wischen) und neu öffnen –
+die alte Version hielt sich sonst im Zwischenspeicher fest.
+
 ## Technik
 
 | Teil | Desktop-App | iPad-/Browser-Version |

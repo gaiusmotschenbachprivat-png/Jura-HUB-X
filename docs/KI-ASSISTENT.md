@@ -34,9 +34,19 @@ gegeben – die Rust-Seite setzt ihn erst beim Weiterleiten an die Claude API ei
 - Windows: Einstellungen → „Umgebungsvariablen für dieses Konto bearbeiten“ → Neu:
   `ANTHROPIC_API_KEY`. Danach Studium OS neu starten.
 
-**iPad/Browser:** Den Schlüssel gibst du nach dem Start im Assistenten ein. Er bleibt nur im
-Arbeitsspeicher des Tabs und ist nach dem Schließen oder Neuladen weg. (Im Browser lässt sich
-technisch nicht verhindern, dass die Seite den Schlüssel während der Sitzung im Speicher hält.)
+**iPad/Browser:** Den Schlüssel gibst du im Assistenten ein. Zwei Möglichkeiten:
+
+- **Mit PIN merken** (Standard): Der Schlüssel wird mit einer PIN (mind. 6 Zeichen)
+  verschlüsselt auf dem iPad gespeichert – Web Crypto API, PBKDF2-SHA-256 mit 600 000 Runden
+  und AES-256-GCM, keine eigene Kryptografie. Gespeichert werden nur Salz, IV und Chiffrat.
+  Nach jedem Start entsperrst du ihn mit der PIN. PIN vergessen → „Anderen Schlüssel verwenden“.
+  Grenze: Wer an die Daten des iPads kommt, kann kurze PINs durch Ausprobieren erraten –
+  nimm eine längere PIN.
+- **Nur für diese Sitzung** (Häkchen „Auf diesem iPad merken“ entfernen): Der Schlüssel bleibt
+  nur im Arbeitsspeicher und ist nach dem Schließen weg.
+
+(Im Browser lässt sich technisch nicht verhindern, dass die Seite den entsperrten Schlüssel
+während der Sitzung im Speicher hält.)
 
 ### Zustimmung
 
@@ -56,9 +66,15 @@ Ohne Quellen kann der Assistent nichts belegen. Unter **KI-Assistent → Rechtsq
 
 ## 2. Bedienung
 
+**Von jeder Seite:** Unten rechts ist immer ein kleines ✦-Symbol (oder ⌘/Strg + J). Es öffnet den
+Assistenten als Seitenleiste, ohne die aktuelle Seite zu verlassen. Ist gerade eine Notiz oder
+ein PDF offen, kannst du **„Aktuelle Notiz/Aktuelles Dokument einbeziehen“** ankreuzen – der Text
+wird dann (anonymisiert) mitgeschickt. Das Symbol oben in der Leiste öffnet die Vollansicht mit
+Rechtsquellen und Einstellungen.
+
 1. Aufgabe wählen: **Recherche & Fall**, **Vertrag prüfen** (Vertragstext einfügen oder als
    Datei laden) oder **Schriftsatz entwerfen**.
-2. Optional **„Eigene Notizen einbeziehen“**: Claude darf dann deine Notizen und Dokumente
+2. Optional **„Eigene Notizen durchsuchen“**: Claude darf dann deine Notizen und Dokumente
    durchsuchen; Auszüge werden vor dem Senden anonymisiert.
 3. Frage senden (⌘/Strg + Enter). Die Antwort enthält Quellenkennungen wie **[Q3]** – ein Klick
    zeigt den Wortlaut und die Fassung der Quelle.

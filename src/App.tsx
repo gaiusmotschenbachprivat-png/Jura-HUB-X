@@ -9,6 +9,7 @@ import { CardsView } from "./features/learn/CardsView";
 import { LearnSession } from "./features/learn/LearnSession";
 import { PlanningView } from "./features/planning/PlanningView";
 import { AssistantView } from "./features/assistant/AssistantView";
+import { AssistantFab } from "./features/assistant/AssistantPanel";
 import { Dashboard } from "./features/dashboard/Dashboard";
 import { DocumentsView } from "./features/documents/DocumentsView";
 import { DocumentViewer } from "./features/documents/DocumentViewer";
@@ -181,6 +182,7 @@ function Shell() {
         </div>
       )}
       <SearchPalette />
+      <AssistantFab />
       <ImportHost />
       <Toasts />
     </div>
