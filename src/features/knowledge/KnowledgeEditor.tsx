@@ -129,7 +129,7 @@ function Loaded({ initial }: { initial: Knowledge }) {
     const areaId = k.area_id ?? (k.node_id ? allNodes.find((n) => n.id === k.node_id)?.area_id : undefined) ?? areas[0]?.id;
     if (!areaId) return;
     await flush();
-    const note = await createNode({ areaId, parentId: k.node_id, kind: "note", title: `Lösung: ${k.title}`, templateId: "gutachten", openAfter: false });
+    const note = await createNode({ areaId, parentId: k.node_id, kind: "note", title: `Lösung: ${k.title}`, templateId: "gutachten", meta: { noteType: "fall" }, openAfter: false });
     if (!note) return;
     await api.knowledgeUpdate(k.id, { data: { ...(k.data as object), solution_note_id: note.id } }).catch(reportError);
     await api.linkAdd({ source_type: "knowledge", source_id: k.id, target_type: "node", target_id: note.id, kind: "related" }).catch(() => {});

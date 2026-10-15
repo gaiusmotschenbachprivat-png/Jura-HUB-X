@@ -20,6 +20,7 @@ import { FootnoteDialog, FootnoteList } from "./Footnotes";
 import { FOOTNOTE_EDIT_EVENT, footnotesOf, type FootnoteEditDetail } from "./formatting";
 import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
+import { NoteMetaBar } from "./NoteMetaBar";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
 import { CardDialog } from "../learn/CardDialog";
@@ -98,7 +99,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
-  const nodeTitle = nodes.find((n) => n.id === note.node_id)?.title;
+  const treeNode = nodes.find((n) => n.id === note.node_id);
+  const nodeTitle = treeNode?.title;
 
   const editor = useEditor({
     extensions: editorExtensions({ placeholder: "Mitschrift beginnen … Überschriften mit # , Listen mit - , Checklisten mit [ ]" }),
@@ -312,6 +314,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             <MoreHorizontal size={16} />
           </IconButton>
         </div>
+        {treeNode && <NoteMetaBar node={treeNode} />}
       </div>
       <Toolbar
         editor={editor}

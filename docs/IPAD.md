@@ -15,6 +15,34 @@ Warum Home-Bildschirm? Safari löscht Website-Daten, die länger nicht genutzt w
 Websites im Browser-Tab – nicht bei Apps auf dem Home-Bildschirm. Außerdem startet die App
 dann im Vollbild und funktioniert offline.
 
+## Vorlesungen und andere Schreibarten
+
+Jede Notiz hat eine **Art**, erkennbar an Symbol und Farbe:
+
+| Art | Wofür |
+|---|---|
+| **Vorlesung** | Mitschrift eines Termins – mit Nr., Datum, Thema und Dozent/in |
+| Zusammenfassung | Lernstoff verdichtet, z. B. pro Thema |
+| Fall / Gutachten | Sachverhalt im Gutachtenstil lösen |
+| Übung / AG | Arbeitsgemeinschaft, Tutorium, Übungsblatt |
+| Hausarbeit / Seminar | wissenschaftlich mit Fußnoten |
+| Klausurvorbereitung | Prüfungsstoff, Schemata, Probeklausuren |
+| Notiz | freier Text |
+
+**Anlegen:** In einer Veranstaltung auf **„Vorlesung“** tippen – Nummer (fortlaufend), Datum
+(heute) und Dozent/in (aus den Angaben der Veranstaltung) sind vorausgefüllt, nur das Thema
+fehlt. **„Neu …“** (Seitenleiste oben, Übersicht, jede Veranstaltung) öffnet die Auswahl aller
+Arten; dort lässt sich auch der Ablageort wählen. Langes Drücken auf einen Eintrag in der
+Seitenleiste bietet „Vorlesung hinzufügen“ und „Notiz hinzufügen“.
+
+**Ändern:** Unter dem Titel jeder Notiz stehen Art, bei Vorlesungen Nr., Datum und Dozent/in –
+direkt änderbar.
+
+**Sortierung** (Knopf ⇅ neben der Suche): *Automatisch* (Ordner zuerst, dann nach Art,
+Vorlesungen nach Datum), *Eigene Reihenfolge* (Ziehen), *Name* oder *Zuletzt bearbeitet*.
+Die Seite einer Veranstaltung gruppiert ihren Inhalt nach Art („Vorlesungen · 12“,
+„Fälle & Gutachten · 3“ …).
+
 ## Schreiben wie in Word
 
 Die Werkzeugleiste über jeder Notiz bietet:
@@ -36,7 +64,8 @@ und Seitenumbrüche. Beim **Word-Import** werden Fußnoten übernommen; Schrifta
 liest der Import (noch) nicht. Beim **Einfügen** aus Word oder Pages bleiben Schrift, Größe,
 Farbe und Einzug erhalten.
 
-Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
+Als App vom Home-Bildschirm hält Studium OS Abstand zur Statusleiste (Uhrzeit, Akku) und zum
+Home-Balken. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
 daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
 sich seitlich wischen lässt.
 

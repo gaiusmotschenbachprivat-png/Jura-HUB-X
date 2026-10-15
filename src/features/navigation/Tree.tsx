@@ -11,7 +11,8 @@ import type { StudyNode } from "../../api/types";
 import { isDescendant, positionBetween, type TreeItem } from "../../lib/tree";
 import { areaById, reportError, useApp } from "../../state/store";
 import { AreaDot } from "../../ui/misc";
-import { KindIcon } from "./icons";
+import { formatDateDe, noteTypeOf } from "../../lib/noteTypes";
+import { NodeIcon } from "./icons";
 
 type Zone = "before" | "after" | "inside";
 interface DropTarget {
@@ -183,12 +184,15 @@ export function Tree({
               <ChevronRight size={13} />
             </span>
             <span className="tree-icon">
-              <KindIcon kind={n.kind} />
+              <NodeIcon node={n} />
             </span>
             {renamingId === n.id ? (
               <RenameInput initial={n.title} onDone={(t) => onRename(n.id, t)} />
             ) : (
               <span className="tree-title ellipsis">{n.title}</span>
+            )}
+            {noteTypeOf(n) === "vorlesung" && typeof n.meta?.date === "string" && (
+              <span className="tree-date tnum">{formatDateDe(n.meta.date, true)}</span>
             )}
             {showAreaDots && item.depth === 0 && <AreaDot color={areaById(n.area_id)?.color ?? "#999"} size={6} />}
           </div>

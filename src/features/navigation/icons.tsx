@@ -1,4 +1,5 @@
 import {
+  BookMarked,
   BookOpen,
   CalendarClock,
   CalendarDays,
@@ -11,13 +12,18 @@ import {
   Highlighter,
   Layers,
   ListTree,
+  NotebookPen,
+  PencilLine,
+  Presentation,
   Quote,
   Scale,
   SquareStack,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 
-import type { NodeKind } from "../../api/types";
+import type { NodeKind, StudyNode } from "../../api/types";
+import { noteTypeInfo, noteTypeOf, type NoteType } from "../../lib/noteTypes";
 
 export const KIND_ICON: Record<NodeKind, LucideIcon> = {
   semester: CalendarRange,
@@ -49,4 +55,26 @@ export const ANY_ICON: Record<string, LucideIcon> = {
 export function KindIcon({ kind, size = 15 }: { kind: string; size?: number }) {
   const I = ANY_ICON[kind] ?? FileText;
   return <I size={size} strokeWidth={1.75} aria-hidden />;
+}
+
+export const NOTE_TYPE_ICON: Record<NoteType, LucideIcon> = {
+  vorlesung: Presentation,
+  zusammenfassung: BookMarked,
+  fall: Gavel,
+  uebung: PencilLine,
+  hausarbeit: NotebookPen,
+  klausur: Target,
+  notiz: FileText,
+};
+
+/** Symbol für eine Notizart, farbig. */
+export function NoteTypeIcon({ type, size = 15, plain = false }: { type: NoteType; size?: number; plain?: boolean }) {
+  const I = NOTE_TYPE_ICON[type];
+  return <I size={size} strokeWidth={1.9} aria-hidden style={plain ? undefined : { color: noteTypeInfo(type).color }} />;
+}
+
+/** Symbol für einen Knoten: Notizen nach Art, sonst nach Strukturtyp. */
+export function NodeIcon({ node, size = 15 }: { node: Pick<StudyNode, "kind" | "meta">; size?: number }) {
+  const t = noteTypeOf(node);
+  return t ? <NoteTypeIcon type={t} size={size} /> : <KindIcon kind={node.kind} size={size} />;
 }

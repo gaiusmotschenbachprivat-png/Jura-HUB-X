@@ -10,8 +10,9 @@ import { Button } from "../../ui/Button";
 import { AreaDot, MOD } from "../../ui/misc";
 import { DocIcon } from "../documents/DocumentList";
 import { useImport } from "../documents/ImportDialog";
-import { createNode, openNode } from "../navigation/actions";
-import { KindIcon } from "../navigation/icons";
+import { openNode } from "../navigation/actions";
+import { KindIcon, NodeIcon, NoteTypeIcon } from "../navigation/icons";
+import { NewNodeDialog, type NewNodeRequest } from "../navigation/NewNodeDialog";
 import { LearningOverview } from "./LearningOverview";
 
 export function Dashboard() {
@@ -87,10 +88,9 @@ export function Dashboard() {
   const backupAge = lastOk ? (Date.now() - Date.parse(lastOk.created_at)) / 86400000 : Infinity;
   const lastFailed = backups?.[0]?.status === "fehler" ? backups[0] : null;
 
-  const newNote = () => {
-    const target = scope ?? visibleAreas[0]?.id;
-    if (target) void createNode({ areaId: target, parentId: null, kind: "note", title: "Neue Notiz" });
-  };
+  const [newReq, setNewReq] = useState<NewNodeRequest | null>(null);
+  const storeNodes = useApp((s) => s.nodes);
+  const newItem = (extra: Partial<NewNodeRequest> = {}) => setNewReq({ parentId: null, areaId: scope ?? visibleAreas[0]?.id ?? null, ...extra });
 
   return (
     <div className="page dashboard">
@@ -99,8 +99,11 @@ export function Dashboard() {
         <div className="small muted">{scope ? visibleAreas.find((a) => a.id === scope)?.name : "Alle Studienbereiche"}</div>
         <h1 className="page-title-static">Übersicht</h1>
         <div className="row wrap">
-          <Button variant="primary" icon={<FilePlus2 size={15} />} onClick={newNote}>
-            Neue Notiz
+          <Button variant="primary" icon={<FilePlus2 size={15} />} onClick={() => newItem()}>
+            Neu …
+          </Button>
+          <Button icon={<NoteTypeIcon type="vorlesung" size={15} plain />} onClick={() => newItem({ noteType: "vorlesung" })}>
+            Vorlesung
           </Button>
           <Button icon={<FileUp size={15} />} onClick={() => void startImport({})}>
             Dokumente importieren
@@ -154,7 +157,7 @@ export function Dashboard() {
             <div className="list">
               {recentNotes.map((n) => (
                 <button key={n.node_id} className="list-row" onClick={() => open({ type: "note", id: n.node_id }, { title: n.title })}>
-                  <KindIcon kind="note" />
+                  <NodeIcon node={storeNodes.find((x) => x.id === n.node_id) ?? { kind: "note", meta: {} }} />
                   <span className="grow" style={{ minWidth: 0 }}>
                     <span className="ellipsis block">{n.title}</span>
                     {n.path && <span className="xs muted ellipsis block">{n.path}</span>}
@@ -242,6 +245,7 @@ export function Dashboard() {
           </Button>
         </section>
       </div>
+      {newReq && <NewNodeDialog req={newReq} onClose={() => setNewReq(null)} />}
     </div>
   );
 }

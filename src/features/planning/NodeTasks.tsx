@@ -37,7 +37,7 @@ export function NodeTasks({ nodeId }: { nodeId: string }) {
             bump();
           }}
         >
-          <select value={kind} onChange={(e) => setKind(e.target.value as TaskKind)} aria-label="Art" style={{ width: 120 }}>
+          <select value={kind} onChange={(e) => setKind(e.target.value as TaskKind)} aria-label="Art" style={{ width: 150, flex: "none" }}>
             {Object.entries(TASK_KIND_LABEL).map(([v, l]) => (
               <option key={v} value={v}>
                 {l}

@@ -1,4 +1,6 @@
 import {
+  ArrowUpDown,
+  Check,
   Scale,
   Archive,
   CalendarCheck,
@@ -22,13 +24,14 @@ import { api } from "../../api";
 import type { NodeKind, StudyNode } from "../../api/types";
 import { KIND_LABEL, SUGGESTED_CHILDREN } from "../../lib/kinds";
 import { useCardStats } from "../learn/CardsView";
+import { SORT_LABEL, type SortMode } from "../../lib/noteTypes";
 import { buildTree } from "../../lib/tree";
 import { reportError, useApp, viewId } from "../../state/store";
 import { IconButton } from "../../ui/Button";
 import { useMenu, type MenuItem } from "../../ui/Menu";
 import { AreaDot, MOD } from "../../ui/misc";
 import { createNode, defaultTitle, openNode, renameNode, trashNode } from "./actions";
-import { KindIcon } from "./icons";
+import { KindIcon, NodeIcon, NoteTypeIcon } from "./icons";
 import { NewNodeDialog, type NewNodeRequest } from "./NewNodeDialog";
 import { Tree } from "./Tree";
 import { TYPE_LABEL_PLURAL } from "../knowledge/meta";
@@ -43,6 +46,7 @@ export function Sidebar() {
   const open = useApp((s) => s.open);
   const setPalette = useApp((s) => s.setPalette);
   const showArchived = useApp((s) => s.showArchived);
+  const treeSort = useApp((s) => s.treeSort);
   const setPref = useApp((s) => s.setPref);
   const reload = useApp((s) => s.reloadNodes);
   const [renaming, setRenaming] = useState<string | null>(null);
@@ -60,10 +64,32 @@ export function Sidebar() {
   const archivedCount = nodes.filter((n) => n.archived_at).length;
 
   const groups = useMemo(() => {
-    const tree = buildTree(nodes, { showArchived });
+    const tree = buildTree(nodes, { showArchived, sort: treeSort });
     if (areaId !== "all") return [{ area: null, items: tree }];
     return visibleAreas.map((a) => ({ area: a, items: tree.filter((t) => t.node.area_id === a.id) }));
-  }, [nodes, showArchived, areaId, visibleAreas]);
+  }, [nodes, showArchived, areaId, visibleAreas, treeSort]);
+
+  /** Ort für „Neu …“: aktuell geöffnetes Element bzw. Ordner der geöffneten Notiz. */
+  const contextParent = (): StudyNode | null => {
+    const id = viewId(view);
+    const n = id ? nodes.find((x) => x.id === id) : undefined;
+    if (!n) return null;
+    if (n.kind !== "note") return n;
+    return n.parent_id ? (nodes.find((x) => x.id === n.parent_id) ?? null) : null;
+  };
+  const openNew = (extra: Partial<NewNodeRequest> = {}) => {
+    const p = contextParent();
+    setNewReq({ parentId: p?.id ?? null, areaId: p?.area_id ?? currentArea, ...extra });
+  };
+  const sortMenu = (el: HTMLElement) =>
+    menu.openBelow(
+      el,
+      (Object.keys(SORT_LABEL) as SortMode[]).map((m) => ({
+        label: SORT_LABEL[m],
+        icon: treeSort === m ? <Check size={14} /> : <span style={{ width: 14 }} />,
+        onSelect: () => setPref("treeSort", m),
+      })),
+    );
 
   const currentArea = areaId === "all" ? null : areaId;
 
@@ -76,15 +102,22 @@ export function Sidebar() {
   };
 
   const nodeMenu = (e: React.MouseEvent, n: StudyNode) => {
-    const kids = SUGGESTED_CHILDREN[n.kind];
+    const kids = SUGGESTED_CHILDREN[n.kind].filter((k) => k !== "note");
     const others = areas.filter((a) => a.id !== n.area_id && !a.archived_at);
+    // Notizen liegen neben der angeklickten Notiz, sonst im angeklickten Element
+    const host = n.kind === "note" ? (n.parent_id ? nodes.find((x) => x.id === n.parent_id) : undefined) : n;
+    const req = { parentId: host?.id ?? null, areaId: n.area_id };
     const items: MenuItem[] = [
-      ...kids.slice(0, 4).map((k) => ({
-        label: `${KIND_LABEL[k]} hinzufügen`,
-        icon: <KindIcon kind={k} size={14} />,
-        onSelect: () => quickCreate(n, k),
-      })),
-      { label: "Anderes Element …", icon: <Plus size={14} />, onSelect: () => setNewReq({ parentId: n.id, areaId: n.area_id }) },
+      { label: "Vorlesung hinzufügen …", icon: <NoteTypeIcon type="vorlesung" size={14} />, onSelect: () => setNewReq({ ...req, noteType: "vorlesung" }) },
+      { label: "Notiz hinzufügen", icon: <NoteTypeIcon type="notiz" size={14} />, onSelect: () => (host ? quickCreate(host, "note") : quickCreate(null, "note", n.area_id)) },
+      ...(n.kind === "note"
+        ? []
+        : kids.slice(0, 3).map((k) => ({
+            label: `${KIND_LABEL[k]} hinzufügen`,
+            icon: <KindIcon kind={k} size={14} />,
+            onSelect: () => quickCreate(n, k),
+          }))),
+      { label: "Weitere (Fall, Zusammenfassung …)", icon: <Plus size={14} />, onSelect: () => setNewReq(req) },
       { separator: true, label: "" },
       { label: "Umbenennen", icon: <Pencil size={14} />, shortcut: "F2", onSelect: () => setRenaming(n.id) },
       {
@@ -122,7 +155,11 @@ export function Sidebar() {
     const kinds: NodeKind[] = ["semester", "module", "course", "folder", "note"];
     menu.openBelow(
       target,
-      kinds.map((k) => ({ label: KIND_LABEL[k], icon: <KindIcon kind={k} size={14} />, onSelect: () => quickCreate(null, k, aId) })),
+      [
+        ...kinds.map((k) => ({ label: KIND_LABEL[k], icon: <KindIcon kind={k} size={14} />, onSelect: () => quickCreate(null, k, aId) })),
+        { separator: true, label: "" },
+        { label: "Mehr …", icon: <Plus size={14} />, onSelect: () => setNewReq({ parentId: null, areaId: aId ?? currentArea }) },
+      ],
     );
   };
 
@@ -161,7 +198,10 @@ export function Sidebar() {
           <span className="grow">Suchen</span>
           <kbd>{MOD} K</kbd>
         </button>
-        <IconButton label={`Neue Notiz (${MOD}+N)`} onClick={() => quickCreate(null, "note")}>
+        <IconButton label="Sortierung" onClick={(e) => sortMenu(e.currentTarget)}>
+          <ArrowUpDown size={16} />
+        </IconButton>
+        <IconButton label="Neu: Vorlesung, Notiz, Ordner …" onClick={() => openNew()}>
           <FilePlus2 size={16} />
         </IconButton>
       </div>
@@ -194,7 +234,7 @@ export function Sidebar() {
           <section key={area?.id ?? "tree"} className="side-section">
             <div className="side-head">
               <span className="label ellipsis">{area ? area.name : "Studienstruktur"}</span>
-              <IconButton label="Hinzufügen" className="side-add" onClick={(e) => addMenu(e.currentTarget, area?.id)}>
+              <IconButton label={`Neu in ${area ? area.name : "der Struktur"}`} className="side-add" onClick={(e) => addMenu(e.currentTarget, area?.id)}>
                 <FolderPlus size={14} />
               </IconButton>
             </div>
@@ -235,7 +275,7 @@ export function Sidebar() {
                 onKeyDown={(e) => e.key === "Enter" && openNode(n)}
               >
                 <span className="tree-icon">
-                  <KindIcon kind={n.kind} />
+                  <NodeIcon node={n} />
                 </span>
                 <span className="tree-title ellipsis">{n.title}</span>
                 <AreaDot color={areas.find((a) => a.id === n.area_id)?.color ?? "#999"} size={6} />

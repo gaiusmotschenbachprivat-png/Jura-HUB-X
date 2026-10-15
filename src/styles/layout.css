@@ -81,6 +81,7 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .tree-icon { color: var(--text-3); display: grid; place-items: center; flex: none; }
 .tree-row.is-active .tree-icon { color: var(--accent); }
 .tree-title { flex: 1; min-width: 0; }
+.tree-date { flex: none; font-size: var(--fs-xs); color: var(--text-3); margin-left: 4px; }
 .tree-rename { flex: 1; min-width: 0; height: 22px; border: 1px solid var(--accent); border-radius: 3px; padding: 0 5px; background: var(--bg); }
 .drag-ghost {
   position: fixed; z-index: 100; pointer-events: none; background: var(--bg); border: 1px solid var(--line-strong);
@@ -131,3 +132,12 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
   box-shadow: -8px 0 28px rgba(20, 30, 60, 0.16);
   padding-top: env(safe-area-inset-top, 0px);
 }
+
+/* iPad als App (Home-Bildschirm): Inhalt nicht unter Statusleiste (Uhrzeit, Akku) und Home-Balken */
+.shell-side, .shell-main, .shell-context:not(.is-overlay) {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.shell-side { padding-left: env(safe-area-inset-left, 0px); }
+.shell-context:not(.is-overlay), .shell-main:last-child { padding-right: env(safe-area-inset-right, 0px); }
+.shell-context.is-overlay { padding-bottom: env(safe-area-inset-bottom, 0px); }

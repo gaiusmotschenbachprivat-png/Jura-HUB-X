@@ -1,4 +1,5 @@
 import type { StudyNode } from "../api/types";
+import { compareNodes, type SortMode } from "./noteTypes";
 
 export interface TreeItem {
   node: StudyNode;
@@ -7,7 +8,8 @@ export interface TreeItem {
 }
 
 /** Baut aus der flachen Liste den Baum. Knoten mit fehlendem Elternknoten landen oben. */
-export function buildTree(nodes: StudyNode[], opts: { showArchived?: boolean } = {}): TreeItem[] {
+export function buildTree(nodes: StudyNode[], opts: { showArchived?: boolean; sort?: SortMode } = {}): TreeItem[] {
+  const cmp = compareNodes(opts.sort ?? "manual");
   const byParent = new Map<string | null, StudyNode[]>();
   const ids = new Set(nodes.map((n) => n.id));
   for (const n of nodes) {
@@ -19,7 +21,7 @@ export function buildTree(nodes: StudyNode[], opts: { showArchived?: boolean } =
   const make = (parent: string | null, depth: number): TreeItem[] =>
     (byParent.get(parent) ?? [])
       .filter((n) => opts.showArchived || !n.archived_at)
-      .sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at))
+      .sort(cmp)
       .map((node) => ({ node, depth, children: make(node.id, depth + 1) }));
   return make(null, 0);
 }

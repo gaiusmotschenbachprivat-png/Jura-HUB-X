@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { api, errorMessage } from "../api";
 import type { Area, KnowledgeType, StudyNode } from "../api/types";
+import type { SortMode } from "../lib/noteTypes";
 
 export type View =
   | { type: "dashboard" }
@@ -54,6 +55,7 @@ interface State {
   areaRefs: StudyNode[];
   expanded: Record<string, boolean>;
   showArchived: boolean;
+  treeSort: SortMode;
 
   view: View;
   history: View[];
@@ -99,7 +101,7 @@ interface State {
   toggleContext(): void;
   setPalette(open: boolean): void;
   setSaveStatus(s: SaveStatus, err?: string | null, savedAt?: string | null, id?: string): void;
-  setPref<K extends "theme" | "fontScale" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "showArchived" | "focusMode">(
+  setPref<K extends "theme" | "fontScale" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "showArchived" | "focusMode" | "treeSort">(
     key: K,
     value: State[K],
   ): void;
@@ -116,6 +118,7 @@ const PREF_KEYS: Record<string, string> = {
   contextWidth: "ui.contextWidth",
   secondaryWidth: "ui.secondaryWidth",
   showArchived: "ui.showArchived",
+  treeSort: "ui.treeSort",
   contextOpen: "ui.contextOpen",
   areaId: "ui.lastArea",
   expanded: "ui.expanded",
@@ -146,6 +149,7 @@ export const useApp = create<State>((set, get) => ({
   areaRefs: [],
   expanded: {},
   showArchived: false,
+  treeSort: "auto",
   view: { type: "dashboard" },
   history: [{ type: "dashboard" }],
   historyIndex: 0,
@@ -186,6 +190,7 @@ export const useApp = create<State>((set, get) => ({
         secondaryWidth: typeof s["ui.secondaryWidth"] === "number" ? (s["ui.secondaryWidth"] as number) : 560,
         contextOpen: s["ui.contextOpen"] !== false,
         showArchived: s["ui.showArchived"] === true,
+        treeSort: (["auto", "manual", "name", "updated"] as const).find((m) => m === s["ui.treeSort"]) ?? "auto",
         expanded: (s["ui.expanded"] as Record<string, boolean>) ?? {},
       });
       await get().reloadNodes();

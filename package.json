@@ -1,7 +1,7 @@
 {
   "name": "studium-os",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Studium OS – lokales Arbeitsinstrument für das Studium",
   "scripts": {
@@ -14,6 +14,7 @@
     "build:web": "tsc --noEmit && vite build --mode web",
     "test:web": "node tests/e2e-web/web-e2e.mjs",
     "test:editor": "node tests/e2e-web/editor-e2e.mjs",
+    "test:struktur": "node tests/e2e-web/struktur-e2e.mjs",
     "eval": "RUN_EVAL=1 vitest run --config eval/vitest.config.ts",
     "eval:vergleich": "node eval/vergleich.mjs",
     "test:gesetze": "RUN_GII_REAL=1 vitest run --config eval/vitest.config.ts eval/gii-echt.eval.ts"

@@ -53,6 +53,8 @@ jobs:
         run: node tests/e2e-web/ki-e2e.mjs
       - name: Schreiben wie in Word (iPad-Größe, Touch)
         run: node tests/e2e-web/editor-e2e.mjs
+      - name: Vorlesungen, Schreibarten, Sortierung, Layout
+        run: node tests/e2e-web/struktur-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

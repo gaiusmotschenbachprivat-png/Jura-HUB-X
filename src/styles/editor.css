@@ -14,9 +14,9 @@
 }
 .note.is-compact .toolbar { padding: 4px 12px; }
 .tb-sep { width: 1px; height: 18px; background: var(--line); margin: 0 5px; }
-.tb-group { display: flex; flex-wrap: wrap; align-items: center; gap: 1px; padding: 0 5px; min-width: 0; }
-.tb-group + .tb-group { border-left: 1px solid var(--line); }
-.tb-group:first-child { padding-left: 0; }
+/* Gruppen nur durch Abstand getrennt – keine Striche, die beim Umbruch am Zeilenanfang hängen */
+.toolbar { column-gap: 14px; row-gap: 2px; }
+.tb-group { display: flex; flex-wrap: wrap; align-items: center; gap: 1px; min-width: 0; }
 .tb-font { width: 150px; }
 .tb-size { width: 70px; }
 .tb-style { width: 132px; }
@@ -140,3 +140,13 @@
   .toolbar .tb-font { width: 128px; }
   .toolbar .tb-style { width: 118px; }
 }
+
+/* Art der Notiz und Vorlesungsangaben unter dem Titel */
+.note-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin-top: 6px; font-size: var(--fs-sm); color: var(--text-2); }
+.note-type-chip { display: inline-flex; align-items: center; gap: 4px; padding: 0 4px 0 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-side); }
+.note-type-chip select { border: 0 !important; background: transparent !important; min-height: 28px !important; height: 28px; padding: 0 4px !important; font-size: var(--fs-sm); font-weight: 600; color: var(--text); }
+.note-meta-field { display: inline-flex; align-items: center; gap: 4px; }
+.note-meta-field > span { color: var(--text-3); font-size: var(--fs-xs); }
+.note-meta-field input { min-height: 28px !important; height: 28px; padding: 0 6px !important; font-size: var(--fs-sm); border-color: transparent !important; background: transparent !important; }
+.note-meta-field input:hover, .note-meta-field input:focus { border-color: var(--line) !important; background: var(--bg) !important; }
+.note-meta-field.grow-field input { width: 180px; }

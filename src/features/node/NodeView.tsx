@@ -1,9 +1,10 @@
-import { Archive, ArchiveRestore, FileUp, FileInput, Plus, Share2, X } from "lucide-react";
+import { Archive, ArchiveRestore, FilePlus2, FileUp, FileInput, Share2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api, errorMessage } from "../../api";
 import type { DocumentInfo, NodeDetail, NodeKind, NodeMeta } from "../../api/types";
-import { KIND_LABEL, KIND_LABEL_PLURAL, SUGGESTED_CHILDREN } from "../../lib/kinds";
+import { KIND_LABEL, KIND_LABEL_PLURAL } from "../../lib/kinds";
+import { compareNodes, formatDateDe, NOTE_TYPES, noteTypeOf } from "../../lib/noteTypes";
 import { formatRelative } from "../../lib/format";
 import { reportError, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
@@ -12,9 +13,10 @@ import { AreaDot, EmptyState } from "../../ui/misc";
 import { DocumentList } from "../documents/DocumentList";
 import { useImport } from "../documents/ImportDialog";
 import { importFileAsNote } from "../editor/exportImport";
-import { createNode, defaultTitle, openNode, renameNode } from "../navigation/actions";
+import { createNode, openNode, renameNode } from "../navigation/actions";
+import { NewNodeDialog, type NewNodeRequest } from "../navigation/NewNodeDialog";
 import { NodeTasks } from "../planning/NodeTasks";
-import { KindIcon } from "../navigation/icons";
+import { KindIcon, NodeIcon, NoteTypeIcon } from "../navigation/icons";
 
 const FIELDS: Record<string, { key: keyof NodeMeta; label: string; placeholder?: string; multiline?: boolean }[]> = {
   semester: [{ key: "description", label: "Notiz zum Semester", multiline: true }],
@@ -53,6 +55,8 @@ export function NodeView({ id }: { id: string }) {
   const [meta, setMeta] = useState<NodeMeta>({});
   const menu = useMenu();
   const startImport = useImport();
+  const treeSort = useApp((s) => s.treeSort);
+  const [newReq, setNewReq] = useState<NewNodeRequest | null>(null);
 
   const nodeFromTree = nodes.find((n) => n.id === id);
   useEffect(() => {
@@ -79,10 +83,7 @@ export function NodeView({ id }: { id: string }) {
       .catch(reportError);
   }, [id, includeSub, dataVersion]);
 
-  const children = useMemo(
-    () => nodes.filter((n) => n.parent_id === id).sort((a, b) => a.position - b.position),
-    [nodes, id],
-  );
+  const children = useMemo(() => nodes.filter((n) => n.parent_id === id).sort(compareNodes(treeSort)), [nodes, id, treeSort]);
 
   if (error) return <EmptyState title="Nicht verfügbar">{error}</EmptyState>;
   if (!detail) return <div className="loading">Lade …</div>;
@@ -93,15 +94,30 @@ export function NodeView({ id }: { id: string }) {
   const saveMeta = async (next: NodeMeta) => {
     try {
       await api.nodeUpdate(id, { meta: next });
+      // Baum aktualisieren: neue Vorlesungen übernehmen z. B. Dozent/in der Veranstaltung
+      await reloadNodes();
     } catch (e) {
       reportError(e);
     }
   };
-  const add = (kind: NodeKind) => createNode({ areaId: node.area_id, parentId: id, kind, title: defaultTitle(kind) });
+  const lectureHost = node.kind === "course" || node.kind === "session";
+  const newIn = (extra: Partial<NewNodeRequest> = {}) => setNewReq({ parentId: id, areaId: node.area_id, ...extra });
 
-  const grouped = (["session", "topic", "course", "module", "folder", "note", "semester"] as NodeKind[])
-    .map((k) => ({ kind: k, items: children.filter((c) => c.kind === k) }))
-    .filter((g) => g.items.length);
+  // Struktur nach Art, Notizen nach Schreibart (Vorlesungen chronologisch)
+  const grouped = [
+    ...(["semester", "module", "course", "session", "topic", "folder"] as NodeKind[]).map((k) => ({
+      key: k,
+      label: KIND_LABEL_PLURAL[k],
+      icon: <KindIcon kind={k} size={14} />,
+      items: children.filter((c) => c.kind === k),
+    })),
+    ...NOTE_TYPES.map((t) => ({
+      key: t.id,
+      label: t.plural,
+      icon: <NoteTypeIcon type={t.id} size={14} />,
+      items: children.filter((c) => noteTypeOf(c) === t.id),
+    })),
+  ].filter((g) => g.items.length);
 
   const otherAreas = areas.filter((a) => a.id !== node.area_id && !detail.also_in_areas.includes(a.id) && !a.archived_at);
 
@@ -131,21 +147,20 @@ export function NodeView({ id }: { id: string }) {
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         />
         <div className="row wrap">
-          <Button variant="primary" icon={<Plus size={15} />} onClick={() => void add("note")}>
+          {lectureHost && (
+            <Button variant="primary" icon={<NoteTypeIcon type="vorlesung" size={15} plain />} onClick={() => newIn({ noteType: "vorlesung" })}>
+              Vorlesung
+            </Button>
+          )}
+          <Button
+            variant={lectureHost ? undefined : "primary"}
+            icon={<NoteTypeIcon type="notiz" size={15} plain />}
+            onClick={() => void createNode({ areaId: node.area_id, parentId: id, kind: "note", title: "Neue Notiz", meta: { noteType: "notiz" } })}
+          >
             Notiz
           </Button>
-          <Button
-            icon={<Plus size={15} />}
-            onClick={(e) =>
-              menu.openBelow(
-                e.currentTarget,
-                SUGGESTED_CHILDREN[node.kind]
-                  .filter((k) => k !== "note")
-                  .map((k) => ({ label: KIND_LABEL[k], icon: <KindIcon kind={k} size={14} />, onSelect: () => void add(k) })),
-              )
-            }
-          >
-            Unterelement
+          <Button icon={<FilePlus2 size={15} />} onClick={() => newIn()}>
+            Neu …
           </Button>
           <Button icon={<FileUp size={15} />} onClick={() => void startImport({ nodeId: id })}>
             Dokumente importieren
@@ -181,15 +196,17 @@ export function NodeView({ id }: { id: string }) {
             </div>
           ) : (
             grouped.map((g) => (
-              <section key={g.kind} className="section">
-                <h3 className="label">{KIND_LABEL_PLURAL[g.kind]}</h3>
+              <section key={g.key} className="section">
+                <h3 className="label row">
+                  {g.icon} {g.label} <span className="muted">· {g.items.length}</span>
+                </h3>
                 <div className="list">
                   {g.items.map((c) => (
                     <button key={c.id} className={`list-row ${c.archived_at ? "is-archived" : ""}`} onClick={() => openNode(c)}>
-                      <KindIcon kind={c.kind} />
+                      <NodeIcon node={c} />
                       <span className="grow ellipsis">{c.title}</span>
-                      {typeof c.meta?.date === "string" && c.meta.date && <span className="muted small tnum">{c.meta.date}</span>}
-                      <span className="muted xs">{formatRelative(c.updated_at)}</span>
+                      {typeof c.meta?.date === "string" && c.meta.date && <span className="muted small tnum">{formatDateDe(c.meta.date)}</span>}
+                      <span className="muted xs nowrap">{formatRelative(c.updated_at)}</span>
                     </button>
                   ))}
                 </div>
@@ -198,9 +215,9 @@ export function NodeView({ id }: { id: string }) {
           )}
 
           <section className="section">
-            <div className="row">
+            <div className="row wrap section-head">
               <h3 className="label grow">Unterlagen</h3>
-              <label className="small muted row">
+              <label className="small muted row nowrap">
                 <input type="checkbox" checked={includeSub} onChange={(e) => setIncludeSub(e.target.checked)} /> inkl. Unterelemente
               </label>
             </div>
@@ -288,6 +305,7 @@ export function NodeView({ id }: { id: string }) {
         </aside>
       </div>
       {menu.el}
+      {newReq && <NewNodeDialog req={newReq} onClose={() => setNewReq(null)} />}
     </div>
   );
 }
