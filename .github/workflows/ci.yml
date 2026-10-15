@@ -59,6 +59,8 @@ jobs:
         run: node tests/e2e-web/etappe1-e2e.mjs
       - name: Zeichnen (Apple Pencil), Stundenplan, Klausurenphase
         run: node tests/e2e-web/etappe2-e2e.mjs
+      - name: KI-Lernhilfen (Claude API nachgebildet)
+        run: node tests/e2e-web/etappe3-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

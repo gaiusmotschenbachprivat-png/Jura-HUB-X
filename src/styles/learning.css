@@ -193,3 +193,10 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .today-time { min-width: 92px; font-size: var(--fs-sm); color: var(--text-2); }
 .phase-banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .today-course { border: 0; background: none; padding: 0; color: var(--text); cursor: pointer; font: inherit; text-align: left; min-width: 0; }
+
+/* KI-Lernhilfen */
+.study-result { max-height: 50vh; overflow: auto; border: 1px solid var(--line); border-radius: var(--r-md); padding: 10px 14px; background: var(--bg-side); }
+.study-cards { max-height: 52vh; overflow: auto; }
+.study-card { align-items: flex-start; cursor: pointer; }
+.study-card input { margin-top: 3px; }
+.sent-preview { white-space: pre-wrap; max-height: 200px; overflow: auto; background: var(--bg-sunken); padding: 8px; border-radius: 6px; }

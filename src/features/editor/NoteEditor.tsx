@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { ExternalLink, History, ListTree, MoreHorizontal, Printer, Unlink } from "lucide-react";
+import { ExternalLink, GraduationCap, History, ListTree, MoreHorizontal, Printer, Unlink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -26,6 +26,7 @@ import { FindBar } from "./FindBar";
 import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
 import { PrintView } from "./PrintView";
+import { StudyDialog, type StudyMode } from "../assistant/StudyTools";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
 import { CardDialog } from "../learn/CardDialog";
@@ -105,6 +106,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [drawing, setDrawing] = useState<{ pos: number | null; data: string | null } | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
+  const [study, setStudy] = useState<StudyMode | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
@@ -305,6 +307,13 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     );
   };
 
+  const studyItems = () => [
+    { label: "Mitschrift aufbereiten …", onSelect: () => setStudy("aufbereiten" as const) },
+    { label: "Karteikarten vorschlagen …", onSelect: () => setStudy("karteikarten" as const) },
+    { label: "Übungsfall erstellen …", onSelect: () => setStudy("uebungsfall" as const) },
+    ...(treeNode?.meta?.training ? [{ label: "Lösung besprechen …", onSelect: () => setStudy("korrektur" as const) }] : []),
+  ];
+
   const moreMenu = (el: HTMLElement) =>
     menu.openBelow(el, [
       { label: "Karteikarte aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("card") },
@@ -351,6 +360,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               }
             }}
           />
+          <IconButton label="KI-Lernhilfen" onClick={(e) => menu.openBelow(e.currentTarget, studyItems())}>
+            <GraduationCap size={16} />
+          </IconButton>
           <IconButton label="Inhaltsverzeichnis" onClick={(e) => tocMenu(e.currentTarget)}>
             <ListTree size={16} />
           </IconButton>
@@ -510,6 +522,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               .catch(reportError);
           }}
         />
+      )}
+      {study && treeNode && (
+        <StudyDialog mode={study} node={treeNode} text={plainText(editor.getJSON() as PMNode)} editor={editor} onClose={() => setStudy(null)} />
       )}
       {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} />}
       {printDoc && <PrintView doc={printDoc} title={title} onClose={() => setPrintDoc(null)} />}

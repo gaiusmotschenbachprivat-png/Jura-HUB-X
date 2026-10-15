@@ -84,6 +84,24 @@ Rechtsquellen und Einstellungen.
 6. **„Als Notiz speichern“** legt die Antwort als Notiz an (als „ungeprüft“ gekennzeichnet).
    Unterhaltungen selbst werden nicht gespeichert.
 
+### KI-Lernhilfen in jeder Notiz
+
+Das Hut-Symbol neben dem Notiztitel („KI-Lernhilfen“) bietet:
+
+- **Mitschrift aufbereiten:** Claude ordnet die Mitschrift zu einem Lernskript (Gliederung,
+  Kernaussagen, Definitionen, Prüfungsschemata, Lücken, Wiederholungsfragen). Wahlweise als
+  neue Zusammenfassung speichern oder unter der Mitschrift einfügen – das Original bleibt.
+- **Karteikarten vorschlagen:** 6–15 Vorschläge (Definition, Frage, Norm); du wählst aus,
+  welche angelegt werden. Sie tragen das Schlagwort „KI-Vorschlag“ und verweisen auf die Notiz.
+- **Übungsfall erstellen:** Sachverhalt und Fallfrage zum Stoff, in drei Schwierigkeitsstufen,
+  als neue Fall-Notiz. Die Lösungsskizze wird verdeckt gespeichert.
+- **Lösung besprechen** (in einem Übungsfall): Rückmeldung zu Aufbau, erkannten Problemen und
+  Gutachtenstil, ohne Note; die Lösungsskizze lässt sich danach aufdecken.
+
+Die Prompts liegen in `prompts/lernen/` und lassen sich wie die übrigen anpassen. Auch hier
+wird vor dem Senden anonymisiert, „An Anthropic gesendet“ zeigt den genauen Text, und alle
+Ergebnisse sind als ungeprüft gekennzeichnet.
+
 ## 3. Wie es funktioniert
 
 ```
