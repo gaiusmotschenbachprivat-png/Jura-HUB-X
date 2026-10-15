@@ -106,7 +106,7 @@ try {
   await page.keyboard.press("End");
   await page.getByRole("button", { name: /^Fußnote einfügen/ }).click();
   const citeFirst = await page
-    .waitForFunction(() => document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.includes("Quelle zitieren"), null, { timeout: 5000 })
+    .waitForFunction(() => document.querySelector('[role="dialog"] [role="tab"][aria-selected="true"]')?.textContent?.includes("Quelle zitieren"), null, { timeout: 5000 })
     .then(() => true, () => false);
   check("Mit vorhandenen Quellen startet „Quelle zitieren“", citeFirst);
   await dlg.getByRole("button", { name: "Neue Quelle" }).click();
