@@ -4,6 +4,7 @@ import {
   AlignCenter,
   Baseline,
   Asterisk,
+  PenTool,
   Scale,
   Search,
   ChevronDown,
@@ -66,6 +67,7 @@ export function Toolbar({
   onFootnote,
   onSchema,
   onFind,
+  onDraw,
 }: {
   editor: Editor;
   onExternalLink: () => void;
@@ -75,6 +77,7 @@ export function Toolbar({
   onFootnote: () => void;
   onSchema: () => void;
   onFind: () => void;
+  onDraw: () => void;
 }) {
   const menu = useMenu();
   const s = useEditorState({
@@ -350,6 +353,9 @@ export function Toolbar({
         </IconButton>
         <IconButton label="Tabelle" active={s.table} onClick={(e) => tableMenu(e.currentTarget)}>
           <TableIcon size={16} />
+        </IconButton>
+        <IconButton label="Zeichnung (Apple Pencil)" onClick={onDraw}>
+          <PenTool size={16} />
         </IconButton>
         <IconButton label="Bild einfügen (oder Screenshot einfügen/hineinziehen)" onClick={onImage}>
           <ImagePlus size={16} />

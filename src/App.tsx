@@ -8,6 +8,7 @@ import { KnowledgeList } from "./features/knowledge/KnowledgeList";
 import { CardsView } from "./features/learn/CardsView";
 import { LearnSession } from "./features/learn/LearnSession";
 import { PlanningView } from "./features/planning/PlanningView";
+import { TimetableView } from "./features/planning/TimetableView";
 import { AssistantView } from "./features/assistant/AssistantView";
 import { AssistantFab } from "./features/assistant/AssistantPanel";
 import { Dashboard } from "./features/dashboard/Dashboard";
@@ -233,6 +234,8 @@ function ViewSwitch({ view }: { view: View }) {
       return <LearnSession />;
     case "planning":
       return <PlanningView />;
+    case "timetable":
+      return <TimetableView />;
     case "assistant":
       return <AssistantView />;
   }

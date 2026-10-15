@@ -31,6 +31,32 @@ dann im Vollbild und funktioniert offline.
   Seitenzahlen, Korrekturrand 7 cm und „Hausarbeit“-Satz (Times 12 pt, 1,5-zeilig, Blocksatz).
   Auf dem iPad im Druckdialog auf Teilen tippen → „In Dateien sichern“ ergibt ein PDF.
 
+## Zeichnen mit dem Apple Pencil
+
+Stift-Symbol in der Werkzeugleiste → Zeichenfläche über den ganzen Bildschirm: **Stift**
+(Strichstärke folgt dem Druck), **Textmarker**, **Radierer** (ganze Striche), vier Farben,
+Strichstärke, Rückgängig/Wiederholen, „+“ für mehr Platz nach unten. Sobald der Apple Pencil
+erkannt ist, zeichnet nur noch der Stift – die Hand kann aufliegen, mit dem Finger wird gescrollt.
+„Fertig“ fügt die Zeichnung als Bild in die Notiz ein (zugeschnitten, scharf in doppelter
+Auflösung). **Antippen** öffnet sie wieder zum Weiterzeichnen – die Striche bleiben als
+Vektordaten erhalten. Zeichnungen erscheinen auch im Word-Export und in der Druckansicht.
+
+## Stundenplan und „Heute“
+
+Trage bei einer Veranstaltung unter „Angaben“ **Wochentag** (z. B. „Mo, Do“ oder „dienstags“)
+und **Uhrzeit** (z. B. „10:15–11:45“) ein. Dann erscheint sie im **Stundenplan** (Seitenleiste)
+und am Vorlesungstag auf der Übersicht unter **„Heute“** – mit **„Mitschrift starten“**
+(Vorlesung mit Nr., Datum und Dozent/in) bzw. „Mitschrift öffnen“, wenn es sie schon gibt.
+
+## Klausurenphase
+
+Unter „Aufgaben & Prüfungen“ hat jeder Prüfungstermin einen Countdown und den Knopf
+**„Lernplan“**: Alle Inhalte der zugeordneten Veranstaltung (Vorlesungen chronologisch,
+Zusammenfassungen, Fälle …) werden gleichmäßig auf die Tage bis drei Tage vor der Klausur
+verteilt (ein lernfreier Tag wählbar), danach Probeklausur und Schlusswiederholung. Die Schritte
+erscheinen als Lernziele mit Datum; der Fortschrittsbalken zeigt, wie viel erledigt ist. Ab vier
+Wochen vor einer Klausur zeigt die Übersicht die **Klausurenphase** mit Countdown.
+
 ## Backup-Erinnerung
 
 Backups entstehen täglich automatisch im App-Speicher. Einmal pro Woche erinnert eine Leiste

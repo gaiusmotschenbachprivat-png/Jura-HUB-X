@@ -17,6 +17,7 @@ export type View =
   | { type: "cards"; id?: string }
   | { type: "learn" }
   | { type: "planning" }
+  | { type: "timetable" }
   | { type: "assistant" }
   | { type: "settings"; tab?: "allgemein" | "backup" | "daten" | "bereiche" };
 

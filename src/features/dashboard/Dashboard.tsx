@@ -14,6 +14,7 @@ import { openNode } from "../navigation/actions";
 import { KindIcon, NodeIcon, NoteTypeIcon } from "../navigation/icons";
 import { NewNodeDialog, type NewNodeRequest } from "../navigation/NewNodeDialog";
 import { LearningOverview } from "./LearningOverview";
+import { TodayCard } from "./TodayCard";
 
 export function Dashboard() {
   const areas = useApp((s) => s.areas);
@@ -129,6 +130,8 @@ export function Dashboard() {
           </Button>
         </div>
       )}
+
+      <TodayCard />
 
       <div className="area-cards">
         {visibleAreas.map((a) => {

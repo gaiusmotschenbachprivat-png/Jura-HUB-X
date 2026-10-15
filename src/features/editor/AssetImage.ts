@@ -8,6 +8,12 @@ import Image from "@tiptap/extension-image";
 import { api } from "../../api";
 
 export const ASSET_PREFIX = "studium:asset/";
+/** Antippen einer Zeichnung: der Editor öffnet die Zeichenfläche. */
+export const DRAWING_EDIT_EVENT = "studium:edit-drawing";
+export interface DrawingEditDetail {
+  pos: number;
+  drawing: string;
+}
 export const isAssetSrc = (src: unknown): src is string => typeof src === "string" && /^studium:asset\/[0-9a-f]{64}$/.test(src);
 
 const cache = new Map<string, Promise<string>>();
@@ -29,12 +35,27 @@ export const AssetImage = Image.extend({
     return {
       ...this.parent?.(),
       width: { default: null },
+      /** Vektordaten einer Handzeichnung (siehe lib/drawing.ts); null bei normalen Bildern. */
+      drawing: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute("data-drawing"),
+        renderHTML: (a: Record<string, unknown>) => (a.drawing ? { "data-drawing": a.drawing } : {}),
+      },
     };
   },
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, getPos }) => {
       const wrap = document.createElement("span");
       wrap.className = "asset-image";
+      if (node.attrs.drawing) {
+        wrap.classList.add("is-drawing");
+        wrap.title = "Zeichnung – antippen zum Bearbeiten";
+        wrap.addEventListener("click", () => {
+          const pos = typeof getPos === "function" ? getPos() : undefined;
+          if (typeof pos === "number")
+            window.dispatchEvent(new CustomEvent<DrawingEditDetail>(DRAWING_EDIT_EVENT, { detail: { pos, drawing: String(node.attrs.drawing) } }));
+        });
+      }
       const src = node.attrs.src as unknown;
       if (!isAssetSrc(src)) {
         wrap.classList.add("is-missing");

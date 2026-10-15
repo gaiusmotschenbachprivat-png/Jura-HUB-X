@@ -9,6 +9,7 @@ import { areaById, reportError, useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import { confirmDialog, Dialog } from "../../ui/Dialog";
 import { AreaDot, Field } from "../../ui/misc";
+import { PlanBar, planProgress, StudyPlanDialog } from "./StudyPlan";
 
 export const TASK_KIND_LABEL: Record<TaskKind, string> = { aufgabe: "Aufgabe", frage: "Offene Frage", lernziel: "Lernziel" };
 
@@ -54,11 +55,14 @@ export function PlanningView() {
   const [due, setDue] = useState("");
   const [nodeId, setNodeId] = useState("");
   const [examEdit, setExamEdit] = useState<Exam | "new" | null>(null);
+  const [planFor, setPlanFor] = useState<Exam | null>(null);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
   const scope = areaId === "all" ? null : areaId;
 
   useEffect(() => {
     api.tasksList({ area_id: scope, include_done: showDone }).then(setTasks).catch(reportError);
     api.examsList(scope, showPast ? null : todayIso()).then(setExams).catch(reportError);
+    api.tasksList({ area_id: null, include_done: true }).then(setAllTasks).catch(reportError);
   }, [scope, showDone, showPast, dataVersion]);
 
   const nodeOptions = useMemo(() => flattenNodes(buildTree(nodes)), [nodes]);
@@ -166,16 +170,22 @@ export function PlanningView() {
             {exams.map((e) => {
               const n = daysUntil(e.date);
               return (
-                <button key={e.id} className="exam-card" onClick={() => setExamEdit(e)}>
-                  <span className="exam-days tnum">{n >= 0 ? n : "–"}</span>
-                  <span className="grow" style={{ minWidth: 0 }}>
+                <div key={e.id} className="exam-card">
+                  <span className={`exam-days tnum ${n >= 0 && n <= 14 ? "is-soon" : ""}`}>{n >= 0 ? n : "–"}</span>
+                  <button className="grow exam-main" style={{ minWidth: 0 }} onClick={() => setExamEdit(e)}>
                     <strong className="ellipsis block">{e.title}</strong>
                     <span className="xs muted block">
                       {formatDate(e.date + "T12:00:00")} {e.time && `· ${e.time}`} {e.place && `· ${e.place}`}
                     </span>
                     <span className="xs muted block">{n >= 0 ? `noch ${n} ${n === 1 ? "Tag" : "Tage"}` : "vorbei"}</span>
-                  </span>
-                </button>
+                    <PlanBar {...planProgress(allTasks, e.id)} />
+                  </button>
+                  {n >= 0 && (
+                    <Button size="sm" onClick={() => setPlanFor(e)}>
+                      Lernplan
+                    </Button>
+                  )}
+                </div>
               );
             })}
             <label className="small row">
@@ -184,6 +194,7 @@ export function PlanningView() {
           </div>
         </aside>
       </div>
+      {planFor && <StudyPlanDialog exam={planFor} tasks={allTasks} onClose={() => setPlanFor(null)} />}
       {examEdit && <ExamDialog exam={examEdit === "new" ? null : examEdit} nodeOptions={nodeOptions} onClose={() => setExamEdit(null)} />}
     </div>
   );

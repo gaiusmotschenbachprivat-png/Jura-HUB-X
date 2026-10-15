@@ -27,7 +27,7 @@ const FIELDS: Record<string, { key: keyof NodeMeta; label: string; placeholder?:
   ],
   course: [
     { key: "lecturer", label: "Dozent/in" },
-    { key: "weekday", label: "Wochentag", placeholder: "z. B. Montag" },
+    { key: "weekday", label: "Wochentag (für den Stundenplan)", placeholder: "z. B. Mo, Do" },
     { key: "time", label: "Uhrzeit", placeholder: "z. B. 10:15–11:45" },
     { key: "room", label: "Ort", placeholder: "z. B. Hörsaal H 24" },
     { key: "description", label: "Beschreibung", multiline: true },

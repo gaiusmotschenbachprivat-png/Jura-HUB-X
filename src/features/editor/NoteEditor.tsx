@@ -12,7 +12,9 @@ import { Dialog } from "../../ui/Dialog";
 import { useMenu } from "../../ui/Menu";
 import { EmptyState, Field, MOD } from "../../ui/misc";
 import { renameNode, trashNode } from "../navigation/actions";
-import { storeImageFile } from "./AssetImage";
+import { DRAWING_EDIT_EVENT, storeImageFile, type DrawingEditDetail } from "./AssetImage";
+import { DrawingDialog, type DrawingResult } from "./DrawingDialog";
+import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
@@ -100,6 +102,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [math, setMath] = useState<(MathEditDetail & { isNew?: boolean }) | null>(null);
   const [footnote, setFootnote] = useState<(FootnoteEditDetail & { isNew?: boolean }) | null>(null);
   const [findOpen, setFindOpen] = useState(false);
+  const [drawing, setDrawing] = useState<{ pos: number | null; data: string | null } | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -223,9 +226,16 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       if (!editor.view.dom.contains(document.activeElement) && !editor.view.dom.querySelector(":hover")) return;
       setFootnote(d);
     };
+    const onDrawing = (e: Event) => {
+      const d = (e as CustomEvent<DrawingEditDetail>).detail;
+      if (editor.state.doc.nodeAt(d.pos)?.type.name !== "image" || !editor.view.dom.isConnected) return;
+      setDrawing({ pos: d.pos, data: d.drawing });
+    };
     window.addEventListener(MATH_EDIT_EVENT, onMath);
     window.addEventListener(FOOTNOTE_EDIT_EVENT, onFootnote);
+    window.addEventListener(DRAWING_EDIT_EVENT, onDrawing);
     return () => {
+      window.removeEventListener(DRAWING_EDIT_EVENT, onDrawing);
       window.removeEventListener(MATH_EDIT_EVENT, onMath);
       window.removeEventListener(FOOTNOTE_EDIT_EVENT, onFootnote);
     };
@@ -368,6 +378,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         onFootnote={() => setFootnote({ text: "", pos: -1, isNew: true })}
         onSchema={() => setSchemaOpen(true)}
         onFind={() => setFindOpen(true)}
+        onDraw={() => setDrawing({ pos: null, data: null })}
       />
       {findOpen && <FindBar editor={editor} onClose={() => setFindOpen(false)} />}
       <input
@@ -460,6 +471,43 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             else chain.insertInlineMath({ latex, pos: math.isNew ? undefined : math.pos });
             chain.run();
             setMath(null);
+          }}
+        />
+      )}
+      {drawing && (
+        <DrawingDialog
+          initial={decodeDrawing(drawing.data)}
+          onClose={() => setDrawing(null)}
+          onDelete={
+            drawing.pos === null
+              ? undefined
+              : () => {
+                  const at = drawing.pos!;
+                  editor.chain().focus().command(({ tr }) => {
+                    const n = tr.doc.nodeAt(at);
+                    if (n?.type.name === "image") tr.delete(at, at + n.nodeSize);
+                    return true;
+                  }).run();
+                  setDrawing(null);
+                }
+          }
+          onSave={(r: DrawingResult) => {
+            const at = drawing.pos;
+            setDrawing(null);
+            void storeImageFile(r.png)
+              .then((src) => {
+                const attrs = { src, alt: "Zeichnung", width: r.width, drawing: encodeDrawing(r.drawing) };
+                if (at === null) {
+                  editor.chain().focus().insertContent({ type: "image", attrs }).run();
+                } else {
+                  editor.chain().focus().command(({ tr }) => {
+                    const n = tr.doc.nodeAt(at);
+                    if (n?.type.name === "image") tr.setNodeMarkup(at, undefined, { ...n.attrs, ...attrs });
+                    return true;
+                  }).run();
+                }
+              })
+              .catch(reportError);
           }}
         />
       )}
