@@ -19,7 +19,7 @@ trap 'kill $DRIVER ${XVFB:-} 2>/dev/null || true' EXIT
 STATUS=0
 # Jede Testdatei bekommt einen eigenen, frischen Datenordner. Der Treiber wird
 # danach gestartet, damit die App den Datenordner (XDG_DATA_HOME) erbt.
-for t in e2e.mjs e2e-phase3.mjs; do
+for t in ${E2E_TESTS:-e2e.mjs e2e-phase3.mjs e2e-ki.mjs}; do
   echo "== $t"
   export E2E_WORK="$WORK/${t%.mjs}" XDG_DATA_HOME="$WORK/${t%.mjs}/xdg"
   mkdir -p "$XDG_DATA_HOME"

@@ -179,9 +179,9 @@ EVAL_FILTER='^ar-' npm run eval                         # nur Arbeitsrecht
 npm run eval:vergleich                                  # die zwei neuesten Läufe vergleichen
 ```
 
-Ohne eigenen Rechner: Auf GitHub unter **Actions → KI-Evaluation → Run workflow** (vorher unter
-Settings → Secrets and variables → Actions das Secret `ANTHROPIC_API_KEY` anlegen). Die
-Ergebnisse liegen als Artefakt am Lauf.
+Auf GitHub unter **Actions → KI-Evaluation → Run workflow** (vorher unter Settings → Secrets and
+variables → Actions das Secret `ANTHROPIC_API_KEY` anlegen) – siehe aber den Hinweis zu
+gesetze-im-internet.de unten. Die Ergebnisse liegen als Artefakt am Lauf.
 
 Kennzahlen je Frage und gesamt:
 
@@ -194,6 +194,12 @@ Kennzahlen je Frage und gesamt:
 | Kosten | Schätzung nach Listenpreis Claude Opus 5.5 |
 
 Jeder Lauf kostet echte API-Nutzung (die Schätzung steht im Ergebnis).
+
+**Import echter Gesetze prüfen** (ohne API-Schlüssel): `npm run test:gesetze` lädt BGB, GG, StGB und
+KSchG und prüft u. a. Absätze von § 433 BGB, Art. 1 GG, § 242 StGB, § 4 KSchG und die Zitatprüfung
+(erfundener Absatz, erfundene Norm). gesetze-im-internet.de sperrt Rechenzentren wie GitHub Actions –
+deshalb läuft dieser Test nur auf dem eigenen Rechner. Gleiches gilt für die Evaluation auf GitHub:
+dort vorher die Gesetze als Dateien in `eval/.cache/<abk>.zip` bereitstellen oder lokal auswerten.
 
 ## 8. Datenschutz, DSGVO und Verschwiegenheit
 

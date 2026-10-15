@@ -1,7 +1,8 @@
 /**
- * Prüft den Gesetzesimport gegen die echten Dateien von gesetze-im-internet.de
- * (läuft im GitHub-Workflow; lokal: RUN_GII_REAL=1 npm run eval).
- * Kein API-Schlüssel nötig.
+ * Prüft den Gesetzesimport gegen die echten Dateien von gesetze-im-internet.de.
+ * Aufruf: npm run test:gesetze  (kein API-Schlüssel nötig, braucht Internet).
+ * Hinweis: gesetze-im-internet.de lässt Verbindungen aus Rechenzentren (z. B.
+ * GitHub-Actions) nicht zu – der Test läuft deshalb auf dem eigenen Rechner.
  */
 import fs from "node:fs";
 import path from "node:path";

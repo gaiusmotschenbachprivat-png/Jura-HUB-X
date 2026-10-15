@@ -61,30 +61,6 @@ jobs:
           name: studium-os-web
           path: dist-web
 
-  gesetze:
-    name: Import echter Gesetze (gesetze-im-internet.de)
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Gesetze herunterladen
-        run: |
-          mkdir -p eval/.cache
-          for g in bgb gg stgb kschg; do
-            if ! curl -sS --fail --retry 2 --connect-timeout 20 --max-time 120 -A "Mozilla/5.0 (Studium OS Test)" -o "eval/.cache/$g.zip" "https://www.gesetze-im-internet.de/$g/xml.zip" 2> err.txt; then
-              echo "::error::Download $g fehlgeschlagen: $(tr '\n' ' ' < err.txt)"
-              echo "::error::DNS: $(getent hosts www.gesetze-im-internet.de | tr '\n' ' ') / HTTP: $(curl -s -o /dev/null -w '%{http_code} %{remote_ip}' --max-time 20 http://www.gesetze-im-internet.de/ 2>&1)"
-              exit 1
-            fi
-            echo "::notice::$g: $(stat -c %s eval/.cache/$g.zip) Bytes"
-          done
-      - name: BGB, GG, StGB, KSchG importieren und prüfen
-        run: RUN_GII_REAL=1 npx vitest run --config eval/vitest.config.ts eval/gii-echt.eval.ts
-
   safari:
     name: iPad-/Browser-Version (Safari)
     runs-on: macos-latest

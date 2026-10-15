@@ -48,6 +48,12 @@ Architektur, Stack, Projektstruktur, Datenmodell, Sicherheitskonzept, Risiken
 Gleiche Oberfläche, Datenkern als TypeScript-Port, Speicherung im Gerät (OPFS/IndexedDB),
 offline, Backups austauschbar mit der Desktop-App. Details: [IPAD.md](IPAD.md).
 
+## KI-Assistent ✅ (Version 0.4)
+
+Optionaler juristischer Assistent mit Claude: eigene Rechtsquellen (RAG), Werkzeuge, Zitatprüfung,
+Anonymisierung, Evaluation. Details: [KI-ASSISTENT.md](KI-ASSISTENT.md). Offen: semantische Suche,
+Prüfung mit echter API und echten Gesetzesdateien durch den Nutzer.
+
 ## Phase 4 – Word und Export ⬜
 PDF-Export, verknüpfte Word-Dateien mit Änderungserkennung (Hash + Änderungszeit),
 Fußnoten im DOCX-Export, Tests mit realen Dokumenten.

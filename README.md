@@ -5,7 +5,7 @@ Studienstruktur, Mitschriften, Vorlesungsfolien und Skripte, Verknüpfungen, Vol
 und Backups. **Alles läuft lokal.** Keine Anmeldung, kein Server, keine Cloud, kein Tracking. Einzige Ausnahme ist der
 optionale KI-Assistent – er sendet nur nach deiner Zustimmung und nur beim Absenden einer Frage an Anthropic.
 
-> Stand: Version 0.3 (Phase 3 – Dokumente und Lernen, dazu die iPad-/Browser-Version). Was fertig ist und was
+> Stand: Version 0.4 (Phase 3 – Dokumente und Lernen, iPad-/Browser-Version, optionaler KI-Assistent). Was fertig ist und was
 > noch fehlt, steht in [docs/ROADMAP.md](docs/ROADMAP.md) und [docs/PHASENBERICHT.md](docs/PHASENBERICHT.md).
 
 ## Funktionen
@@ -66,8 +66,8 @@ npm run tauri build
 ```
 
 Ergebnis:
-- macOS: `target/release/bundle/dmg/Studium OS_0.3.0_*.dmg`
-- Windows: `target/release/bundle/msi/Studium OS_0.3.0_*.msi` und `…/nsis/*-setup.exe`
+- macOS: `target/release/bundle/dmg/Studium OS_0.4.0_*.dmg`
+- Windows: `target/release/bundle/msi/Studium OS_0.4.0_*.msi` und `…/nsis/*-setup.exe`
 
 Die App ist noch nicht signiert. macOS zeigt beim ersten Öffnen eine Warnung: Rechtsklick auf die App
 → „Öffnen“. Windows SmartScreen: „Weitere Informationen“ → „Trotzdem ausführen“.

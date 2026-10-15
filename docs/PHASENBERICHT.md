@@ -201,3 +201,57 @@ erste Version sind umgesetzt:
 - Verschieben im Strukturbaum per Finger-Ziehen gibt es nicht (Maus/Trackpad geht).
 - Die Veröffentlichung braucht eine Website-Adresse (GitHub Pages: bei privaten Repositories
   nur mit kostenpflichtigem GitHub-Tarif).
+
+## KI-Assistent (Version 0.4)
+
+### Umgesetzt
+
+- **Juristischer Assistent mit Claude** (offizielles SDK `@anthropic-ai/sdk`, Claude Opus 5.5,
+  adaptives Denken, effort „high“, serverseitiges Ausweichmodell bei Ablehnungen) für Recherche und
+  Fallgutachten, Vertragsprüfung und Schriftsatzentwürfe; deutsches Zivil-, Arbeits-, öffentliches
+  und Strafrecht. Desktop und iPad.
+- **System-Prompt als Datei** (`prompts/system.md`) plus Aufgabenprofile; in der App änderbar.
+- **RAG:** Rechtsquellen-Tabellen (Migration 0003) in Rust und TypeScript; Gesetze auf Knopfdruck von
+  gesetze-im-internet.de (Desktop) oder als Datei (XML/ZIP); Urteile, Kommentare, eigene Texte als
+  PDF/DOCX/TXT; Zerlegung je Norm-Absatz bzw. Absatz/Randnummer mit Metadaten (Quelle, Norm, Datum,
+  Fassung); Abruf genannter Normen + BM25-Volltextsuche; Quellenkennungen [Qn] in jeder Antwort.
+- **Werkzeuge:** Normabruf, Quellensuche, Suche in eigenen Notizen (nur mit Freigabe), Fristenrechner
+  nach §§ 187–193 BGB mit Feiertagen aller Länder, Muster-Vorlagen – als austauschbare Module.
+- **Ausgabeprüfung:** Erkennung von Norm- und Entscheidungszitaten (§/§§/Art., Abs./S./Nr., römische
+  Absätze, i. V. m., Aktenzeichen, Fundstellen) und Abgleich gegen die abgerufenen Quellen; Status
+  belegt / Absatz nicht belegt / nicht belegt / existiert nicht; eine automatische Überarbeitungsrunde;
+  Markierung in der Anzeige.
+- **Evaluation:** 32 Testfragen (`eval/fragen.yaml`), Auswertungsskript mit Norm-Trefferquote,
+  falschen Zitaten, Halluzinationen, Stichworten, Werkzeugnutzung und Kosten; Vergleich zweier Läufe;
+  GitHub-Workflow auf Knopfdruck.
+- **Datenschutz:** Zustimmungsdialog, konfigurierbare Anonymisierung mit Rückübersetzung, Anzeige der
+  gesendeten Daten, keine Inhalte in Protokollen, Schlüssel am Desktop nur aus `ANTHROPIC_API_KEY`
+  (bleibt in Rust), im Browser nur im Arbeitsspeicher; README/KI-ASSISTENT.md zu DSGVO, § 203 StGB,
+  §§ 43a, 43e BRAO.
+
+### Ausgeführte Tests (zuletzt alle bestanden)
+
+- Vitest: 97 Tests (u. a. Zitaterkennung, Gesetzesimport-Format, Textzerlegung, Abruf, Anonymisierung,
+  Fristenrechner, Ablauf mit simuliertem Claude inkl. Werkzeug- und Überarbeitungsrunde, Bewertung der
+  Evaluation, Rechtsquellen-Datenbank).
+- Rust: 43 Tests (davon 6 neue für Rechtsquellen, 3 für die Schutzregeln der Weiterleitung), Clippy ohne Warnungen.
+- Desktop-App E2E: 35/35, 21/21 und neu 15/15 (Zustimmung, Schlüsselhinweis, Rechtsquellen über Rust,
+  Weiterleitung nur an api.anthropic.com/v1/messages, nur POST, Gesetzesabruf mit Prüfung der Abkürzung).
+- Browser E2E (Chromium) 24/24 und neu 18/18 für den Assistenten mit nachgebildeter Claude-API: echtes
+  SDK im Browser, Anonymisierung, Quellen, Werkzeugaufruf, Überarbeitung bei erfundenem Zitat,
+  Rückübersetzung, kein anderer Netzverkehr, Schlüssel nicht gespeichert, Antwort als Notiz.
+- WebKit 24/24, Safari (GitHub, macOS) 24/24.
+
+### Bekannte Einschränkungen
+
+- **Nicht mit der echten Claude API getestet** – in der Entwicklungsumgebung gab es keinen API-Schlüssel.
+  Der Ablauf ist mit simulierten Antworten und einer nachgebildeten API geprüft; die Evaluation
+  (`npm run eval`) braucht deinen Schlüssel.
+- **Gesetzesimport nicht an echten Dateien geprüft:** gesetze-im-internet.de ist aus der
+  Entwicklungsumgebung und aus GitHub Actions nicht erreichbar (Verbindungsaufbau wird abgewiesen).
+  Der Import folgt dem veröffentlichten Format und ist mit nachgebauten Dateien getestet;
+  `npm run test:gesetze` prüft ihn auf deinem Rechner an BGB, GG, StGB und KSchG.
+- Die erwarteten Antworten der Testsammlung geben Lehrbuchwissen wieder und sollten fachlich geprüft werden.
+- Anonymisierung musterbasiert und nicht lückenlos.
+- Keine semantische Suche (nur BM25); Austauschpunkt vorhanden.
+- Keine Speicherung von Unterhaltungen (bewusst); wichtige Antworten als Notiz sichern.
