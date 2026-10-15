@@ -12,7 +12,10 @@ use crate::search::{self, Entity};
 use crate::util::{clean_title, new_id, now, require_id};
 use crate::{Error, Result};
 
-pub const TYPES: &[&str] = &["definition", "schema", "case", "citation"];
+pub const TYPES: &[&str] = &["definition", "schema", "case", "citation", "quelle"];
+
+/// Arten von Literatur- und Rechtsprechungsquellen.
+pub const QUELLE_ARTEN: &[&str] = &["kommentar", "lehrbuch", "aufsatz", "urteil", "festschrift", "internet", "sonstiges"];
 pub const SOURCE_KINDS: &[&str] = &["eigen", "vorlesung", "lehrbuch", "rechtsprechung", "import", "ki-vorschlag"];
 const MAX_DATA: usize = 512 * 1024;
 
@@ -74,6 +77,29 @@ pub struct CitationData {
     pub sentence: String,
     pub num: String,
     pub alt: String,
+    pub notes: String,
+}
+
+/// Literatur oder Rechtsprechung (für Fußnoten und Literaturverzeichnis).
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq)]
+#[serde(default)]
+pub struct QuelleData {
+    pub art: String,
+    pub autoren: String,
+    pub titel: String,
+    /// Kurzzitat für die Fußnote, z. B. „Grüneberg/Ellenberger“
+    pub kurz: String,
+    pub auflage: String,
+    pub ort: String,
+    pub jahr: String,
+    pub zeitschrift: String,
+    pub seite: String,
+    pub gericht: String,
+    pub datum: String,
+    pub az: String,
+    pub fundstelle: String,
+    pub url: String,
+    pub abgerufen: String,
     pub notes: String,
 }
 
@@ -229,6 +255,17 @@ fn normalize(ty: &str, data: Value) -> Result<(Value, String)> {
                 return Err(Error::invalid("Als Zeichen sind nur „§“ und „Art.“ möglich."));
             }
             let t = format!("{} {}", format_citation(&d), d.notes);
+            (serde_json::to_value(d)?, t)
+        }
+        "quelle" => {
+            let mut d: QuelleData = serde_json::from_value(v).map_err(bad)?;
+            if !QUELLE_ARTEN.contains(&d.art.as_str()) {
+                d.art = "sonstiges".into();
+            }
+            let t = [
+                d.autoren.as_str(), &d.titel, &d.kurz, &d.zeitschrift, &d.gericht, &d.az, &d.fundstelle, &d.jahr, &d.notes,
+            ]
+            .join(" ");
             (serde_json::to_value(d)?, t)
         }
         _ => return Err(Error::invalid("Unbekannter Typ.")),

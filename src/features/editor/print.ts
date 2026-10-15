@@ -17,6 +17,8 @@ export interface PrintOptions {
   /** „notiz“: wie im Editor; „hausarbeit“: Times New Roman 12 pt, 1,5-zeilig, Blocksatz. */
   style: "notiz" | "hausarbeit";
   pageNumbers: boolean;
+  /** Literaturverzeichnis (Einträge, schon sortiert); leer = keins */
+  bibliography?: string[];
 }
 
 /** Baut das druckfertige HTML. Bilder (studium:asset/…) werden über `imageUrl` aufgelöst. */
@@ -66,7 +68,10 @@ export function buildPrintHtml(doc: PMNode, o: PrintOptions, imageUrl: (src: str
     });
     if (items.length) toc = `<nav class="toc"><h2 class="toc-title">Inhaltsverzeichnis</h2><ol>${items.join("")}</ol></nav>`;
   }
-  return `<header class="doc-title"><h1>${escapeHtml(o.title)}</h1></header>${toc}<main class="doc-body">${body.innerHTML}</main>`;
+  const bib = o.bibliography?.length
+    ? `<section class="bib"><h2 class="bib-title">Literaturverzeichnis</h2>${o.bibliography.map((e) => `<p class="bib-entry">${escapeHtml(e)}</p>`).join("")}</section>`
+    : "";
+  return `<header class="doc-title"><h1>${escapeHtml(o.title)}</h1></header>${toc}${bib}<main class="doc-body">${body.innerHTML}</main>`;
 }
 
 export function printCss(o: PrintOptions): string {
@@ -107,6 +112,9 @@ hr { border: 0; border-top: 0.5pt solid #777; }
 ::footnote-call { content: counter(footnote); vertical-align: super; font-size: 65%; line-height: 0; }
 ::footnote-marker { content: counter(footnote) " "; }
 .toc { break-after: page; }
+.bib { break-after: page; }
+.bib-title { font-size: 14pt; }
+.bib-entry { padding-left: 1.2em; text-indent: -1.2em; margin: 0 0 5pt; text-align: left; }
 .toc-title { font-size: 14pt; }
 .toc ol { list-style: none; padding: 0; margin: 0; }
 .toc li { margin: 2pt 0; }

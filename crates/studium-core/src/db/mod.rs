@@ -15,6 +15,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0001_init.sql"),
     include_str!("migrations/0002_wissen_lernen.sql"),
     include_str!("migrations/0003_rechtsquellen.sql"),
+    include_str!("migrations/0004_quellen.sql"),
 ];
 
 /// Höchste Schemaversion, die diese App-Version versteht.

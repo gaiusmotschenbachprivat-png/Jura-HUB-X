@@ -245,7 +245,7 @@ export interface BackendError {
 
 // ---------- Phase 3: Wissen, Lernen, Planung ----------
 
-export type KnowledgeType = "definition" | "schema" | "case" | "citation";
+export type KnowledgeType = "definition" | "schema" | "case" | "citation" | "quelle";
 export type SourceKind = "eigen" | "vorlesung" | "lehrbuch" | "rechtsprechung" | "import" | "ki-vorschlag";
 
 export interface DefinitionData {
@@ -275,6 +275,28 @@ export interface CaseData {
   notes: string;
   solution_note_id: string | null;
 }
+export type QuelleArt = "kommentar" | "lehrbuch" | "aufsatz" | "urteil" | "festschrift" | "internet" | "sonstiges";
+/** Literatur oder Rechtsprechung (Fußnoten, Literaturverzeichnis). */
+export interface QuelleData {
+  art: QuelleArt;
+  autoren: string;
+  titel: string;
+  /** Kurzzitat für die Fußnote, z. B. „Grüneberg/Ellenberger“ */
+  kurz: string;
+  auflage: string;
+  ort: string;
+  jahr: string;
+  zeitschrift: string;
+  seite: string;
+  gericht: string;
+  datum: string;
+  az: string;
+  fundstelle: string;
+  url: string;
+  abgerufen: string;
+  notes: string;
+}
+
 export interface CitationData {
   law: string;
   prefix: "§" | "Art." | "";

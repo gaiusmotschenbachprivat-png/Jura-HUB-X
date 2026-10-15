@@ -13,12 +13,14 @@ import { CASE_STATUS, DIFFICULTY, TYPE_HINT, TYPE_LABEL, TYPE_LABEL_PLURAL, UNVE
 export async function createKnowledge(type: KnowledgeType, opts: { title?: string; nodeId?: string | null; data?: Record<string, unknown> } = {}) {
   const st = useApp.getState();
   const areaId = st.areaId === "all" ? null : st.areaId;
-  const defaults: Record<KnowledgeType, string> = { definition: "Neuer Begriff", schema: "Neues Prüfungsschema", case: "Neuer Fall", citation: "" };
+  const defaults: Record<KnowledgeType, string> = { definition: "Neuer Begriff", schema: "Neues Prüfungsschema", case: "Neuer Fall", citation: "", quelle: "Neue Quelle" };
   try {
     const data =
       opts.data ??
       (type === "citation"
         ? { prefix: "§", number: "1", law: "" }
+        : type === "quelle"
+          ? { art: "kommentar" }
         : type === "case"
           ? { status: "offen", difficulty: 0 }
           : type === "schema"

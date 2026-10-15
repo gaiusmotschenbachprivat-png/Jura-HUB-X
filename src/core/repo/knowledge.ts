@@ -11,6 +11,7 @@ import type {
   CaseData,
   CitationData,
   DefinitionData,
+  QuelleData,
   Knowledge,
   KnowledgeFilter,
   KnowledgePatch,
@@ -27,7 +28,8 @@ import * as areas from "./areas";
 import * as links from "./links";
 import * as nodes from "./nodes";
 
-export const TYPES: readonly string[] = ["definition", "schema", "case", "citation"];
+export const TYPES: readonly string[] = ["definition", "schema", "case", "citation", "quelle"];
+export const QUELLE_ARTEN: readonly string[] = ["kommentar", "lehrbuch", "aufsatz", "urteil", "festschrift", "internet", "sonstiges"];
 export const SOURCE_KINDS: readonly string[] = ["eigen", "vorlesung", "lehrbuch", "rechtsprechung", "import", "ki-vorschlag"];
 const MAX_DATA = 512 * 1024;
 
@@ -92,6 +94,14 @@ const ITEM_FIELDS = ["id", "text", "note", "children"] as const;
 const SCHEMA_FIELDS = ["norm", "items", "notes"] as const;
 const CASE_FIELDS = ["claim_basis", "difficulty", "status", "facts", "question", "notes", "solution_note_id"] as const;
 const CITATION_FIELDS = ["law", "prefix", "number", "paragraph", "sentence", "num", "alt", "notes"] as const;
+const QUELLE_FIELDS = ["art", "autoren", "titel", "kurz", "auflage", "ort", "jahr", "zeitschrift", "seite", "gericht", "datum", "az", "fundstelle", "url", "abgerufen", "notes"] as const;
+
+function deQuelle(v: unknown): QuelleData {
+  const o = structOf(v, QUELLE_FIELDS);
+  const d = Object.fromEntries(QUELLE_FIELDS.map((k) => [k, str(o, k)])) as unknown as QuelleData;
+  if (!QUELLE_ARTEN.includes(d.art)) d.art = "sonstiges";
+  return d;
+}
 
 function deDefinition(v: unknown): DefinitionData {
   const o = structOf(v, DEF_FIELDS);
@@ -273,6 +283,12 @@ export function normalize(ty: string, data: unknown): { value: Record<string, un
       if (trim(d.number) === "") throw CoreError.invalid("Bitte die Paragrafen- bzw. Artikelnummer angeben.");
       if (!["§", "Art.", ""].includes(trim(d.prefix))) throw CoreError.invalid("Als Zeichen sind nur „§“ und „Art.“ möglich.");
       text = `${formatCitation(d)} ${d.notes}`;
+      value = d;
+      break;
+    }
+    case "quelle": {
+      const d = deQuelle(v);
+      text = [d.autoren, d.titel, d.kurz, d.zeitschrift, d.gericht, d.az, d.fundstelle, d.jahr, d.notes].join(" ");
       value = d;
       break;
     }

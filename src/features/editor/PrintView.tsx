@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { api, errorMessage } from "../../api";
 import { imageSources, type PMNode } from "../../lib/pm";
 import { Button } from "../../ui/Button";
+import { loadBibliography } from "./exportImport";
 import { buildPrintHtml, printCss, type PrintOptions } from "./print";
 
 /**
@@ -13,6 +14,11 @@ import { buildPrintHtml, printCss, type PrintOptions } from "./print";
  */
 export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string; onClose: () => void }) {
   const [opts, setOpts] = useState<PrintOptions>({ title, toc: false, margins: "normal", style: "notiz", pageNumbers: true });
+  const [bib, setBib] = useState<string[]>([]);
+  const [withBib, setWithBib] = useState(true);
+  useEffect(() => {
+    void loadBibliography(doc).then(setBib).catch(() => setBib([]));
+  }, [doc]);
   const [state, setState] = useState<{ busy: boolean; pages: number; error: string | null }>({ busy: true, pages: 0, error: null });
   const target = useRef<HTMLDivElement>(null);
 
@@ -39,7 +45,7 @@ export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string;
           urls.push(url);
           images.set(src, url);
         }
-        const html = buildPrintHtml(doc, opts, (s) => images.get(s));
+        const html = buildPrintHtml(doc, { ...opts, bibliography: withBib ? bib : [] }, (s) => images.get(s));
         const { Previewer } = await import("pagedjs");
         if (cancelled || !target.current) return;
         target.current.innerHTML = "";
@@ -56,7 +62,7 @@ export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string;
       cleanup?.();
       urls.forEach((u) => URL.revokeObjectURL(u));
     };
-  }, [doc, opts]);
+  }, [doc, opts, bib, withBib]);
 
   const set = <K extends keyof PrintOptions>(k: K, v: PrintOptions[K]) => setOpts((o) => ({ ...o, [k]: v }));
 
@@ -67,6 +73,11 @@ export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string;
         <label className="row small">
           <input type="checkbox" checked={opts.toc} onChange={(e) => set("toc", e.target.checked)} /> Inhaltsverzeichnis
         </label>
+        {bib.length > 0 && (
+          <label className="row small">
+            <input type="checkbox" checked={withBib} onChange={(e) => setWithBib(e.target.checked)} /> Literaturverzeichnis ({bib.length})
+          </label>
+        )}
         <label className="row small">
           <input type="checkbox" checked={opts.pageNumbers} onChange={(e) => set("pageNumbers", e.target.checked)} /> Seitenzahlen
         </label>

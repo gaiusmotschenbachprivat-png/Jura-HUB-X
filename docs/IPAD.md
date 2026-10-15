@@ -57,6 +57,30 @@ verteilt (ein lernfreier Tag wählbar), danach Probeklausur und Schlusswiederhol
 erscheinen als Lernziele mit Datum; der Fortschrittsbalken zeigt, wie viel erledigt ist. Ab vier
 Wochen vor einer Klausur zeigt die Übersicht die **Klausurenphase** mit Countdown.
 
+## Normen antippen
+
+Normzitate im Text wie „§ 119 Abs. 1 BGB“ oder „Art. 12 I GG“ werden automatisch erkannt und
+gepunktet unterstrichen (nur Anzeige – der Text bleibt unverändert). **Antippen** zeigt den
+Wortlaut aus den importierten Gesetzen, der zitierte Absatz ist hervorgehoben, darunter die
+Fassung laut Quelle. Ist das Gesetz noch nicht importiert, führt ein Knopf zu
+„KI-Assistent → Rechtsquellen“. Studium OS prüft nicht, ob ein Gesetzesstand aktuell ist.
+
+## Zitierhilfe und Literaturverzeichnis
+
+Fußnote einfügen → **„Quelle zitieren“**: Quelle auswählen oder mit „Neue Quelle“ direkt
+anlegen (Kommentar, Lehrbuch, Aufsatz, Urteil/Beschluss, Sammelwerk, Internetquelle), die
+zitierte Stelle eintragen (z. B. „§ 119 Rn. 10“) und auf Wunsch „Vgl.“ voranstellen – der
+Fußnotentext entsteht automatisch, z. B. „Vgl. Grüneberg/Ellenberger, § 119 Rn. 10.“ oder
+„BGH, Urt. v. 12.3.2020 – I ZR 1/19, NJW 2020, 123 (125).“
+
+Alle Quellen liegen unter **Wissen → Literatur & Urteile**. Das **Literaturverzeichnis**
+(alphabetisch, ohne Rechtsprechung, mit „zitiert: …“) entsteht automatisch aus den zitierten
+Quellen: in der **Druckansicht** und im **Word-Export** vor dem Text, außerdem über
+„… → Literaturverzeichnis“ zum Ansehen, Kopieren oder Einfügen. Änderst du eine Quelle
+(z. B. die Auflage), ist das Verzeichnis beim nächsten Druck aktuell. Hinweis: Den Text bereits
+eingefügter Fußnoten passt Studium OS dabei nicht an – bei Bedarf die Fußnote antippen und neu
+übernehmen.
+
 ## Backup-Erinnerung
 
 Backups entstehen täglich automatisch im App-Speicher. Einmal pro Woche erinnert eine Leiste

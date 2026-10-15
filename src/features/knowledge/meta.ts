@@ -5,6 +5,7 @@ export const TYPE_LABEL: Record<KnowledgeType, string> = {
   schema: "Prüfungsschema",
   case: "Fall",
   citation: "Fundstelle",
+  quelle: "Literatur / Urteil",
 };
 
 export const TYPE_LABEL_PLURAL: Record<KnowledgeType, string> = {
@@ -12,13 +13,15 @@ export const TYPE_LABEL_PLURAL: Record<KnowledgeType, string> = {
   schema: "Prüfungsschemata",
   case: "Fälle",
   citation: "Fundstellen",
+  quelle: "Literatur & Urteile",
 };
 
 export const TYPE_HINT: Record<KnowledgeType, string> = {
   definition: "Begriffe mit Definition, Fundstelle, Quelle und Beispiel. Aus Notizen verlinkbar; Rückverweise zeigen, wo eine Definition verwendet wird.",
   schema: "Mehrstufige Prüfungsschemata mit juristischer Gliederung (A. I. 1. a) aa)). Ein Schema ist eine Arbeitshilfe, keine allgemeingültige Vorgabe.",
   case: "Fälle mit Sachverhalt, Fallfrage und Lösung im Gutachtenstil – sortierbar nach Rechtsgebiet, Anspruchsgrundlage und Schwierigkeit.",
-  citation: "Gesetzesfundstellen als strukturierte Angaben (z. B. § 433 Abs. 2 BGB). Studium OS zeigt keine Gesetzestexte an und prüft keine Gesetzesstände.",
+  citation: "Gesetzesfundstellen als strukturierte Angaben (z. B. § 433 Abs. 2 BGB). Den Wortlaut zeigt Studium OS nur aus Gesetzen, die du unter „KI-Assistent → Rechtsquellen“ importiert hast; Gesetzesstände werden nicht geprüft.",
+  quelle: "Kommentare, Lehrbücher, Aufsätze und Urteile für deine Fußnoten. Beim Zitieren entsteht die Fußnote automatisch; zitierte Literatur erscheint im Literaturverzeichnis (Druck und Word).",
 };
 
 export const SOURCE_LABEL: Record<SourceKind, string> = {

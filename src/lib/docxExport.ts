@@ -285,9 +285,16 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
   return out;
 }
 
-export function buildDocx(docNode: PMNode, meta: { title: string }, assets: Map<string, ExportAsset> = new Map()): Document {
+export function buildDocx(docNode: PMNode, meta: { title: string; bibliography?: string[] }, assets: Map<string, ExportAsset> = new Map()): Document {
   const ctx: Ctx = { listInstance: 0, assets, footnotes: {}, nextFootnote: 1 };
-  const children = blocks(docNode.content, ctx);
+  const children: Block[] = [];
+  // Literaturverzeichnis vor dem Text (wie in Haus- und Seminararbeiten)
+  if (meta.bibliography?.length) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun("Literaturverzeichnis")] }));
+    for (const e of meta.bibliography) children.push(new Paragraph({ indent: { left: 567, hanging: 567 }, spacing: { after: 100 }, children: [new TextRun(e)] }));
+    children.push(new Paragraph({ children: [new PageBreak()] }));
+  }
+  children.push(...blocks(docNode.content, ctx));
   return new Document({
     creator: "Studium OS",
     title: meta.title,
@@ -313,7 +320,7 @@ export function buildDocx(docNode: PMNode, meta: { title: string }, assets: Map<
   });
 }
 
-export async function exportDocx(docNode: PMNode, meta: { title: string }, assets?: Map<string, ExportAsset>): Promise<Uint8Array> {
+export async function exportDocx(docNode: PMNode, meta: { title: string; bibliography?: string[] }, assets?: Map<string, ExportAsset>): Promise<Uint8Array> {
   const buf = await Packer.toArrayBuffer(buildDocx(docNode, meta, assets));
   return new Uint8Array(buf);
 }

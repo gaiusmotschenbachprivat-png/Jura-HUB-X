@@ -222,7 +222,7 @@ export function Sidebar() {
           <NavItem icon={<CalendarDays size={15} />} label="Stundenplan" active={view.type === "timetable"} onClick={() => open({ type: "timetable" })} />
           <NavItem icon={<Scale size={15} />} label="KI-Assistent" active={view.type === "assistant"} onClick={() => open({ type: "assistant" })} />
           <div className="side-sub label">Wissen</div>
-          {(["definition", "schema", "case", "citation"] as const).map((k) => (
+          {(["definition", "schema", "case", "citation", "quelle"] as const).map((k) => (
             <NavItem
               key={k}
               icon={<KindIcon kind={k} />}

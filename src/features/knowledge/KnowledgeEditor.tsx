@@ -2,7 +2,7 @@ import { AlertTriangle, Check, Copy, FileText, Loader2, MoreHorizontal, SquareSt
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
-import type { CaseData, CitationData, DefinitionData, Knowledge, KnowledgePatch, SchemaData, SourceKind } from "../../api/types";
+import type { CaseData, CitationData, DefinitionData, Knowledge, KnowledgePatch, QuelleData, SchemaData, SourceKind } from "../../api/types";
 import { gliederung } from "../../lib/gliederung";
 import { toOutline } from "../../lib/schemaTree";
 import { buildTree, type TreeItem } from "../../lib/tree";
@@ -16,6 +16,8 @@ import { createNode } from "../navigation/actions";
 import { KindIcon } from "../navigation/icons";
 import { CASE_STATUS, DIFFICULTY, FIELD_SUGGESTIONS, SOURCE_LABEL, TYPE_LABEL, UNVERIFIED } from "./meta";
 import { SchemaEditor } from "./SchemaEditor";
+import { QuelleForm } from "./QuelleForm";
+import { quelleTitle } from "../../lib/zitieren";
 
 function flattenNodes(items: TreeItem[], out: { id: string; label: string }[] = []) {
   for (const it of items) {
@@ -184,7 +186,7 @@ function Loaded({ initial }: { initial: Knowledge }) {
             <MoreHorizontal size={16} />
           </IconButton>
         </div>
-        {k.type === "citation" ? (
+        {k.type === "citation" || k.type === "quelle" ? (
           <h1 className="page-title-static">{k.title}</h1>
         ) : (
           <input className="page-title" value={k.title} maxLength={300} aria-label="Titel" placeholder="Titel" onChange={(e) => change({ title: e.target.value })} onBlur={() => void flush()} />
@@ -250,6 +252,15 @@ function Loaded({ initial }: { initial: Knowledge }) {
         )}
         {k.type === "case" && <CaseForm d={k.data as unknown as CaseData} set={setData<CaseData>} onSolution={() => void openSolution()} />}
         {k.type === "citation" && <CitationForm d={k.data as unknown as CitationData} set={setData<CitationData>} />}
+        {k.type === "quelle" && (
+          <QuelleForm
+            d={k.data as unknown as QuelleData}
+            set={(p) => {
+              const next = { ...(k.data as unknown as QuelleData), ...p };
+              change({ data: next as unknown as Knowledge["data"], title: quelleTitle(next) });
+            }}
+          />
+        )}
 
         <div className="row wrap kn-actions">
           <Button icon={<SquareStack size={15} />} onClick={() => setCardOpen(true)}>

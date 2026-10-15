@@ -61,6 +61,8 @@ jobs:
         run: node tests/e2e-web/etappe2-e2e.mjs
       - name: KI-Lernhilfen (Claude API nachgebildet)
         run: node tests/e2e-web/etappe3-e2e.mjs
+      - name: Normen antippen, Zitierhilfe, Literaturverzeichnis
+        run: node tests/e2e-web/zitieren-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

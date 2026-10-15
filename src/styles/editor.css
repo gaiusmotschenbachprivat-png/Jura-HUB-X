@@ -192,3 +192,12 @@
 }
 .draw-canvas.mode-eraser { cursor: cell; }
 .prose .asset-image.is-drawing img { cursor: pointer; border: 1px solid var(--line); border-radius: 6px; max-width: 100%; }
+
+/* Normen antippen */
+.prose .norm-ref { text-decoration: underline dotted color-mix(in srgb, var(--accent) 70%, transparent); text-underline-offset: 3px; text-decoration-thickness: 1.5px; cursor: pointer; }
+.norm-pop { position: fixed; z-index: 125; width: min(460px, calc(100vw - 16px)); max-height: min(60vh, 520px); overflow: auto; background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 10px 12px; }
+.norm-pop-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.norm-pop-text p { margin: 0 0 6px; font-family: var(--font-serif); font-size: 0.95rem; line-height: 1.5; }
+.norm-pop-text p.is-cited { background: var(--accent-soft); border-radius: 4px; padding: 2px 4px; }
+.norm-abs { color: var(--text-3); font-family: var(--font-ui); font-size: 0.85em; }
+.norm-pop-foot { margin: 6px 0 0; }

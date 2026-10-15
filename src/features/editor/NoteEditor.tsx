@@ -18,7 +18,7 @@ import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
-import { FootnoteDialog, FootnoteList } from "./Footnotes";
+import { BibliographyDialog, FootnoteDialog, FootnoteList } from "./Footnotes";
 import { FOOTNOTE_EDIT_EVENT, footnotesOf, type FootnoteEditDetail } from "./formatting";
 import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
@@ -26,6 +26,8 @@ import { FindBar } from "./FindBar";
 import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
 import { PrintView } from "./PrintView";
+import { NormPopover } from "./NormPopover";
+import { normRefOf, type NormRef } from "./normLinks";
 import { StudyDialog, type StudyMode } from "../assistant/StudyTools";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
@@ -107,6 +109,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
   const [study, setStudy] = useState<StudyMode | null>(null);
+  const [bibOpen, setBibOpen] = useState(false);
+  const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
   const area = areaById(note.area_id);
@@ -119,7 +123,13 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     autofocus: false,
     editorProps: {
       attributes: { class: `prose prose-${editorFont}`, spellcheck: "true", lang: "de" },
-      handleClick(_view, _pos, event) {
+      handleClick(view, _pos, event) {
+        // Norm antippen → Wortlaut (nicht beim Markieren)
+        const nr = normRefOf(event.target as Element);
+        if (nr && view.state.selection.empty) {
+          const el = (event.target as Element).closest(".norm-ref")!;
+          setNormPop({ ref: nr, rect: el.getBoundingClientRect() });
+        }
         const a = (event.target as HTMLElement).closest("a");
         if (a && (event.metaKey || event.ctrlKey)) {
           const href = a.getAttribute("href") ?? "";
@@ -224,9 +234,10 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     };
     const onFootnote = (e: Event) => {
       const d = (e as CustomEvent<FootnoteEditDetail>).detail;
-      if (editor.state.doc.nodeAt(d.pos)?.type.name !== "footnote" || !editor.view.dom.isConnected) return;
+      const fn = editor.state.doc.nodeAt(d.pos);
+      if (fn?.type.name !== "footnote" || !editor.view.dom.isConnected) return;
       if (!editor.view.dom.contains(document.activeElement) && !editor.view.dom.querySelector(":hover")) return;
-      setFootnote(d);
+      setFootnote({ ...d, source: (fn.attrs.source as string | null) ?? null, pin: (fn.attrs.pin as string | null) ?? null });
     };
     const onDrawing = (e: Event) => {
       const d = (e as CustomEvent<DrawingEditDetail>).detail;
@@ -321,6 +332,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       { label: "Offene Frage aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("question") },
       { separator: true, label: "" },
       { label: "Drucken / als PDF …", icon: <Printer size={14} />, onSelect: () => setPrintDoc(editor.getJSON() as PMNode) },
+      { label: "Literaturverzeichnis …", onSelect: () => setBibOpen(true) },
       { label: "Als Word-Datei exportieren (.docx)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "docx") },
       { label: "Als Markdown exportieren (.md)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "md") },
       { separator: true, label: "" },
@@ -526,6 +538,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       {study && treeNode && (
         <StudyDialog mode={study} node={treeNode} text={plainText(editor.getJSON() as PMNode)} editor={editor} onClose={() => setStudy(null)} />
       )}
+      {normPop && <NormPopover refInfo={normPop.ref} anchor={normPop.rect} onClose={() => setNormPop(null)} />}
+      {bibOpen && <BibliographyDialog editor={editor} onClose={() => setBibOpen(false)} />}
       {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} />}
       {printDoc && <PrintView doc={printDoc} title={title} onClose={() => setPrintDoc(null)} />}
       {footnote && (
@@ -549,16 +563,17 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
                   setFootnote(null);
                 }
           }
-          onSave={(text) => {
+          initialCite={footnote.source ? { source: footnote.source, pin: footnote.pin ?? "" } : null}
+          onSave={(text, cite) => {
             if (footnote.isNew) {
-              editor.chain().focus().insertFootnote(text).run();
+              editor.chain().focus().insertFootnote(text, cite).run();
             } else {
               editor
                 .chain()
                 .focus()
                 .command(({ tr }) => {
                   const n = tr.doc.nodeAt(footnote.pos);
-                  if (n?.type.name === "footnote") tr.setNodeMarkup(footnote.pos, undefined, { ...n.attrs, text });
+                  if (n?.type.name === "footnote") tr.setNodeMarkup(footnote.pos, undefined, { ...n.attrs, text, source: cite?.source ?? null, pin: cite?.pin ?? null });
                   return true;
                 })
                 // Cursor hinter die Fußnote, damit weitergeschrieben werden kann

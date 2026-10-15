@@ -12,6 +12,8 @@ export const FOOTNOTE_EDIT_EVENT = "studium:edit-footnote";
 export interface FootnoteEditDetail {
   text: string;
   pos: number;
+  source?: string | null;
+  pin?: string | null;
 }
 
 export const MAX_INDENT = 8;
@@ -33,7 +35,7 @@ declare module "@tiptap/core" {
       insertPageBreak: () => ReturnType;
     };
     footnote: {
-      insertFootnote: (text: string) => ReturnType;
+      insertFootnote: (text: string, cite?: { source: string; pin: string } | null) => ReturnType;
     };
   }
 }
@@ -206,6 +208,18 @@ export const Footnote = Node.create({
         parseHTML: (el) => el.getAttribute("data-footnote") ?? "",
         renderHTML: (attrs) => ({ "data-footnote": String(attrs.text ?? "") }),
       },
+      /** Zitierte Quelle (Wissenseintrag „quelle“) – für das Literaturverzeichnis */
+      source: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-source"),
+        renderHTML: (attrs) => (attrs.source ? { "data-source": String(attrs.source) } : {}),
+      },
+      /** Fundstelle in der Quelle, z. B. „§ 119 Rn. 10“ */
+      pin: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-pin"),
+        renderHTML: (attrs) => (attrs.pin ? { "data-pin": String(attrs.pin) } : {}),
+      },
     };
   },
   parseHTML() {
@@ -252,9 +266,11 @@ export const Footnote = Node.create({
   addCommands() {
     return {
       insertFootnote:
-        (text) =>
+        (text, cite) =>
         ({ state, chain }) =>
-          chain().insertContentAt(state.selection.to, { type: "footnote", attrs: { text } }).run(),
+          chain()
+            .insertContentAt(state.selection.to, { type: "footnote", attrs: { text, source: cite?.source ?? null, pin: cite?.pin ?? null } })
+            .run(),
     };
   },
 });
@@ -263,7 +279,8 @@ export const Footnote = Node.create({
 export function footnotesOf(editor: Editor): FootnoteEditDetail[] {
   const out: FootnoteEditDetail[] = [];
   editor.state.doc.descendants((node, pos) => {
-    if (node.type.name === "footnote") out.push({ text: String(node.attrs.text ?? ""), pos });
+    if (node.type.name === "footnote")
+      out.push({ text: String(node.attrs.text ?? ""), pos, source: (node.attrs.source as string | null) ?? null, pin: (node.attrs.pin as string | null) ?? null });
   });
   return out;
 }

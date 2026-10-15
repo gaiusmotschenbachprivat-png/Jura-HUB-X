@@ -182,10 +182,49 @@ fn migration_from_two_keeps_data() {
         conn.execute("INSERT INTO areas (id, name, color, position, created_at, updated_at) VALUES ('01900000-0000-7000-8000-000000000001','Alt','#123456',0,'x','x')", []).unwrap();
     }
     let conn = db::open(dir.path()).unwrap();
-    assert_eq!(db::schema_version(&conn).unwrap(), 3);
+    assert_eq!(db::schema_version(&conn).unwrap(), db::SCHEMA_VERSION);
     assert_eq!(areas::list(&conn).unwrap()[0].name, "Alt");
     assert_eq!(fs::read_dir(dir.path().join("pre-migration")).unwrap().count(), 1);
     assert!(legal::list(&conn).unwrap().is_empty());
     legal::save(&conn, gesetz("Grundgesetz", "GG"), vec![chunk("Art. 1", Some(1), "", "Die Würde des Menschen ist unantastbar.")]).unwrap();
     assert_eq!(legal::search(&conn, &["Wurde".into()], None, 5).unwrap().len(), 1, "Diakritika werden ignoriert");
+}
+
+#[test]
+fn migration_four_adds_quellen_and_keeps_knowledge() {
+    use studium_core::repo::knowledge::{self, NewKnowledge};
+    let dir = tempfile::tempdir().unwrap();
+    let def_id;
+    {
+        let conn = rusqlite::Connection::open(db::db_path(dir.path())).unwrap();
+        db::configure(&conn).unwrap();
+        db::migrate_with(&conn, None, &db::builtin_migrations()[..3]).unwrap();
+        let k = knowledge::create(
+            &conn,
+            NewKnowledge { ty: "definition".into(), area_id: None, node_id: None, title: "Willenserklärung".into(), field: "BGB AT".into(), source_kind: None, data: serde_json::json!({ "text": "Äußerung" }) },
+        )
+        .unwrap();
+        def_id = k.id;
+    }
+    let conn = db::open(dir.path()).unwrap();
+    assert_eq!(db::schema_version(&conn).unwrap(), db::SCHEMA_VERSION);
+    assert_eq!(knowledge::get(&conn, &def_id).unwrap().title, "Willenserklärung");
+    let q = knowledge::create(
+        &conn,
+        NewKnowledge {
+            ty: "quelle".into(),
+            area_id: None,
+            node_id: None,
+            title: "BGH, 12.3.2020, I ZR 1/19".into(),
+            field: String::new(),
+            source_kind: None,
+            data: serde_json::json!({ "art": "quatsch", "gericht": "BGH", "az": "I ZR 1/19", "fremd": "weg" }),
+        },
+    )
+    .unwrap();
+    assert_eq!(q.data["art"], "sonstiges");
+    assert!(q.data.get("fremd").is_none());
+    assert_eq!(q.data.as_object().unwrap().len(), 16);
+    let fk: Option<String> = conn.query_row("PRAGMA foreign_key_check", [], |r| r.get(0)).ok();
+    assert!(fk.is_none());
 }

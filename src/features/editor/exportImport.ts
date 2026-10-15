@@ -5,6 +5,8 @@ import { docxToHtml, markdownToHtml, textToHtml } from "../../lib/docxImport";
 import { exportDocx, type ExportAsset } from "../../lib/docxExport";
 import { toMarkdown } from "../../lib/markdownExport";
 import { imageSources, plainText, type PMNode } from "../../lib/pm";
+import { bibliography, citedSources } from "../../lib/zitieren";
+import type { QuelleData } from "../../api/types";
 import { reportError, useApp } from "../../state/store";
 import { createNode } from "../navigation/actions";
 import { editorExtensions } from "./extensions";
@@ -18,12 +20,23 @@ export async function exportNote(doc: PMNode, title: string, format: "docx" | "m
   try {
     const path = await api.pickSavePath(`${safeName(title)}.${format}`, format);
     if (!path) return;
-    const data = format === "docx" ? await exportDocx(doc, { title }, await loadAssets(doc)) : new TextEncoder().encode(toMarkdown(doc));
+    const data =
+      format === "docx" ? await exportDocx(doc, { title, bibliography: await loadBibliography(doc) }, await loadAssets(doc)) : new TextEncoder().encode(toMarkdown(doc));
     await api.exportWrite(path, data);
     st.toast(`Exportiert: ${path.split(/[\\/]/).pop()}`, "success");
   } catch (e) {
     st.toast(`Export fehlgeschlagen: ${errorMessage(e)}`, "error");
   }
+}
+
+/** Literaturverzeichnis aus den zitierten Quellen der Notiz (aktuelle Angaben der Quellen). */
+export async function loadBibliography(doc: PMNode): Promise<string[]> {
+  const list: QuelleData[] = [];
+  for (const id of citedSources(doc)) {
+    const k = await api.knowledgeGet(id).catch(() => null);
+    if (k && k.type === "quelle" && !k.deleted_at) list.push(k.data as unknown as QuelleData);
+  }
+  return bibliography(list);
 }
 
 /** Lädt die Bilder einer Notiz für den Word-Export (PNG, JPEG, GIF; WebP wird als Hinweis exportiert). */

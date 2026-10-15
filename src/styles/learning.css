@@ -200,3 +200,11 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .study-card { align-items: flex-start; cursor: pointer; }
 .study-card input { margin-top: 3px; }
 .sent-preview { white-space: pre-wrap; max-height: 200px; overflow: auto; background: var(--bg-sunken); padding: 8px; border-radius: 6px; }
+
+/* Zitierhilfe */
+.quelle-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 10px; }
+.quelle-grid .field.is-wide { grid-column: 1 / -1; }
+.quelle-preview { padding: 8px 10px; border: 1px dashed var(--line-strong); border-radius: var(--r-md); background: var(--bg-side); display: flex; flex-direction: column; gap: 4px; }
+.pick-list { max-height: 34vh; overflow: auto; }
+.bib-entry { padding-left: 1.4em; text-indent: -1.4em; margin: 0; }
+.bib-list { max-height: 55vh; overflow: auto; gap: 6px; }
