@@ -13,34 +13,37 @@ export function Splitter({
   onChange: (v: number) => void;
   min: number;
   max: number;
-  side: "left" | "right";
+  /** Lage des Bereichs, dessen Größe `value` ist; „top“ = waagerechter Trenner */
+  side: "left" | "right" | "top";
   label: string;
 }) {
   const start = useRef<{ x: number; v: number } | null>(null);
+  const horizontal = side === "top";
+  const sign = side === "right" ? -1 : 1;
   const clamp = (v: number) => Math.round(Math.min(max, Math.max(min, v)));
   return (
     <div
-      className="splitter"
+      className={`splitter ${horizontal ? "is-horizontal" : ""}`}
       role="separator"
-      aria-orientation="vertical"
+      aria-orientation={horizontal ? "horizontal" : "vertical"}
       aria-label={label}
       aria-valuenow={value}
       aria-valuemin={min}
       aria-valuemax={max}
       tabIndex={0}
       onKeyDown={(e) => {
-        const d = e.key === "ArrowLeft" ? -16 : e.key === "ArrowRight" ? 16 : 0;
-        if (d) onChange(clamp(value + (side === "left" ? d : -d)));
+        const d = horizontal ? (e.key === "ArrowUp" ? -16 : e.key === "ArrowDown" ? 16 : 0) : e.key === "ArrowLeft" ? -16 : e.key === "ArrowRight" ? 16 : 0;
+        if (d) onChange(clamp(value + sign * d));
       }}
       onPointerDown={(e) => {
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
-        start.current = { x: e.clientX, v: value };
+        start.current = { x: horizontal ? e.clientY : e.clientX, v: value };
         document.body.classList.add("is-resizing");
       }}
       onPointerMove={(e) => {
         if (!start.current) return;
-        const dx = e.clientX - start.current.x;
-        onChange(clamp(start.current.v + (side === "left" ? dx : -dx)));
+        const dx = (horizontal ? e.clientY : e.clientX) - start.current.x;
+        onChange(clamp(start.current.v + sign * dx));
       }}
       onPointerUp={() => {
         start.current = null;

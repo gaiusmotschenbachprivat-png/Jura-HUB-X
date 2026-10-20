@@ -9,7 +9,18 @@
 
 .splitter { flex: none; width: 5px; margin: 0 -2px; cursor: col-resize; position: relative; z-index: 5; }
 .splitter:hover, .splitter:focus-visible { background: color-mix(in srgb, var(--accent) 35%, transparent); outline: none; }
+/* größere Griffzone für den Finger, ohne mehr Platz zu belegen */
+.splitter { touch-action: none; }
+.splitter::before { content: ""; position: absolute; inset: 0 -8px; }
+.splitter.is-horizontal { width: auto; height: 5px; margin: -2px 0; cursor: row-resize; }
+.splitter.is-horizontal::before { inset: -9px 0; }
+.splitter.is-horizontal::after { content: ""; position: absolute; left: 50%; top: 50%; width: 44px; height: 5px; margin: -2.5px 0 0 -22px; border-radius: 3px; background: var(--line-strong); }
+.workspace.is-stacked { flex-direction: column; }
+.workspace.is-stacked .primary { min-height: 0; }
+.workspace.is-stacked .secondary { order: -2; border-left: 0; border-bottom: 1px solid var(--line); min-height: 0; }
+.workspace.is-stacked .splitter { order: -1; }
 body.is-resizing, body.is-resizing * { cursor: col-resize !important; user-select: none !important; }
+body.is-resizing .workspace.is-stacked, body.is-resizing .workspace.is-stacked * { cursor: row-resize !important; }
 body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select: none !important; }
 
 .topbar {

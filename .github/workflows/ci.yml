@@ -65,6 +65,8 @@ jobs:
         run: node tests/e2e-web/zitieren-e2e.mjs
       - name: Juristisches Glossar
         run: node tests/e2e-web/glossar-e2e.mjs
+      - name: Folien neben Mitschrift, Handschrift in PDFs
+        run: node tests/e2e-web/folien-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -8,6 +8,10 @@
   flex: 1; font-size: var(--fs-2xl); font-weight: 650; letter-spacing: -0.02em; border: 0 !important; padding: 2px 0 !important;
   background: transparent !important; box-shadow: none !important; min-width: 0;
 }
+/* Titel behält genug Platz; die Knöpfe rutschen bei wenig Breite in die nächste Zeile */
+.note-title-row { flex-wrap: wrap; row-gap: 4px; }
+.note-title-row .note-title { flex: 1 1 200px; }
+.note-actions { display: flex; align-items: center; gap: 2px; flex: none; margin-left: auto; }
 .toolbar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 1px; padding: 4px 36px; border-bottom: 1px solid var(--line);
   border-top: 1px solid var(--line); background: var(--bg);
@@ -134,6 +138,8 @@
 /* Schmale Ansicht (iPad hochkant, geteilte Ansicht): eine wischbare Zeile wie in Pages */
 .note { container-type: inline-size; }
 @container (max-width: 520px) {
+  .note-head { padding-left: 20px; padding-right: 16px; }
+  .note-actions .hide-narrow { display: none; }
   .toolbar { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 4px 12px; -webkit-overflow-scrolling: touch; }
   .toolbar::-webkit-scrollbar { display: none; }
   .toolbar .tb-group { flex-wrap: nowrap; flex: none; }

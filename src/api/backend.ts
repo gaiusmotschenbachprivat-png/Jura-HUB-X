@@ -153,7 +153,7 @@ export interface Backend {
 
   annotationsList(documentId: string): Promise<Annotation[]>;
   annotationCreate(input: NewAnnotation): Promise<Annotation>;
-  annotationUpdate(id: string, patch: { comment?: string; color?: AnnotationColor }): Promise<Annotation>;
+  annotationUpdate(id: string, patch: { comment?: string; color?: AnnotationColor; ink?: string }): Promise<Annotation>;
   annotationDelete(id: string): Promise<void>;
 
   imageStore(data: Uint8Array): Promise<string>;

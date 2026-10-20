@@ -1,4 +1,4 @@
-/** PDF-Markierungen, Kommentare und Lesezeichen – Port von `repo/annotations.rs`. Die PDF-Datei bleibt unverändert. */
+/** PDF-Markierungen, Kommentare, Lesezeichen und Handschrift – Port von `repo/annotations.rs`. Die PDF-Datei bleibt unverändert. */
 import type { Annotation, AnnotationColor, NewAnnotation, Rect } from "../../api/types";
 import type { Db } from "../db";
 import { CoreError } from "../errors";
@@ -10,6 +10,7 @@ export const COLORS: readonly string[] = ["gelb", "gruen", "blau", "rot", "lila"
 export interface AnnotationPatch {
   comment?: string | null;
   color?: AnnotationColor | null;
+  ink?: string | null;
 }
 
 type AnnotationRow = Omit<Annotation, "rects" | "page"> & { rects: string; page: number | bigint };
@@ -37,6 +38,7 @@ function fromRow(r: AnnotationRow): Annotation {
     rects: parseRects(r.rects),
     quote: r.quote,
     comment: r.comment,
+    ink: r.ink ?? "",
     created_at: r.created_at,
     updated_at: r.updated_at,
   };
@@ -68,6 +70,15 @@ function checkRects(rects: unknown[]): asserts rects is Rect[] {
   if (!ok) throw CoreError.invalid("Ungültige Position der Markierung.");
 }
 
+/** Höchstlänge der Handschrift einer Seite (Zeichen). */
+export const MAX_INK = 3_000_000;
+
+/** Handschrift: leer oder „v1|Breite|Höhe“ gefolgt von Strichen; nur harmlose Zeichen. */
+function checkInk(ink: unknown): asserts ink is string {
+  const ok = typeof ink === "string" && ink.length <= MAX_INK && (ink === "" || ink.startsWith("v1|")) && /^[0-9A-Za-z|#,;.\n-]*$/.test(ink);
+  if (!ok) throw CoreError.invalid("Ungültige Handschrift.");
+}
+
 function index(db: Db, a: Annotation): void {
   if (a.kind !== "highlight") return;
   const title = db.value<string>("SELECT title FROM documents WHERE id = ?1", [a.document_id]);
@@ -84,7 +95,7 @@ export function get(db: Db, id: string): Annotation {
 
 export function create(db: Db, a: NewAnnotation): Annotation {
   requireId(a.document_id);
-  if (!["highlight", "bookmark"].includes(a.kind)) throw CoreError.invalid("Unbekannte Art der Markierung.");
+  if (!["highlight", "bookmark", "ink"].includes(a.kind)) throw CoreError.invalid("Unbekannte Art der Markierung.");
   if (typeof a.page !== "number" || !Number.isInteger(a.page) || a.page < 1) {
     throw CoreError.invalid("Ungültige Seitenzahl.");
   }
@@ -92,6 +103,8 @@ export function create(db: Db, a: NewAnnotation): Annotation {
   if (!COLORS.includes(color)) throw CoreError.invalid("Unbekannte Farbe.");
   const rects: unknown[] = Array.isArray(a.rects) ? a.rects : [];
   checkRects(rects);
+  const ink = a.ink ?? "";
+  checkInk(ink);
   if (a.kind === "highlight" && rects.length === 0) throw CoreError.invalid("Die Markierung hat keinen Bereich.");
   return db.tx(() => {
     // wie `documents::get`: Dokument (mit Datei-Eintrag) muss existieren
@@ -99,20 +112,25 @@ export function create(db: Db, a: NewAnnotation): Annotation {
       a.document_id,
     ]);
     if (exists === undefined) throw CoreError.notFound("Dokument nicht gefunden.");
-    if (a.kind === "bookmark") {
-      const existing = db.value<string>(
-        "SELECT id FROM annotations WHERE document_id = ?1 AND page = ?2 AND kind = 'bookmark'",
-        [a.document_id, a.page],
-      );
-      if (existing !== undefined) return get(db, existing);
+    // Lesezeichen und Handschrift gibt es je Seite nur einmal
+    if (a.kind === "bookmark" || a.kind === "ink") {
+      const existing = db.value<string>("SELECT id FROM annotations WHERE document_id = ?1 AND page = ?2 AND kind = ?3", [
+        a.document_id,
+        a.page,
+        a.kind,
+      ]);
+      if (existing !== undefined) {
+        if (a.kind === "ink") db.run("UPDATE annotations SET ink = ?2, updated_at = ?3 WHERE id = ?1", [existing, ink, now()]);
+        return get(db, existing);
+      }
     }
     const id = newId();
     const ts = now();
     const stored = JSON.stringify(rects.map((r) => ({ x: r.x, y: r.y, w: r.w, h: r.h })));
     db.run(
-      `INSERT INTO annotations (id, document_id, page, kind, color, rects, quote, comment, created_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)`,
-      [id, a.document_id, a.page, a.kind, color, stored, clean(a.quote, 5000), clean(a.comment, 10000), ts],
+      `INSERT INTO annotations (id, document_id, page, kind, color, rects, quote, comment, ink, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)`,
+      [id, a.document_id, a.page, a.kind, color, stored, clean(a.quote, 5000), clean(a.comment, 10000), ink, ts],
     );
     const ann = get(db, id);
     index(db, ann);
@@ -128,11 +146,16 @@ export function update(db: Db, id: string, p: AnnotationPatch): Annotation {
       if (!COLORS.includes(p.color)) throw CoreError.invalid("Unbekannte Farbe.");
       a.color = p.color;
     }
+    if (p.ink != null) {
+      checkInk(p.ink);
+      a.ink = p.ink;
+    }
     a.updated_at = now();
-    db.run("UPDATE annotations SET comment = ?2, color = ?3, updated_at = ?4 WHERE id = ?1", [
+    db.run("UPDATE annotations SET comment = ?2, color = ?3, ink = ?4, updated_at = ?5 WHERE id = ?1", [
       id,
       a.comment,
       a.color,
+      a.ink,
       a.updated_at,
     ]);
     index(db, a);

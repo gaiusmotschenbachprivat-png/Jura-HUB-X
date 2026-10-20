@@ -1,4 +1,4 @@
-//! PDF-Markierungen, Kommentare und Lesezeichen. Die PDF-Datei bleibt unverändert.
+//! PDF-Markierungen, Kommentare, Lesezeichen und Handschrift. Die PDF-Datei bleibt unverändert.
 
 use rusqlite::{params, Connection, OptionalExtension, Row};
 use serde::{Deserialize, Serialize};
@@ -28,6 +28,8 @@ pub struct Annotation {
     pub rects: Vec<Rect>,
     pub quote: String,
     pub comment: String,
+    /// Handschrift (nur `kind = "ink"`): Striche im Format von `lib/drawing.ts`
+    pub ink: String,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -43,6 +45,7 @@ fn from_row(r: &Row) -> rusqlite::Result<Annotation> {
         rects: serde_json::from_str(&rects).unwrap_or_default(),
         quote: r.get("quote")?,
         comment: r.get("comment")?,
+        ink: r.get("ink")?,
         created_at: r.get("created_at")?,
         updated_at: r.get("updated_at")?,
     })
@@ -61,6 +64,8 @@ pub struct NewAnnotation {
     pub quote: String,
     #[serde(default)]
     pub comment: String,
+    #[serde(default)]
+    pub ink: String,
 }
 
 fn clean(s: &str, max: usize) -> String {
@@ -81,6 +86,21 @@ fn check_rects(rects: &[Rect]) -> Result<()> {
     }
 }
 
+/// Höchstlänge der Handschrift einer Seite (Zeichen).
+pub const MAX_INK: usize = 3_000_000;
+
+/// Handschrift: leer oder „v1|Breite|Höhe“ gefolgt von Strichen; nur harmlose Zeichen.
+fn check_ink(ink: &str) -> Result<()> {
+    let ok = ink.len() <= MAX_INK
+        && (ink.is_empty() || ink.starts_with("v1|"))
+        && ink.chars().all(|c| c.is_ascii_alphanumeric() || "|#,;.-\n".contains(c));
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::invalid("Ungültige Handschrift."))
+    }
+}
+
 fn index(conn: &Connection, a: &Annotation) -> Result<()> {
     if a.kind != "highlight" {
         return Ok(());
@@ -98,7 +118,7 @@ pub fn get(conn: &Connection, id: &str) -> Result<Annotation> {
 
 pub fn create(conn: &Connection, a: NewAnnotation) -> Result<Annotation> {
     require_id(&a.document_id)?;
-    if !["highlight", "bookmark"].contains(&a.kind.as_str()) {
+    if !["highlight", "bookmark", "ink"].contains(&a.kind.as_str()) {
         return Err(Error::invalid("Unbekannte Art der Markierung."));
     }
     if a.page < 1 {
@@ -109,20 +129,25 @@ pub fn create(conn: &Connection, a: NewAnnotation) -> Result<Annotation> {
         return Err(Error::invalid("Unbekannte Farbe."));
     }
     check_rects(&a.rects)?;
+    check_ink(&a.ink)?;
     if a.kind == "highlight" && a.rects.is_empty() {
         return Err(Error::invalid("Die Markierung hat keinen Bereich."));
     }
     let tx = conn.unchecked_transaction()?;
     crate::repo::documents::get(&tx, None, &a.document_id)?;
-    if a.kind == "bookmark" {
+    // Lesezeichen und Handschrift gibt es je Seite nur einmal
+    if a.kind == "bookmark" || a.kind == "ink" {
         let existing: Option<String> = tx
             .query_row(
-                "SELECT id FROM annotations WHERE document_id = ?1 AND page = ?2 AND kind = 'bookmark'",
-                params![a.document_id, a.page],
+                "SELECT id FROM annotations WHERE document_id = ?1 AND page = ?2 AND kind = ?3",
+                params![a.document_id, a.page, a.kind],
                 |r| r.get(0),
             )
             .optional()?;
         if let Some(id) = existing {
+            if a.kind == "ink" {
+                tx.execute("UPDATE annotations SET ink = ?2, updated_at = ?3 WHERE id = ?1", params![id, a.ink, now()])?;
+            }
             let found = get(&tx, &id)?;
             tx.commit()?;
             return Ok(found);
@@ -131,9 +156,9 @@ pub fn create(conn: &Connection, a: NewAnnotation) -> Result<Annotation> {
     let id = new_id();
     let ts = now();
     tx.execute(
-        "INSERT INTO annotations (id, document_id, page, kind, color, rects, quote, comment, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
-        params![id, a.document_id, a.page, a.kind, color, serde_json::to_string(&a.rects)?, clean(&a.quote, 5000), clean(&a.comment, 10000), ts],
+        "INSERT INTO annotations (id, document_id, page, kind, color, rects, quote, comment, ink, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+        params![id, a.document_id, a.page, a.kind, color, serde_json::to_string(&a.rects)?, clean(&a.quote, 5000), clean(&a.comment, 10000), a.ink, ts],
     )?;
     let ann = get(&tx, &id)?;
     index(&tx, &ann)?;
@@ -145,6 +170,7 @@ pub fn create(conn: &Connection, a: NewAnnotation) -> Result<Annotation> {
 pub struct AnnotationPatch {
     pub comment: Option<String>,
     pub color: Option<String>,
+    pub ink: Option<String>,
 }
 
 pub fn update(conn: &Connection, id: &str, p: AnnotationPatch) -> Result<Annotation> {
@@ -159,10 +185,14 @@ pub fn update(conn: &Connection, id: &str, p: AnnotationPatch) -> Result<Annotat
         }
         a.color = c;
     }
+    if let Some(ink) = p.ink {
+        check_ink(&ink)?;
+        a.ink = ink;
+    }
     a.updated_at = now();
     tx.execute(
-        "UPDATE annotations SET comment = ?2, color = ?3, updated_at = ?4 WHERE id = ?1",
-        params![id, a.comment, a.color, a.updated_at],
+        "UPDATE annotations SET comment = ?2, color = ?3, ink = ?4, updated_at = ?5 WHERE id = ?1",
+        params![id, a.comment, a.color, a.ink, a.updated_at],
     )?;
     index(&tx, &a)?;
     tx.commit()?;

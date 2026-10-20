@@ -41,6 +41,30 @@ erkannt ist, zeichnet nur noch der Stift – die Hand kann aufliegen, mit dem Fi
 Auflösung). **Antippen** öffnet sie wieder zum Weiterzeichnen – die Striche bleiben als
 Vektordaten erhalten. Zeichnungen erscheinen auch im Word-Export und in der Druckansicht.
 
+## Folien neben der Mitschrift
+
+Knopf **„Folien“** im Kopf einer Notiz → Foliensatz wählen (zuerst die PDFs der Veranstaltung,
+„PDF importieren“ holt neue Folien aus der Dateien-App). Die Folien öffnen sich **rechts neben**
+der Mitschrift, auf dem iPad **hochkant darüber**; der Trenner lässt sich ziehen, das Symbol
+oben in der Folie schaltet zwischen nebeneinander und untereinander um. Die Notiz merkt sich
+Foliensatz und Seite – „Folien“ macht beim nächsten Mal dort weiter. Während die Folien offen
+sind, schwebt der Kontextbereich nur bei Bedarf über dem Inhalt.
+
+**„Folie übernehmen“** fügt die aktuelle Seite (samt Handschrift) als Bild an der
+Schreibposition ein, darunter „Folie 12 · Titel“ als Verweis auf genau diese Seite; die Seite
+wird außerdem mit der Notiz verknüpft. Danach lässt sich direkt weiterschreiben.
+
+## Mit dem Pencil in PDFs schreiben
+
+Stift-Symbol in der PDF-Leiste → **Stift**, **Textmarker**, **Radierer** (ganze Striche), vier
+Farben, drei Strichstärken, Rückgängig/Wiederholen. Der Apple Pencil schreibt, der **Finger
+blättert** weiter mit Schwung – die aufliegende Hand malt nicht mit. Ohne Stift lässt sich
+„Finger zeichnen“ (Hand-Symbol) einschalten; dann blättert man über die Pfeile oder die
+Seitenübersicht. Die Handschrift wird kurz nach dem letzten Strich gespeichert (und sofort beim
+Wechsel in eine andere App), als Vektordaten relativ zur Seite – sie bleibt bei jedem Zoom
+scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehen unter
+„Markierungen“ in der Seitenübersicht.
+
 ## Stundenplan und „Heute“
 
 Trage bei einer Veranstaltung unter „Angaben“ **Wochentag** (z. B. „Mo, Do“ oder „dienstags“)

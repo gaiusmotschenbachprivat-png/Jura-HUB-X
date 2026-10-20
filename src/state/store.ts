@@ -21,6 +21,13 @@ export type View =
   | { type: "assistant" }
   | { type: "settings"; tab?: "allgemein" | "backup" | "daten" | "bereiche" };
 
+/**
+ * Kontextbereich schwebt über dem Inhalt statt daneben: im schmalen Fenster
+ * und solange Folien neben einer Mitschrift offen sind (sonst bliebe zu wenig Platz).
+ */
+export const contextFloats = (s: { narrow: boolean; secondary: Secondary; view: View }) => s.narrow || (!!s.secondary && s.view.type === "note");
+
+export type SplitLayout = "auto" | "side" | "stacked";
 export type Secondary = { type: "document"; id: string; page?: number } | { type: "note"; id: string } | null;
 
 export type SaveStatus = "saved" | "dirty" | "saving" | "error";
@@ -72,6 +79,12 @@ interface State {
   sidebarWidth: number;
   contextWidth: number;
   secondaryWidth: number;
+  /** Höhe der Folie, wenn Folie und Mitschrift untereinander stehen */
+  secondaryHeight: number;
+  /** Geteilte Ansicht: automatisch (hochkant untereinander), nebeneinander, untereinander */
+  splitLayout: SplitLayout;
+  /** Wäre „automatisch“ gerade untereinander? (vom Arbeitsbereich gemessen) */
+  splitAutoStacked: boolean;
   paletteOpen: boolean;
 
   saveStatus: SaveStatus;
@@ -102,7 +115,7 @@ interface State {
   toggleContext(): void;
   setPalette(open: boolean): void;
   setSaveStatus(s: SaveStatus, err?: string | null, savedAt?: string | null, id?: string): void;
-  setPref<K extends "theme" | "fontScale" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "showArchived" | "focusMode" | "treeSort">(
+  setPref<K extends "theme" | "fontScale" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "secondaryHeight" | "splitLayout" | "showArchived" | "focusMode" | "treeSort">(
     key: K,
     value: State[K],
   ): void;
@@ -118,6 +131,8 @@ const PREF_KEYS: Record<string, string> = {
   sidebarWidth: "ui.sidebarWidth",
   contextWidth: "ui.contextWidth",
   secondaryWidth: "ui.secondaryWidth",
+  secondaryHeight: "ui.secondaryHeight",
+  splitLayout: "ui.splitLayout",
   showArchived: "ui.showArchived",
   treeSort: "ui.treeSort",
   contextOpen: "ui.contextOpen",
@@ -162,6 +177,9 @@ export const useApp = create<State>((set, get) => ({
   sidebarWidth: 280,
   contextWidth: 300,
   secondaryWidth: 560,
+  secondaryHeight: 420,
+  splitLayout: "auto",
+  splitAutoStacked: false,
   paletteOpen: false,
   saveStatus: "saved",
   saveError: null,
@@ -189,6 +207,8 @@ export const useApp = create<State>((set, get) => ({
         sidebarWidth: typeof s["ui.sidebarWidth"] === "number" ? (s["ui.sidebarWidth"] as number) : 280,
         contextWidth: typeof s["ui.contextWidth"] === "number" ? (s["ui.contextWidth"] as number) : 300,
         secondaryWidth: typeof s["ui.secondaryWidth"] === "number" ? (s["ui.secondaryWidth"] as number) : 560,
+        secondaryHeight: typeof s["ui.secondaryHeight"] === "number" ? (s["ui.secondaryHeight"] as number) : 420,
+        splitLayout: (["auto", "side", "stacked"] as const).find((m) => m === s["ui.splitLayout"]) ?? "auto",
         contextOpen: s["ui.contextOpen"] !== false,
         showArchived: s["ui.showArchived"] === true,
         treeSort: (["auto", "manual", "name", "updated"] as const).find((m) => m === s["ui.treeSort"]) ?? "auto",
@@ -246,7 +266,7 @@ export const useApp = create<State>((set, get) => ({
   },
 
   openSecondary(s) {
-    set({ secondary: s });
+    set({ secondary: s, contextOverlay: false });
   },
 
   setExpanded(id, open) {
@@ -268,7 +288,7 @@ export const useApp = create<State>((set, get) => ({
   },
 
   toggleContext() {
-    if (get().narrow) return set({ contextOverlay: !get().contextOverlay });
+    if (contextFloats(get())) return set({ contextOverlay: !get().contextOverlay });
     const v = !get().contextOpen;
     set({ contextOpen: v });
     persist(PREF_KEYS.contextOpen!, v);

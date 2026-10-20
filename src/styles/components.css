@@ -115,7 +115,11 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 .doc-type { width: 120px; text-align: right; }
 .doc-size { width: 64px; text-align: right; }
 .doc-date { width: 92px; text-align: right; }
-@media (max-width: 1000px) { .doc-type, .doc-date { display: none; } }
+/* Spalten nach verfügbarer Breite der Liste ausblenden (nicht nach Fenster), damit der Titel lesbar bleibt */
+.list:has(> .doc-row) { container-type: inline-size; }
+.doc-row > .grow { min-width: 110px; }
+@container (max-width: 720px) { .doc-type, .doc-date { display: none; } }
+@container (max-width: 480px) { .doc-size, .doc-row > .status-pill:not(.is-danger) { display: none; } }
 .filters { margin-bottom: 12px; max-width: 1100px; }
 .filter-input { width: 260px; }
 .card { border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px 18px; background: var(--bg); }
@@ -247,3 +251,13 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
   display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px;
   background: var(--bg); border: 1px solid var(--line-strong); border-radius: var(--r-lg); box-shadow: var(--shadow);
 }
+
+/* Definitionen aus der Mitschrift ins Glossar */
+.harvest-list { display: flex; flex-direction: column; gap: 6px; max-height: min(50vh, 440px); overflow: auto; }
+.harvest-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-md); }
+.harvest-row.is-picked { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.harvest-row > input[type="checkbox"] { margin-top: 8px; }
+.harvest-term { font-weight: 600; }
+.harvest-row textarea { width: 100%; resize: vertical; }
+.stack-tight { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.warn-text { color: var(--warning); }

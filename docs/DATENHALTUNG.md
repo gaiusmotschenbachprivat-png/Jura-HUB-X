@@ -102,7 +102,7 @@ der Oberfläche als „nicht geprüft“ markiert und erscheinen nie als geprüf
 | `review_log` | jede einzelne Wiederholung | `card_id`, `rating` (1–4), `reviewed_at`, Stand davor |
 | `tasks` | Aufgaben, offene Fragen, Lernziele | `kind`, `title`, `node_id`, `due_date`, `done_at` |
 | `exams` | Prüfungstermine | `title`, `date`, `time`, `place`, `kind`, `node_id` |
-| `annotations` | PDF-Markierungen, Kommentare, Lesezeichen | `document_id`, `page`, `kind`, `color`, `rects` (relativ zur Seite, 0–1), `quote`, `comment` |
+| `annotations` | PDF-Markierungen, Kommentare, Lesezeichen, Handschrift (ab Schema 5) | `document_id`, `page`, `kind` (`highlight`/`bookmark`/`ink`), `color`, `rects` (relativ zur Seite, 0–1), `quote`, `comment`, `ink` (Striche, Breite 2000 = Seitenbreite) |
 
 **Inhalt von `knowledge.data` je Typ** (unbekannte Felder werden beim Speichern verworfen):
 

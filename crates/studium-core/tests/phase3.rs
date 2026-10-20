@@ -205,13 +205,25 @@ fn pdf_annotations_and_bookmarks() {
     fs::write(&p, b"%PDF-1.7\nTest").unwrap();
     let d = documents::import(&f.conn, &f.store, &p, None, "skript").unwrap();
     let r = Rect { x: 0.1, y: 0.2, w: 0.5, h: 0.03 };
-    let h = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 3, kind: "highlight".into(), color: Some("gruen".into()), rects: vec![r], quote: "Trennungsprinzip".into(), comment: "Klausurrelevant".into() }).unwrap();
+    let h = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 3, kind: "highlight".into(), color: Some("gruen".into()), rects: vec![r], quote: "Trennungsprinzip".into(), comment: "Klausurrelevant".into(), ink: String::new() }).unwrap();
     assert_eq!(h.rects, vec![r]);
-    assert!(annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 1, kind: "highlight".into(), color: None, rects: vec![Rect { x: 5.0, y: 0.0, w: 0.1, h: 0.1 }], quote: String::new(), comment: String::new() }).is_err());
-    assert!(annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 1, kind: "highlight".into(), color: Some("pink; x".into()), rects: vec![r], quote: String::new(), comment: String::new() }).is_err());
-    let b1 = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 5, kind: "bookmark".into(), color: None, rects: vec![], quote: String::new(), comment: "Kapitel 2".into() }).unwrap();
-    let b2 = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 5, kind: "bookmark".into(), color: None, rects: vec![], quote: String::new(), comment: String::new() }).unwrap();
+    assert!(annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 1, kind: "highlight".into(), color: None, rects: vec![Rect { x: 5.0, y: 0.0, w: 0.1, h: 0.1 }], quote: String::new(), comment: String::new(), ink: String::new() }).is_err());
+    assert!(annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 1, kind: "highlight".into(), color: Some("pink; x".into()), rects: vec![r], quote: String::new(), comment: String::new(), ink: String::new() }).is_err());
+    let b1 = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 5, kind: "bookmark".into(), color: None, rects: vec![], quote: String::new(), comment: "Kapitel 2".into(), ink: String::new() }).unwrap();
+    let b2 = annotations::create(&f.conn, NewAnnotation { document_id: d.id.clone(), page: 5, kind: "bookmark".into(), color: None, rects: vec![], quote: String::new(), comment: String::new(), ink: String::new() }).unwrap();
     assert_eq!(b1.id, b2.id, "ein Lesezeichen je Seite");
+
+    // Handschrift: eine je Seite, ein zweites Anlegen ersetzt die Striche
+    let ink = |s: &str| NewAnnotation { document_id: d.id.clone(), page: 2, kind: "ink".into(), color: None, rects: vec![], quote: String::new(), comment: String::new(), ink: s.into() };
+    let i1 = annotations::create(&f.conn, ink("v1|2000|2828\npen|#1d2433|3|10,10,50;20,20,60")).unwrap();
+    let i2 = annotations::create(&f.conn, ink("v1|2000|2828\npen|#c0392b|5|30,30,50")).unwrap();
+    assert_eq!(i1.id, i2.id, "eine Handschrift je Seite");
+    assert!(i2.ink.contains("#c0392b"));
+    assert!(annotations::create(&f.conn, ink("<script>")).is_err(), "nur Strichdaten");
+    assert!(annotations::update(&f.conn, &i1.id, AnnotationPatch { ink: Some("v1|1|1\n'; DROP".into()), ..Default::default() }).is_err());
+    let i3 = annotations::update(&f.conn, &i1.id, AnnotationPatch { ink: Some(String::new()), ..Default::default() }).unwrap();
+    assert_eq!(i3.ink, "");
+    annotations::delete(&f.conn, &i1.id).unwrap();
 
     // Nicht zugeordnete Dokumente (und ihre Markierungen) erscheinen in jedem Bereich
     assert_eq!(search::search(&f.conn, "klausurrelevant", Some(&f.wiwi), 5).unwrap().len(), 1);
@@ -223,7 +235,7 @@ fn pdf_annotations_and_bookmarks() {
     assert_eq!(hit.entity_type, "annotation");
     assert_eq!(hit.page, Some(3));
     assert_eq!(hit.target_id.as_deref(), Some(d.id.as_str()));
-    annotations::update(&f.conn, &h.id, AnnotationPatch { comment: Some("Nicht mehr".into()), color: None }).unwrap();
+    annotations::update(&f.conn, &h.id, AnnotationPatch { comment: Some("Nicht mehr".into()), color: None, ink: None }).unwrap();
     assert!(search::search(&f.conn, "klausurrelevant", None, 5).unwrap().is_empty());
     assert_eq!(annotations::list(&f.conn, &d.id).unwrap().len(), 2);
     annotations::delete(&f.conn, &h.id).unwrap();

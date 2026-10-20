@@ -10,6 +10,15 @@ import { api } from "../../api";
 export const ASSET_PREFIX = "studium:asset/";
 /** Antippen einer Zeichnung: der Editor öffnet die Zeichenfläche. */
 export const DRAWING_EDIT_EVENT = "studium:edit-drawing";
+/** Folie aus der geteilten Ansicht in die Mitschrift übernehmen */
+export const INSERT_SLIDE_EVENT = "studium:insert-slide";
+export interface InsertSlideDetail {
+  noteId: string;
+  src: string;
+  page: number;
+  documentId: string;
+  title: string;
+}
 export interface DrawingEditDetail {
   pos: number;
   drawing: string;

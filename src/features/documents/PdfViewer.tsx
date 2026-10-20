@@ -1,18 +1,22 @@
 /**
  * PDF-Ansicht mit pdf.js: Seiten werden erst gerendert, wenn sie sichtbar
  * werden (auch bei Skripten mit Hunderten Seiten flüssig). Mit Textebene zum
- * Markieren und Kopieren, Seitenübersicht, Zoom und Textsuche.
+ * Markieren und Kopieren, Seitenübersicht, Zoom und Textsuche. Im Stiftmodus
+ * lässt sich mit dem Apple Pencil direkt auf die Seiten schreiben.
  */
 import "../../styles/pdf-textlayer.css";
 
-import { Bookmark, ChevronLeft, ChevronRight, PanelLeft, Search, ZoomIn, ZoomOut } from "lucide-react";
+import { Bookmark, Check, ChevronLeft, ChevronRight, Eraser, Hand, Highlighter, PanelLeft, PenLine, Redo2, Search, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import type { Annotation, Rect } from "../../api/types";
+import type { Stroke } from "../../lib/drawing";
+import { INK_MARKER_COLORS, INK_PEN_COLORS, INK_SIZES } from "../../lib/ink";
 import { closePdf, loadPdf, type PdfDoc } from "../../lib/pdf";
 import { HIGHLIGHT_COLORS, toPageRects } from "../../lib/pdfSelection";
 import { IconButton } from "../../ui/Button";
+import { InkLayer, type InkSettings, type InkTool } from "./InkLayer";
 
 const ZOOMS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
@@ -35,6 +39,9 @@ export function PdfViewer({
   onTextSelected,
   onAnnotationClick,
   onToggleBookmark,
+  inks,
+  onInkChange,
+  onDocument,
 }: {
   bytes: Uint8Array;
   page: number;
@@ -46,6 +53,11 @@ export function PdfViewer({
   onTextSelected?: (s: PdfSelection | null) => void;
   onAnnotationClick?: (a: Annotation, x: number, y: number) => void;
   onToggleBookmark?: (page: number) => void;
+  /** Handschrift je Seite; ohne `onInkChange` gibt es keinen Stiftmodus */
+  inks?: Map<number, Stroke[]>;
+  onInkChange?: (page: number, strokes: Stroke[], ratio: number) => void;
+  /** Geladenes PDF (z. B. um eine Seite als Bild zu übernehmen) */
+  onDocument?: (pdf: PdfDoc | null) => void;
 }) {
   const [pdf, setPdf] = useState<PdfDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +73,41 @@ export function PdfViewer({
   const scroller = useRef<HTMLDivElement>(null);
   const jumpRef = useRef<number | null>(page);
   const currentRef = useRef(page);
+  const [inkOn, setInkOn] = useState(false);
+  const [tool, setTool] = useState<InkTool>("pen");
+  const [penColor, setPenColor] = useState(INK_PEN_COLORS[0]!);
+  const [markerColor, setMarkerColor] = useState(INK_MARKER_COLORS[0]!);
+  const [sizeIdx, setSizeIdx] = useState(1);
+  const [finger, setFinger] = useState(false);
+  const [undo, setUndo] = useState<{ page: number; strokes: Stroke[]; ratio: number }[]>([]);
+  const [redo, setRedo] = useState<{ page: number; strokes: Stroke[]; ratio: number }[]>([]);
+  const inkSettings: InkSettings = {
+    tool,
+    color: tool === "marker" ? markerColor : penColor,
+    size: INK_SIZES[tool === "marker" ? "marker" : "pen"][sizeIdx]!,
+    finger,
+  };
+  const commitInk = (p: number, next: Stroke[], ratio: number) => {
+    if (!onInkChange) return;
+    setUndo((u) => [...u.slice(-80), { page: p, strokes: inks?.get(p) ?? [], ratio }]);
+    setRedo([]);
+    onInkChange(p, next, ratio);
+  };
+  const stepHistory = (from: "undo" | "redo") => {
+    const stack = from === "undo" ? undo : redo;
+    const last = stack[stack.length - 1];
+    if (!last || !onInkChange) return;
+    const back = { page: last.page, strokes: inks?.get(last.page) ?? [], ratio: last.ratio };
+    if (from === "undo") {
+      setUndo(stack.slice(0, -1));
+      setRedo((r) => [...r, back]);
+    } else {
+      setRedo(stack.slice(0, -1));
+      setUndo((u) => [...u, back]);
+    }
+    onInkChange(last.page, last.strokes, last.ratio);
+    if (last.page !== currentRef.current) scrollToPage(last.page);
+  };
 
   useEffect(() => {
     let doc: PdfDoc | null = null;
@@ -75,12 +122,15 @@ export function PdfViewer({
         const vp = p1.getViewport({ scale: 1 });
         setBaseSize({ w: vp.width, h: vp.height });
         setPdf(d);
+        onDocument?.(d);
       })
       .catch(() => alive && setError("Die PDF-Datei konnte nicht geöffnet werden. Sie ist eventuell beschädigt oder passwortgeschützt."));
     return () => {
       alive = false;
+      onDocument?.(null);
       void closePdf(doc);
     };
+    // onDocument absichtlich nicht als Abhängigkeit (nur beim Laden)
   }, [bytes]);
 
   useLayoutEffect(() => {
@@ -149,7 +199,7 @@ export function PdfViewer({
   };
 
   const onMouseUp = (ev: React.MouseEvent) => {
-    if (!onTextSelected) return;
+    if (!onTextSelected || inkOn) return;
     const cx = ev.clientX;
     const cy = ev.clientY;
     // Auswahl erst nach dem Loslassen auswerten
@@ -255,9 +305,65 @@ export function PdfViewer({
             <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
           </IconButton>
         )}
+        {onInkChange && (
+          <IconButton label={inkOn ? "Stiftmodus beenden" : "Mit dem Stift schreiben"} active={inkOn} onClick={() => setInkOn(!inkOn)}>
+            <PenLine size={16} />
+          </IconButton>
+        )}
         <span className="grow" />
         {toolbarExtra}
       </div>
+      {inkOn && (
+        <div className="ink-bar" role="toolbar" aria-label="Stiftwerkzeuge">
+          <div className="ink-group">
+            <IconButton label="Stift" active={tool === "pen"} onClick={() => setTool("pen")}>
+              <PenLine size={16} />
+            </IconButton>
+            <IconButton label="Textmarker" active={tool === "marker"} onClick={() => setTool("marker")}>
+              <Highlighter size={16} />
+            </IconButton>
+            <IconButton label="Radierer" active={tool === "eraser"} onClick={() => setTool("eraser")}>
+              <Eraser size={16} />
+            </IconButton>
+          </div>
+          {tool !== "eraser" && (
+            <div className="ink-group">
+              {(tool === "marker" ? INK_MARKER_COLORS : INK_PEN_COLORS).map((c) => (
+                <button
+                  key={c}
+                  className={`color-dot ${(tool === "marker" ? markerColor : penColor) === c ? "is-active" : ""}`}
+                  style={{ background: c }}
+                  aria-label={`Farbe ${c}`}
+                  aria-pressed={(tool === "marker" ? markerColor : penColor) === c}
+                  onClick={() => (tool === "marker" ? setMarkerColor(c) : setPenColor(c))}
+                />
+              ))}
+              <span className="tb-sep" />
+              {["fein", "mittel", "dick"].map((l, i) => (
+                <button key={l} className={`ink-size ${sizeIdx === i ? "is-active" : ""}`} aria-label={`Strichstärke ${l}`} aria-pressed={sizeIdx === i} onClick={() => setSizeIdx(i)}>
+                  <span style={{ width: 4 + i * 4, height: 4 + i * 4 }} />
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="ink-group">
+            <IconButton label="Rückgängig" disabled={!undo.length} onClick={() => stepHistory("undo")}>
+              <Undo2 size={16} />
+            </IconButton>
+            <IconButton label="Wiederholen" disabled={!redo.length} onClick={() => stepHistory("redo")}>
+              <Redo2 size={16} />
+            </IconButton>
+            <IconButton label={finger ? "Finger zeichnen (an)" : "Finger zeichnen (aus)"} active={finger} onClick={() => setFinger(!finger)}>
+              <Hand size={16} />
+            </IconButton>
+          </div>
+          <span className="grow" />
+          <span className="xs muted ink-hint">{finger ? "Finger und Stift schreiben – zum Blättern die Leiste links nutzen." : "Stift schreibt, Finger blättert."}</span>
+          <button className="btn btn-sm btn-primary" onClick={() => setInkOn(false)}>
+            <Check size={14} /> Fertig
+          </button>
+        </div>
+      )}
       {searchOpen && (
         <div className="pdf-search">
           <input autoFocus placeholder={pageTexts ? "Text im Dokument suchen …" : "Text wird noch ausgelesen …"} value={q} onChange={(e) => setQ(e.target.value)} disabled={!pageTexts} />
@@ -298,9 +404,9 @@ export function PdfViewer({
                   .map((a) => (
                     <button key={a.id} className="pdf-anno-item" onClick={() => go(a.page)}>
                       <span className="xs muted tnum row">
-                        {a.kind === "bookmark" ? <Bookmark size={11} /> : <span className="anno-dot" style={{ background: HIGHLIGHT_COLORS[a.color] }} />} S. {a.page}
+                        {a.kind === "bookmark" ? <Bookmark size={11} /> : a.kind === "ink" ? <PenLine size={11} /> : <span className="anno-dot" style={{ background: HIGHLIGHT_COLORS[a.color] }} />} S. {a.page}
                       </span>
-                      <span className="small anno-quote">{a.kind === "bookmark" ? a.comment || "Lesezeichen" : a.quote}</span>
+                      <span className="small anno-quote">{a.kind === "bookmark" ? a.comment || "Lesezeichen" : a.kind === "ink" ? "Handschrift" : a.quote}</span>
                       {a.kind === "highlight" && a.comment && <span className="xs muted">{a.comment}</span>}
                     </button>
                   ))}
@@ -308,12 +414,25 @@ export function PdfViewer({
             )}
           </div>
         )}
-        <div className="pdf-scroll" ref={scroller} onScroll={onScroll} onMouseUp={onMouseUp}>
+        <div className={`pdf-scroll ${inkOn ? "is-inking" : ""}`} ref={scroller} onScroll={onScroll} onMouseUp={onMouseUp}>
           {!pdf || !baseSize ? (
             <div className="loading">Lade PDF …</div>
           ) : (
             Array.from({ length: pdf.numPages }, (_, i) => (
-              <PdfPage key={i + 1} pdf={pdf} n={i + 1} scale={scale} base={baseSize} root={scroller.current} highlights={byPage.get(i + 1)} onAnnotationClick={onAnnotationClick} />
+              <PdfPage
+                key={i + 1}
+                pdf={pdf}
+                n={i + 1}
+                scale={scale}
+                base={baseSize}
+                root={scroller.current}
+                highlights={byPage.get(i + 1)}
+                onAnnotationClick={onAnnotationClick}
+                ink={inks?.get(i + 1)}
+                inkActive={inkOn}
+                inkSettings={inkSettings}
+                onInk={commitInk}
+              />
             ))
           )}
         </div>
@@ -342,6 +461,10 @@ function PdfPage({
   root,
   highlights,
   onAnnotationClick,
+  ink,
+  inkActive = false,
+  inkSettings,
+  onInk,
 }: {
   pdf: PdfDoc;
   n: number;
@@ -350,6 +473,10 @@ function PdfPage({
   root: HTMLElement | null;
   highlights?: Annotation[];
   onAnnotationClick?: (a: Annotation, x: number, y: number) => void;
+  ink?: Stroke[];
+  inkActive?: boolean;
+  inkSettings?: InkSettings;
+  onInk?: (page: number, strokes: Stroke[], ratio: number) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -423,6 +550,9 @@ function PdfPage({
           />
         );
       })}
+      {visible && inkSettings && (inkActive || !!ink?.length) && (
+        <InkLayer width={size.w} height={size.h} strokes={ink ?? []} active={inkActive} settings={inkSettings} onCommit={(next) => onInk?.(n, next, size.h / size.w)} />
+      )}
       <span className="pdf-page-no xs tnum">{n}</span>
     </div>
   );

@@ -12,7 +12,7 @@ import { Dialog } from "../../ui/Dialog";
 import { useMenu } from "../../ui/Menu";
 import { EmptyState, Field, MOD } from "../../ui/misc";
 import { renameNode, trashNode } from "../navigation/actions";
-import { DRAWING_EDIT_EVENT, storeImageFile, type DrawingEditDetail } from "./AssetImage";
+import { DRAWING_EDIT_EVENT, INSERT_SLIDE_EVENT, storeImageFile, type DrawingEditDetail, type InsertSlideDetail } from "./AssetImage";
 import { DrawingDialog, type DrawingResult } from "./DrawingDialog";
 import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
@@ -25,6 +25,7 @@ import { freezeAndFlush, scheduleSave } from "./saveQueue";
 import { FindBar } from "./FindBar";
 import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
+import { SlidesButton } from "../documents/Slides";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, type NormRef } from "./normLinks";
@@ -244,15 +245,33 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       if (editor.state.doc.nodeAt(d.pos)?.type.name !== "image" || !editor.view.dom.isConnected) return;
       setDrawing({ pos: d.pos, data: d.drawing });
     };
+    // Folie aus der geteilten Ansicht: Bild + Verweis auf die Seite, dann weiterschreiben
+    const onSlide = (e: Event) => {
+      const d = (e as CustomEvent<InsertSlideDetail>).detail;
+      if (compact || d.noteId !== note.node_id || !editor.view.dom.isConnected) return;
+      const href = `studium:document/${d.documentId}#page=${d.page}`;
+      editor
+        .chain()
+        .focus()
+        .insertContent([
+          { type: "image", attrs: { src: d.src, alt: `Folie ${d.page} – ${d.title}` } },
+          { type: "paragraph", content: [{ type: "text", text: `Folie ${d.page} · ${d.title}`, marks: [{ type: "link", attrs: { href } }, { type: "italic" }] }] },
+          { type: "paragraph" },
+        ])
+        .run();
+      useApp.getState().toast(`Folie ${d.page} übernommen.`, "success");
+    };
+    window.addEventListener(INSERT_SLIDE_EVENT, onSlide);
     window.addEventListener(MATH_EDIT_EVENT, onMath);
     window.addEventListener(FOOTNOTE_EDIT_EVENT, onFootnote);
     window.addEventListener(DRAWING_EDIT_EVENT, onDrawing);
     return () => {
+      window.removeEventListener(INSERT_SLIDE_EVENT, onSlide);
       window.removeEventListener(DRAWING_EDIT_EVENT, onDrawing);
       window.removeEventListener(MATH_EDIT_EVENT, onMath);
       window.removeEventListener(FOOTNOTE_EDIT_EVENT, onFootnote);
     };
-  }, [editor]);
+  }, [editor, compact, note.node_id]);
 
   if (!editor) return null;
 
@@ -355,7 +374,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           {area && <span className="crumb-area" style={{ color: area.color }}>{area.name}</span>}
           {note.path && <span> › {note.path}</span>}
         </div>
-        <div className="row">
+        <div className="row note-title-row">
           <input
             id="note-title"
             className="note-title"
@@ -372,21 +391,24 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               }
             }}
           />
-          <IconButton label="KI-Lernhilfen" onClick={(e) => menu.openBelow(e.currentTarget, studyItems())}>
-            <GraduationCap size={16} />
-          </IconButton>
-          <IconButton label="Inhaltsverzeichnis" onClick={(e) => tocMenu(e.currentTarget)}>
-            <ListTree size={16} />
-          </IconButton>
-          <IconButton label="Drucken / als PDF" onClick={() => setPrintDoc(editor.getJSON() as PMNode)}>
-            <Printer size={16} />
-          </IconButton>
-          <IconButton label="Versionshistorie" onClick={() => setShowHistory(true)}>
-            <History size={16} />
-          </IconButton>
-          <IconButton label="Weitere Aktionen" onClick={(e) => moreMenu(e.currentTarget)}>
-            <MoreHorizontal size={16} />
-          </IconButton>
+          <div className="note-actions">
+            {!compact && treeNode && <SlidesButton node={treeNode} />}
+            <IconButton label="KI-Lernhilfen" onClick={(e) => menu.openBelow(e.currentTarget, studyItems())}>
+              <GraduationCap size={16} />
+            </IconButton>
+            <IconButton label="Inhaltsverzeichnis" onClick={(e) => tocMenu(e.currentTarget)}>
+              <ListTree size={16} />
+            </IconButton>
+            <IconButton className="hide-narrow" label="Drucken / als PDF" onClick={() => setPrintDoc(editor.getJSON() as PMNode)}>
+              <Printer size={16} />
+            </IconButton>
+            <IconButton className="hide-narrow" label="Versionshistorie" onClick={() => setShowHistory(true)}>
+              <History size={16} />
+            </IconButton>
+            <IconButton label="Weitere Aktionen" onClick={(e) => moreMenu(e.currentTarget)}>
+              <MoreHorizontal size={16} />
+            </IconButton>
+          </div>
         </div>
         {treeNode && <NoteMetaBar node={treeNode} />}
       </div>

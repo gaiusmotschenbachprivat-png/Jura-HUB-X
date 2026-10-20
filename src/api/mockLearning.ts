@@ -263,9 +263,9 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
       return [...annotations.values()].filter((a) => a.document_id === documentId).sort((a, b) => a.page - b.page);
     },
     async annotationCreate(input) {
-      if (input.kind === "bookmark") {
-        const dup = [...annotations.values()].find((a) => a.document_id === input.document_id && a.page === input.page && a.kind === "bookmark");
-        if (dup) return dup;
+      if (input.kind === "bookmark" || input.kind === "ink") {
+        const dup = [...annotations.values()].find((a) => a.document_id === input.document_id && a.page === input.page && a.kind === input.kind);
+        if (dup) return input.kind === "ink" ? Object.assign(dup, { ink: input.ink ?? "", updated_at: now() }) : dup;
       }
       const a: Annotation = {
         id: uuid(),
@@ -276,6 +276,7 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
         rects: input.rects ?? [],
         quote: input.quote ?? "",
         comment: input.comment ?? "",
+        ink: input.ink ?? "",
         created_at: now(),
         updated_at: now(),
       };

@@ -28,7 +28,7 @@ import { SettingsView } from "./features/settings/SettingsView";
 import { TrashView } from "./features/settings/TrashView";
 import { formatRelative } from "./lib/format";
 import { ancestors } from "./lib/tree";
-import { NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
+import { contextFloats, NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
 import { IconButton } from "./ui/Button";
 import { MOD, Toasts } from "./ui/misc";
 import { Splitter } from "./ui/Splitter";
@@ -78,21 +78,33 @@ function Shell() {
   const sidebarWidth = useApp((s) => s.sidebarWidth);
   const contextWidth = useApp((s) => s.contextWidth);
   const secondaryWidth = useApp((s) => s.secondaryWidth);
+  const secondaryHeight = useApp((s) => s.secondaryHeight);
+  const splitLayout = useApp((s) => s.splitLayout);
   const focusMode = useApp((s) => s.focusMode);
   const setPref = useApp((s) => s.setPref);
   const [dropHover, setDropHover] = useState(false);
   const [workspaceWidth, setWorkspaceWidth] = useState(1200);
+  const [workspaceHeight, setWorkspaceHeight] = useState(800);
   const workspaceRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const el = workspaceRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setWorkspaceWidth(el.clientWidth));
+    const ro = new ResizeObserver(() => {
+      setWorkspaceWidth(el.clientWidth);
+      setWorkspaceHeight(el.clientHeight);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
   // Die Mitschrift behält mindestens 420 px, die Folie bekommt den Rest.
   const maxSecondary = Math.max(320, workspaceWidth - 420);
   const effSecondary = Math.min(secondaryWidth, maxSecondary);
+  // iPad hochkant: Folie oben, Mitschrift darunter
+  const autoStacked = workspaceWidth < 860;
+  const stacked = splitLayout === "stacked" || (splitLayout === "auto" && autoStacked);
+  useEffect(() => useApp.setState({ splitAutoStacked: autoStacked }), [autoStacked]);
+  const maxSecondaryH = Math.max(200, workspaceHeight - 220);
+  const effSecondaryH = Math.min(secondaryHeight, maxSecondaryH);
   const startImport = useImport();
 
   useGlobalShortcuts();
@@ -148,7 +160,8 @@ function Shell() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, [setNarrow]);
-  const showContext = (narrow ? contextOverlay : contextOpen) && !focusMode && ["note", "node", "document", "knowledge"].includes(view.type);
+  const floating = narrow || !!showSecondary;
+  const showContext = (floating ? contextOverlay : contextOpen) && !focusMode && ["note", "node", "document", "knowledge"].includes(view.type);
 
   return (
     <div className={`shell ${focusMode ? "is-focus" : ""}`}>
@@ -162,14 +175,18 @@ function Shell() {
       )}
       <div className="shell-main">
         <Topbar />
-        <div className="workspace" ref={workspaceRef}>
+        <div className={`workspace ${showSecondary && stacked ? "is-stacked" : ""}`} ref={workspaceRef}>
           <main className="primary" key={viewId(view) ?? (view.type === "knowledge-list" ? `kl-${view.kind}` : view.type)}>
             <ViewSwitch view={view} />
           </main>
           {showSecondary && (
             <>
-              <Splitter value={effSecondary} min={320} max={maxSecondary} side="right" label="Breite der geteilten Ansicht" onChange={(v) => setPref("secondaryWidth", v)} />
-              <section className="secondary" style={{ width: effSecondary }} aria-label="Geteilte Ansicht">
+              {stacked ? (
+                <Splitter value={effSecondaryH} min={160} max={maxSecondaryH} side="top" label="Höhe der geteilten Ansicht" onChange={(v) => setPref("secondaryHeight", v)} />
+              ) : (
+                <Splitter value={effSecondary} min={320} max={maxSecondary} side="right" label="Breite der geteilten Ansicht" onChange={(v) => setPref("secondaryWidth", v)} />
+              )}
+              <section className="secondary" style={stacked ? { height: effSecondaryH } : { width: effSecondary }} aria-label="Geteilte Ansicht">
                 {secondary.type === "document" ? (
                   <DocumentViewer key={secondary.id} id={secondary.id} page={secondary.page} compact linkTargetNoteId={view.id} />
                 ) : (
@@ -180,12 +197,12 @@ function Shell() {
           )}
         </div>
       </div>
-      {showContext && narrow && (
+      {showContext && floating && (
         <div className="shell-context is-overlay" style={{ width: Math.min(contextWidth, 380) }}>
           <ContextPanel />
         </div>
       )}
-      {showContext && !narrow && (
+      {showContext && !floating && (
         <>
           <Splitter value={contextWidth} min={240} max={480} side="right" label="Breite des Kontextbereichs" onChange={(v) => setPref("contextWidth", v)} />
           <div className="shell-context" style={{ width: contextWidth }}>
@@ -251,7 +268,7 @@ function Topbar() {
   const saveStatus = useApp((s) => s.saveStatus);
   const saveError = useApp((s) => s.saveError);
   const lastSavedAt = useApp((s) => (viewId(s.view) && s.lastSavedId === viewId(s.view) ? s.lastSavedAt : null));
-  const contextOpen = useApp((s) => (s.narrow ? s.contextOverlay : s.contextOpen));
+  const contextOpen = useApp((s) => (contextFloats(s) ? s.contextOverlay : s.contextOpen));
   const toggleContext = useApp((s) => s.toggleContext);
   const focusMode = useApp((s) => s.focusMode);
   const setPref = useApp((s) => s.setPref);

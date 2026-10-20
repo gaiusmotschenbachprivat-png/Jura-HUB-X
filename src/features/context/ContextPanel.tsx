@@ -111,7 +111,7 @@ function EntityContext({ entity, isNote }: { entity: { type: "node" | "document"
   return (
     <div className="context-pad stack">
       {secondary?.type === "document" && isNote && (
-        <div className="hint-card small">Die Folie rechts kannst du mit „Seite verknüpfen“ dieser Notiz zuordnen. Die Verknüpfung bleibt dauerhaft erhalten.</div>
+        <div className="hint-card small">Die geöffnete Folie kannst du mit „Seite verknüpfen“ dieser Notiz zuordnen oder mit „Folie übernehmen“ als Bild einfügen. Die Verknüpfung bleibt dauerhaft erhalten.</div>
       )}
       <section>
         <div className="row">

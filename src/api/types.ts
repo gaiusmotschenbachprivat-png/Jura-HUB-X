@@ -504,6 +504,7 @@ export interface ExamInput {
 }
 
 export type AnnotationColor = "gelb" | "gruen" | "blau" | "rot" | "lila";
+export type AnnotationKind = "highlight" | "bookmark" | "ink";
 
 export interface Rect {
   x: number;
@@ -516,11 +517,13 @@ export interface Annotation {
   id: string;
   document_id: string;
   page: number;
-  kind: "highlight" | "bookmark";
+  kind: AnnotationKind;
   color: AnnotationColor;
   rects: Rect[];
   quote: string;
   comment: string;
+  /** Handschrift (nur bei `ink`): Striche im Format von `lib/drawing.ts`, Breite 1000 = Seitenbreite */
+  ink: string;
   created_at: string;
   updated_at: string;
 }
@@ -528,11 +531,12 @@ export interface Annotation {
 export interface NewAnnotation {
   document_id: string;
   page: number;
-  kind: "highlight" | "bookmark";
+  kind: AnnotationKind;
   color?: AnnotationColor;
   rects?: Rect[];
   quote?: string;
   comment?: string;
+  ink?: string;
 }
 
 // ---------- KI-Assistent: Rechtsquellen ----------
