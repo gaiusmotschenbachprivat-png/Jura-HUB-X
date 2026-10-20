@@ -212,6 +212,19 @@ export interface VerifyReport {
   problems: string[];
 }
 
+/** Ergebnis des Abgleichs mit einem anderen Gerät (über dessen Backup-Datei). */
+export interface MergeResult {
+  /** Zeitpunkt, zu dem das Backup des anderen Geräts entstand */
+  created_at: string;
+  added: Record<string, number>;
+  updated: Record<string, number>;
+  conflicts: number;
+  /** Gleichnamige Studienbereiche, die doppelt entstünden (Geräte unabhängig eingerichtet) */
+  duplicate_areas: string[];
+  /** Sicherung des Stands vor dem Abgleich (nur wenn nicht nur Vorschau) */
+  previous_backup: string | null;
+}
+
 export interface RestoreResult {
   previous_state_dir: string;
   created_at: string;

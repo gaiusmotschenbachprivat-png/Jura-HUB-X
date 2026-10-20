@@ -109,6 +109,9 @@ export function createTauriBackend(): Backend {
     backupCreate: () => c("backup_create"),
     backupVerify: (path) => c("backup_verify", { path }),
     backupRestore: (path) => c("backup_restore", { path }),
+    backupMerge: async () => {
+      throw { code: "unsupported", message: "Der Abgleich mit einem anderen Gerät ist bisher nur in der iPad-/Browser-Version verfügbar. In der Desktop-App: „Wiederherstellen“." };
+    },
     backupHistory: () => c("backup_history"),
 
     legalSourcesList: () => c("legal_sources_list"),

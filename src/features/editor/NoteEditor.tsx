@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { ExternalLink, GraduationCap, History, ListTree, MoreHorizontal, Printer, Unlink } from "lucide-react";
+import { BookOpen, ExternalLink, GraduationCap, History, ListTree, MoreHorizontal, PencilLine, Printer, Unlink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -26,6 +26,7 @@ import { FindBar } from "./FindBar";
 import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
 import { SlidesButton } from "../documents/Slides";
+import { DictationButton, insertTimestamp } from "./Dictation";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, type NormRef } from "./normLinks";
@@ -113,6 +114,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [study, setStudy] = useState<StudyMode | null>(null);
   const [bibOpen, setBibOpen] = useState(false);
   const [harvest, setHarvest] = useState(false);
+  const [reading, setReading] = useState(false);
+  const focusBefore = useRef(false);
   const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
@@ -134,7 +137,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           setNormPop({ ref: nr, rect: el.getBoundingClientRect() });
         }
         const a = (event.target as HTMLElement).closest("a");
-        if (a && (event.metaKey || event.ctrlKey)) {
+        // Im Lesemodus öffnen Links direkt beim Antippen
+        if (a && (event.metaKey || event.ctrlKey || !view.editable)) {
           const href = a.getAttribute("href") ?? "";
           event.preventDefault();
           followHref(href);
@@ -275,6 +279,27 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     };
   }, [editor, compact, note.node_id]);
 
+  // Lesemodus: nur lesen, ohne Werkzeugleiste, größere Schrift, Seitenleiste aus
+  useEffect(() => {
+    if (!editor) return;
+    editor.setEditable(!reading);
+    const st = useApp.getState();
+    if (reading) {
+      focusBefore.current = st.focusMode;
+      st.setPref("focusMode", true);
+    } else if (!focusBefore.current && st.focusMode) st.setPref("focusMode", false);
+    if (!reading) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setReading(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [editor, reading]);
+  useEffect(
+    () => () => {
+      if (reading && !focusBefore.current) useApp.getState().setPref("focusMode", false);
+    },
+    [reading],
+  );
+
   if (!editor) return null;
 
   const insertLink = (href: string, text: string) => {
@@ -351,6 +376,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       { label: "Karteikarte aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("card") },
       { label: "Definition aus Auswahl anlegen", disabled: !selectedText(), onSelect: () => void fromSelection("definition") },
       { label: "Definitionen ins Glossar übernehmen …", disabled: !treeNode, onSelect: () => setHarvest(true) },
+      { label: "Zeitstempel einfügen", onSelect: () => insertTimestamp(editor) },
       { label: "Offene Frage aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("question") },
       { separator: true, label: "" },
       { label: "Drucken / als PDF …", icon: <Printer size={14} />, onSelect: () => setPrintDoc(editor.getJSON() as PMNode) },
@@ -371,7 +397,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     ]);
 
   return (
-    <div className={`note ${compact ? "is-compact" : ""}`}>
+    <div className={`note ${compact ? "is-compact" : ""} ${reading ? "is-reading" : ""}`}>
       <div className="note-head">
         <div className="note-crumb small muted ellipsis">
           {area && <span className="crumb-area" style={{ color: area.color }}>{area.name}</span>}
@@ -395,7 +421,13 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             }}
           />
           <div className="note-actions">
-            {!compact && treeNode && <SlidesButton node={treeNode} />}
+            {!compact && treeNode && !reading && <SlidesButton node={treeNode} />}
+            {!compact && (
+              <IconButton label={reading ? "Bearbeiten" : "Lesemodus"} active={reading} onClick={() => setReading(!reading)}>
+                {reading ? <PencilLine size={16} /> : <BookOpen size={16} />}
+              </IconButton>
+            )}
+            {!compact && !reading && <DictationButton editor={editor} />}
             <IconButton label="KI-Lernhilfen" onClick={(e) => menu.openBelow(e.currentTarget, studyItems())}>
               <GraduationCap size={16} />
             </IconButton>

@@ -42,6 +42,7 @@ import type {
   Note,
   NodeDetail,
   RecentNote,
+  MergeResult,
   RestoreResult,
   SaveResult,
   SearchHit,
@@ -163,6 +164,8 @@ export interface Backend {
   backupCreate(): Promise<BackupInfo>;
   backupVerify(path: string): Promise<VerifyReport>;
   backupRestore(path: string): Promise<RestoreResult>;
+  /** Mit dem Backup eines anderen Geräts zusammenführen; `preview` zählt nur. */
+  backupMerge(path: string, preview: boolean): Promise<MergeResult>;
   backupHistory(): Promise<BackupRecord[]>;
 
   // ---- KI-Assistent: Rechtsquellen ----

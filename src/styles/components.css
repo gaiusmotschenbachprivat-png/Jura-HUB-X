@@ -261,3 +261,6 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 .harvest-row textarea { width: 100%; resize: vertical; }
 .stack-tight { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .warn-text { color: var(--warning); }
+.merge-table { border-collapse: collapse; width: 100%; }
+.merge-table th, .merge-table td { padding: 4px 8px; border-bottom: 1px solid var(--line); text-align: right; }
+.merge-table th:first-child, .merge-table td:first-child { text-align: left; }

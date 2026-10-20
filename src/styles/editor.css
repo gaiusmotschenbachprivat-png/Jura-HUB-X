@@ -207,3 +207,21 @@
 .norm-pop-text p.is-cited { background: var(--accent-soft); border-radius: 4px; padding: 2px 4px; }
 .norm-abs { color: var(--text-3); font-family: var(--font-ui); font-size: 0.85em; }
 .norm-pop-foot { margin: 6px 0 0; }
+
+/* Lesemodus: ruhige Ansicht zum Wiederholen */
+.note.is-reading .toolbar, .note.is-reading .note-meta, .note.is-reading .find-bar, .note.is-reading .link-bar { display: none; }
+.note.is-reading .note-body { max-width: 720px; margin: 0 auto; }
+.note.is-reading .prose { font-size: 1.14em; line-height: 1.75; }
+.note.is-reading .prose a { cursor: pointer; }
+.note.is-reading .note-title { pointer-events: none; }
+
+/* Diktat */
+.dictation-bar {
+  position: fixed; z-index: 70; left: 50%; transform: translateX(-50%); bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  width: min(640px, calc(100vw - 32px)); display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px;
+  background: var(--bg); border: 1px solid var(--line-strong); border-radius: 999px; box-shadow: var(--shadow);
+}
+.dictation-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--danger); animation: dict-pulse 1.2s infinite; flex: none; }
+@keyframes dict-pulse { 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .dictation-dot { animation: none; } }
+.note.is-reading .note-head { width: 100%; max-width: 800px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }

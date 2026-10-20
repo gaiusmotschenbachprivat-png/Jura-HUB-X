@@ -10,6 +10,7 @@ import type {
   BackupSettings,
   DocScope,
   ImportOutcome,
+  MergeResult,
   NodeDetail,
   RestoreResult,
   VerifyReport,
@@ -17,7 +18,8 @@ import type {
 import * as backup from "../core/backup";
 import { sha256Blob, type BlobStore } from "../core/blobs";
 import type { Ctx } from "../core/ctx";
-import { type Db, schemaVersion } from "../core/db";
+import { configure, type Db, migrate, schemaVersion } from "../core/db";
+import { mergeDatabases } from "../core/merge";
 import { CoreError } from "../core/errors";
 import * as search from "../core/search";
 import * as settings from "../core/settings";
@@ -140,6 +142,36 @@ export function createService(env: Env) {
     for (const sha of env.blobs.list()) if (!keepSet.has(sha)) await env.blobs.remove(sha);
     search.rebuild(db());
     return { previous_state_dir: previous, created_at: ex.createdAt };
+  }
+
+  /**
+   * Abgleich mit einem anderen Gerät: dessen Backup wird geprüft und mit den
+   * Daten hier zusammengeführt (nichts wird ersetzt). Vorher wird der jetzige
+   * Stand vollständig gesichert.
+   */
+  async function mergeFrom(file: Blob, preview: boolean): Promise<MergeResult> {
+    const ex = await backup.extractBackup(file, openBytes);
+    const other = openBytes(ex.dbBytes);
+    try {
+      configure(other);
+      // Ältere Stände auf den aktuellen bringen; neuere lehnt migrate() ab.
+      migrate(other);
+      if (preview) {
+        const r = mergeDatabases(db(), other, { dryRun: true });
+        return { created_at: ex.createdAt, added: r.added, updated: r.updated, conflicts: r.conflicts, duplicate_areas: r.duplicateAreas, previous_backup: null };
+      }
+      const previous = `Studium-OS-Backup-vor-Abgleich-${fileStamp()}.studiumbackup`;
+      await runBackup("manual", previous);
+      const r = mergeDatabases(db(), other);
+      for (const sha of r.blobs) {
+        const data = ex.files.get(sha);
+        if (data) await env.blobs.put(data);
+      }
+      search.rebuild(db());
+      return { created_at: ex.createdAt, added: r.added, updated: r.updated, conflicts: r.conflicts, duplicate_areas: r.duplicateAreas, previous_backup: previous };
+    } finally {
+      other.raw.close();
+    }
   }
 
   /** Automatisches Backup (einmal täglich, während die App geöffnet ist). */
@@ -278,6 +310,8 @@ export function createService(env: Env) {
     backupVerifyStored: async (name: string): Promise<VerifyReport> => backup.verifyBackup(await storedBackup(name), openBytes),
     backupRestoreFile: async (file: File) => restoreFrom(file),
     backupRestoreStored: async (name: string) => restoreFrom(await storedBackup(name)),
+    backupMergeFile: async (file: File, preview: boolean) => mergeFrom(file, preview),
+    backupMergeStored: async (name: string, preview: boolean) => mergeFrom(await storedBackup(name), preview),
     backupFiles: async () => listBackups(),
     backupFile: async (name: string) => storedBackup(name),
     backupDelete: async (name: string) => {

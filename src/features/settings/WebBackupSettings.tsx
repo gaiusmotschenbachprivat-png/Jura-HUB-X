@@ -1,8 +1,9 @@
-import { CheckCircle2, HardDriveDownload, RotateCcw, Share, ShieldCheck, Trash2, XCircle } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, HardDriveDownload, RotateCcw, Share, ShieldCheck, Trash2, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { api, errorMessage } from "../../api";
-import type { BackupSettings as BS, VerifyReport } from "../../api/types";
+import type { BackupSettings as BS, MergeResult, VerifyReport } from "../../api/types";
+import { MERGE_LABEL } from "../../lib/mergeLabels";
 import { formatBytes, formatDateTime } from "../../lib/format";
 import { reportError, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
@@ -31,6 +32,37 @@ export function WebBackupSettings() {
   const [busy, setBusy] = useState<string | null>(null);
   const [report, setReport] = useState<{ path: string; label: string; report: VerifyReport; forRestore: boolean } | null>(null);
   const toast = useApp((s) => s.toast);
+  const [merge, setMerge] = useState<{ path: string; label: string; preview: MergeResult } | null>(null);
+
+  const pickMerge = async () => {
+    const path = (await api.pickFiles({ multiple: false, title: "Backup des anderen Geräts auswählen" }))?.[0] ?? null;
+    if (!path) return;
+    setBusy("merge");
+    try {
+      await flushAll();
+      setMerge({ path, label: path.split("/").pop() ?? path, preview: await api.backupMerge(path, true) });
+    } catch (e) {
+      toast(`Abgleich nicht möglich: ${errorMessage(e)}`, "error");
+    } finally {
+      setBusy(null);
+    }
+  };
+  const runMerge = async () => {
+    if (!merge) return;
+    setBusy("merge");
+    try {
+      await flushAll();
+      const r = await api.backupMerge(merge.path, false);
+      const n = Object.values(r.added).reduce((a, b) => a + b, 0) + Object.values(r.updated).reduce((a, b) => a + b, 0);
+      setMerge(null);
+      toast(`Abgeglichen: ${n} Änderungen übernommen${r.conflicts ? `, ${r.conflicts} Notiz(en) mit zwei Fassungen (ältere in der Versionshistorie)` : ""}. Der vorherige Stand liegt als Backup bereit.`, "success");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (e) {
+      toast(`Abgleich fehlgeschlagen: ${errorMessage(e)}. Es wurde nichts verändert.`, "error");
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const load = async () => {
     try {
@@ -242,6 +274,22 @@ export function WebBackupSettings() {
       </section>
 
       <section className="card">
+        <h3>Mit anderem Gerät abgleichen</h3>
+        <p className="small">
+          Für ein zweites Gerät (z. B. Laptop) ohne fremden Server. Einmalig einrichten: das zweite Gerät mit „Aus Backup-Datei wiederherstellen“ starten. Danach: Auf
+          dem anderen Gerät ein Backup erstellen und in iCloud Drive sichern, hier abgleichen. Neues kommt hinzu,
+          bei Änderungen auf beiden Seiten gilt die jüngere – bei Notizen bleibt die andere Fassung in der Versionshistorie. Für die Gegenrichtung danach hier ein Backup
+          sichern und dort abgleichen.
+        </p>
+        <div className="row wrap">
+          <Button icon={<ArrowLeftRight size={15} />} onClick={() => void pickMerge()} disabled={!!busy}>
+            {busy === "merge" ? "Prüfe Backup …" : "Backup des anderen Geräts abgleichen …"}
+          </Button>
+        </div>
+        <p className="xs muted">Vor dem Abgleich wird der jetzige Stand vollständig gesichert. Endgültig Gelöschtes (geleerter Papierkorb) wird nicht übertragen.</p>
+      </section>
+
+      <section className="card">
         <h3>Speicher</h3>
         <p className="small">
           {persisted
@@ -255,6 +303,39 @@ export function WebBackupSettings() {
         )}
       </section>
 
+      {merge && (
+        <Dialog
+          title="Abgleich mit anderem Gerät"
+          onClose={() => setMerge(null)}
+          footer={
+            <>
+              <Button onClick={() => setMerge(null)}>Abbrechen</Button>
+              <Button variant="primary" icon={<ArrowLeftRight size={14} />} onClick={() => void runMerge()} disabled={busy === "merge"}>
+                {busy === "merge" ? "Gleiche ab …" : "Jetzt abgleichen"}
+              </Button>
+            </>
+          }
+        >
+          <div className="stack small">
+            <p>
+              Backup „{merge.label}“{merge.preview.created_at ? ` vom ${formatDateTime(merge.preview.created_at)}` : ""}.
+            </p>
+            {merge.preview.duplicate_areas.length > 0 && (
+              <p className="notice notice-warn">
+                Achtung: Die Studienbereiche {merge.preview.duplicate_areas.map((n) => `„${n}“`).join(", ")} gibt es auf beiden Geräten, sie wurden aber unabhängig angelegt und
+                würden doppelt erscheinen. Richte ein neues Gerät besser einmal mit „Aus Backup-Datei wiederherstellen“ ein und gleiche erst danach ab.
+              </p>
+            )}
+            <MergeCounts preview={merge.preview} />
+            {merge.preview.conflicts > 0 && (
+              <p className="notice notice-warn">
+                {merge.preview.conflicts} Notiz(en) wurden auf beiden Geräten unterschiedlich geändert. Die jüngere Fassung gilt, die andere bleibt in der Versionshistorie der Notiz.
+              </p>
+            )}
+            <p className="xs muted">Der jetzige Stand wird vorher als Backup gesichert. Danach lädt die App neu.</p>
+          </div>
+        </Dialog>
+      )}
       {report && (
         <Dialog
           title={report.report.ok ? "Backup ist in Ordnung" : "Backup ist beschädigt"}
@@ -292,5 +373,30 @@ export function WebBackupSettings() {
         </Dialog>
       )}
     </div>
+  );
+}
+
+function MergeCounts({ preview }: { preview: MergeResult }) {
+  const keys = [...new Set([...Object.keys(preview.added), ...Object.keys(preview.updated)])].filter((k) => k !== "document_pages" && k !== "legal_chunks");
+  if (!keys.length) return <p>Beide Geräte sind auf demselben Stand – es gibt nichts zu übernehmen.</p>;
+  return (
+    <table className="merge-table">
+      <thead>
+        <tr>
+          <th />
+          <th>neu</th>
+          <th>aktualisiert</th>
+        </tr>
+      </thead>
+      <tbody>
+        {keys.map((k) => (
+          <tr key={k}>
+            <td>{MERGE_LABEL[k] ?? k}</td>
+            <td className="tnum">{preview.added[k] ?? 0}</td>
+            <td className="tnum">{preview.updated[k] ?? 0}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }

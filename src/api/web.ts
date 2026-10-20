@@ -197,6 +197,8 @@ export function createWebBackend(): Backend {
       path.startsWith("web-file:") ? call("backupVerifyFile", resolveFile(path)) : call("backupVerifyStored", path),
     backupRestore: (path: string) =>
       path.startsWith("web-file:") ? call("backupRestoreFile", resolveFile(path)) : call("backupRestoreStored", path),
+    backupMerge: (path: string, preview: boolean) =>
+      path.startsWith("web-file:") ? call("backupMergeFile", resolveFile(path), preview) : call("backupMergeStored", path, preview),
 
     async exportWrite(path: string, bytes: Uint8Array) {
       const name = path.replace(/^download:/, "");

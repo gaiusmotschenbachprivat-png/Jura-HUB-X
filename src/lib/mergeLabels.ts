@@ -1,0 +1,21 @@
+/** Bezeichnungen der Datenarten in der Vorschau des Geräte-Abgleichs (`core/merge.ts`). */
+export const MERGE_LABEL: Record<string, string> = {
+  areas: "Studienbereiche",
+  nodes: "Struktur und Notizen",
+  notes: "Notizinhalte",
+  note_versions: "Notizversionen",
+  blobs: "Dateien",
+  documents: "Dokumente",
+  document_pages: "Dokumentseiten",
+  placements: "Zuordnungen",
+  node_area_refs: "Bereichsverweise",
+  links: "Verknüpfungen",
+  knowledge: "Wissen",
+  flashcards: "Karteikarten",
+  review_log: "Wiederholungen",
+  tasks: "Aufgaben",
+  exams: "Prüfungen",
+  annotations: "Markierungen und Handschrift",
+  legal_sources: "Rechtsquellen",
+  legal_chunks: "Normen",
+};

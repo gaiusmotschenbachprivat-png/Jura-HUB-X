@@ -86,6 +86,33 @@ scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehe
   (Tippfehler, Normangaben), „gewusst/nicht gewusst“ entscheidest du. Danach lassen sich nur
   die verpassten Punkte wiederholen; das letzte Ergebnis wird je Schema gemerkt.
 
+## Diktat, Zeitstempel, Lesemodus
+
+- **Diktat** (Mikrofon im Notizkopf): Gesprochenes landet an der Schreibposition, beginnend mit
+  der Uhrzeit „[10:42]“; nach längeren Pausen beginnt eine neue Zeile mit Uhrzeit. Die
+  Spracherkennung übernimmt iPadOS/Safari (je nach Gerät auf dem Gerät oder über Apple-Server,
+  wie die Diktierfunktion der Tastatur) – vor der ersten Nutzung wird das erklärt. Studium OS
+  sendet nichts. Bietet der Browser keine Spracherkennung an, hilft die Mikrofon-Taste der
+  iPad-Tastatur. „Zeitstempel einfügen“ gibt es auch ohne Diktat im „…“-Menü.
+- **Lesemodus** (Buch-Symbol): nur lesen, ohne Werkzeugleiste und Seitenleiste, größere Schrift;
+  Links öffnen beim Antippen. Stift-Symbol oder Esc kehrt zum Bearbeiten zurück.
+
+## Abgleich mit einem zweiten Gerät
+
+Einstellungen → Backup → **„Backup des anderen Geräts abgleichen …“**. Ohne Server, über eine
+Datei: Auf dem anderen Gerät ein Backup erstellen und in iCloud Drive sichern, hier auswählen.
+Die Vorschau zeigt, was neu ist und was aktualisiert wird; erst „Jetzt abgleichen“ ändert etwas,
+und vorher wird der jetzige Stand als Backup gesichert. Regeln: Neues kommt hinzu, bei
+Änderungen auf beiden Geräten gilt die jüngere; bei Notizen bleibt die andere Fassung in der
+**Versionshistorie** – es geht kein Text verloren. Für die Gegenrichtung danach hier ein Backup
+sichern und auf dem anderen Gerät abgleichen.
+
+- Ein **neues Gerät einmalig mit „Aus Backup-Datei wiederherstellen“ einrichten**, nicht
+  unabhängig anlegen – sonst gäbe es gleichnamige Studienbereiche doppelt (die Vorschau warnt).
+- Endgültig Gelöschtes (geleerter Papierkorb, entfernte Markierungen) wird nicht übertragen.
+- Einstellungen bleiben je Gerät. Die Desktop-App kann (noch) nicht abgleichen, nur
+  wiederherstellen.
+
 ## Stundenplan und „Heute“
 
 Trage bei einer Veranstaltung unter „Angaben“ **Wochentag** (z. B. „Mo, Do“ oder „dienstags“)

@@ -520,6 +520,9 @@ export function createMockBackend(seed?: (b: Backend) => Promise<void>): Backend
     async backupRestore() {
       throw err("unsupported", "In der Browser-Vorschau nicht verfügbar.");
     },
+    async backupMerge() {
+      throw err("unsupported", "In der Browser-Vorschau nicht verfügbar.");
+    },
     async backupHistory() {
       return backups;
     },
