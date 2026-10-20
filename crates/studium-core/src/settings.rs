@@ -5,7 +5,7 @@ use serde_json::Value;
 
 use crate::{Error, Result};
 
-const ALLOWED_PREFIXES: &[&str] = &["ui.", "backup.", "editor.", "onboarding.", "ai."];
+const ALLOWED_PREFIXES: &[&str] = &["ui.", "backup.", "editor.", "onboarding.", "ai.", "learn."];
 
 fn check_key(key: &str) -> Result<()> {
     if key.len() > 64 || !ALLOWED_PREFIXES.iter().any(|p| key.starts_with(p)) {

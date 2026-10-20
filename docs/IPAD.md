@@ -65,6 +65,27 @@ Wechsel in eine andere App), als Vektordaten relativ zur Seite – sie bleibt be
 scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehen unter
 „Markierungen“ in der Seitenübersicht.
 
+## Lernen: Lernstand, Lernmodi, Schemata üben
+
+- **Lernstand nach Fach** (Karteikarten): je Veranstaltung, wie viele Karten „sitzen“
+  (voraussichtlich auch in drei Wochen noch gewusst, FSRS-Stabilität ab 21 Tagen), wie viele
+  fällig und neu sind – mit „lernen“ nur für dieses Fach.
+- **Lernmodi**: „Nur Definitionen“, „Nur Normen“ oder „Fragen“; in der Sitzung umschaltbar.
+  „Auch nicht fällige (vorziehen)“ übt vor der Klausur auch Karten, die noch nicht dran sind.
+- **Fällige Karten** stehen als Zahl in der Seitenleiste; auf dem Home-Bildschirm zusätzlich am
+  App-Symbol, sofern iPadOS das für Web-Apps erlaubt (setzt erteilte Mitteilungen voraus).
+  Erinnerungen zu einer Uhrzeit gibt es nicht – dafür wäre ein fremder Server nötig.
+- **Definitionen ins Glossar** (Notiz → „…“ → „Definitionen ins Glossar übernehmen …“): erkennt
+  Definitionen, deren Begriff **fett** am Absatzanfang steht („**Willenserklärung:** …“,
+  „**Anfechtung** ist …“) oder die mit „Definition:“ beginnen. Auswahl prüfen, Text anpassen,
+  übernehmen – auf Wunsch zugleich als Karteikarte und mit Link vom Begriff ins Glossar. Schon
+  vorhandene Begriffe werden angezeigt und nicht vorausgewählt.
+- **Schemata üben** (Karteikarten → „Schemata üben“ oder im Schema „Schema üben“):
+  „Reihenfolge“ – gemischte Prüfungspunkte in der richtigen Reihenfolge antippen;
+  „Abfragen“ – Punkt für Punkt aus dem Gedächtnis, eine Eingabe wird nachsichtig verglichen
+  (Tippfehler, Normangaben), „gewusst/nicht gewusst“ entscheidest du. Danach lassen sich nur
+  die verpassten Punkte wiederholen; das letzte Ergebnis wird je Schema gemerkt.
+
 ## Stundenplan und „Heute“
 
 Trage bei einer Veranstaltung unter „Angaben“ **Wochentag** (z. B. „Mo, Do“ oder „dienstags“)

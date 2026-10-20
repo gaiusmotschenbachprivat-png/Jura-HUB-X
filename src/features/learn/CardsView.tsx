@@ -12,6 +12,7 @@ import { longPress } from "../../ui/longPress";
 import { type MenuItem, useMenu } from "../../ui/Menu";
 import { AreaDot, EmptyState } from "../../ui/misc";
 import { CARD_KIND_LABEL, CardDialog } from "./CardDialog";
+import { BadgePermission, FachProgress, SchemaPractice } from "./LearnOverview";
 
 export function useCardStats() {
   const areaId = useApp((s) => s.areaId);
@@ -102,6 +103,7 @@ export function CardsView({ focusId }: { focusId?: string }) {
           <Button icon={<Plus size={15} />} onClick={() => setEdit("new")}>
             Neue Karte
           </Button>
+          <BadgePermission />
         </div>
       </header>
 
@@ -116,6 +118,10 @@ export function CardsView({ focusId }: { focusId?: string }) {
         </div>
       )}
 
+      <FachProgress cards={cards} />
+      <SchemaPractice />
+
+      <h2 className="section-title">Alle Karten</h2>
       <div className="filters row wrap">
         <input className="filter-input" placeholder="Karten durchsuchen …" value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="seg" role="radiogroup" aria-label="Filter">

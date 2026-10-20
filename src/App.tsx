@@ -6,6 +6,7 @@ import { ContextPanel } from "./features/context/ContextPanel";
 import { KnowledgeEditor } from "./features/knowledge/KnowledgeEditor";
 import { KnowledgeList } from "./features/knowledge/KnowledgeList";
 import { CardsView } from "./features/learn/CardsView";
+import { SchemaTrainer } from "./features/learn/SchemaTrainer";
 import { LearnSession } from "./features/learn/LearnSession";
 import { PlanningView } from "./features/planning/PlanningView";
 import { TimetableView } from "./features/planning/TimetableView";
@@ -249,7 +250,9 @@ function ViewSwitch({ view }: { view: View }) {
     case "cards":
       return <CardsView focusId={view.id} />;
     case "learn":
-      return <LearnSession />;
+      return <LearnSession kind={view.kind} node={view.node} label={view.label} />;
+    case "schema-train":
+      return <SchemaTrainer id={view.id} />;
     case "planning":
       return <PlanningView />;
     case "timetable":

@@ -33,6 +33,7 @@ import { StudyDialog, type StudyMode } from "../assistant/StudyTools";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
 import { CardDialog } from "../learn/CardDialog";
+import { DefinitionHarvest } from "../knowledge/DefinitionHarvest";
 
 /** Öffnet einen Link aus einer Notiz: intern in der App, Weblinks im Browser. */
 export function followHref(href: string) {
@@ -111,6 +112,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
   const [study, setStudy] = useState<StudyMode | null>(null);
   const [bibOpen, setBibOpen] = useState(false);
+  const [harvest, setHarvest] = useState(false);
   const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const menu = useMenu();
@@ -348,6 +350,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     menu.openBelow(el, [
       { label: "Karteikarte aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("card") },
       { label: "Definition aus Auswahl anlegen", disabled: !selectedText(), onSelect: () => void fromSelection("definition") },
+      { label: "Definitionen ins Glossar übernehmen …", disabled: !treeNode, onSelect: () => setHarvest(true) },
       { label: "Offene Frage aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("question") },
       { separator: true, label: "" },
       { label: "Drucken / als PDF …", icon: <Printer size={14} />, onSelect: () => setPrintDoc(editor.getJSON() as PMNode) },
@@ -606,6 +609,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           }}
         />
       )}
+      {harvest && treeNode && <DefinitionHarvest editor={editor} node={treeNode} onClose={() => setHarvest(false)} />}
       {cardFrom !== null && (
         <CardDialog
           initial={{ front: cardFrom.length < 160 ? cardFrom : "", back: cardFrom.length < 160 ? "" : cardFrom, area_id: note.area_id, source_type: "node", source_id: note.node_id }}

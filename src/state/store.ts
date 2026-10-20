@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { api, errorMessage } from "../api";
-import type { Area, KnowledgeType, StudyNode } from "../api/types";
+import type { Area, CardKind, KnowledgeType, StudyNode } from "../api/types";
 import type { SortMode } from "../lib/noteTypes";
 
 export type View =
@@ -15,7 +15,8 @@ export type View =
   | { type: "knowledge"; id: string }
   | { type: "knowledge-list"; kind: KnowledgeType }
   | { type: "cards"; id?: string }
-  | { type: "learn" }
+  | { type: "learn"; kind?: CardKind; node?: string; label?: string }
+  | { type: "schema-train"; id: string }
   | { type: "planning" }
   | { type: "timetable" }
   | { type: "assistant" }

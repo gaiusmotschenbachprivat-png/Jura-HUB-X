@@ -3,7 +3,7 @@ import type { Db } from "./db";
 import { CoreError } from "./errors";
 import { byteLen, parseJson } from "./util";
 
-const ALLOWED_PREFIXES = ["ui.", "backup.", "editor.", "onboarding.", "ai."];
+const ALLOWED_PREFIXES = ["ui.", "backup.", "editor.", "onboarding.", "ai.", "learn."];
 
 function checkKey(key: string) {
   if (typeof key !== "string" || key.length > 64 || !ALLOWED_PREFIXES.some((p) => key.startsWith(p))) {

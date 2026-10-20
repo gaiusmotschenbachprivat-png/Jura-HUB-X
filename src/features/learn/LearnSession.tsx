@@ -6,15 +6,28 @@ import { Pencil, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
-import type { Card } from "../../api/types";
+import type { Card, CardKind } from "../../api/types";
 import { previewIntervals, RATINGS, schedule, STATE_LABEL } from "../../lib/fsrs";
+import { descendantIds } from "../../lib/learnStats";
 import { reportError, useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import { EmptyState } from "../../ui/misc";
 import { CardDialog } from "./CardDialog";
 
-export function LearnSession() {
+const KIND_FILTERS: { kind: CardKind | undefined; label: string }[] = [
+  { kind: undefined, label: "Alle" },
+  { kind: "definition", label: "Definitionen" },
+  { kind: "norm", label: "Normen" },
+  { kind: "frage", label: "Fragen" },
+];
+
+/** `kind`/`node`: nur Karten einer Art bzw. eines Fachs (Veranstaltung mit allem darunter). */
+export function LearnSession({ kind: initialKind, node, label }: { kind?: CardKind; node?: string; label?: string } = {}) {
   const areaId = useApp((s) => s.areaId);
+  const nodes = useApp((s) => s.nodes);
+  const [kind, setKind] = useState<CardKind | undefined>(initialKind);
+  const [ahead, setAhead] = useState(false);
+  useEffect(() => setKind(initialKind), [initialKind]);
   const open = useApp((s) => s.open);
   const bump = useApp((s) => s.bump);
   const [queue, setQueue] = useState<Card[] | null>(null);
@@ -24,12 +37,17 @@ export function LearnSession() {
   const [editing, setEditing] = useState<Card | null>(null);
   const [onlyDifficult, setOnlyDifficult] = useState(false);
 
+  const scope = useMemo(() => (node ? descendantIds(nodes, node) : null), [nodes, node]);
   const load = useCallback(() => {
     api
-      .cardsList({ area_id: areaId === "all" ? null : areaId, due_only: !onlyDifficult, difficult_only: onlyDifficult, limit: 500 })
-      .then((cs) => setQueue(cs.filter((c) => !c.suspended)))
+      .cardsList({ area_id: areaId === "all" || node ? null : areaId, due_only: !onlyDifficult && !ahead, difficult_only: onlyDifficult, limit: 2000 })
+      .then((cs) => {
+        const list = cs.filter((c) => !c.suspended && (!kind || c.kind === kind) && (!scope || (c.node_id != null && scope.has(c.node_id))));
+        // Vorziehen: zuerst die am frühesten fälligen, höchstens 50 auf einmal
+        setQueue(ahead ? list.sort((a, b) => a.due.localeCompare(b.due)).slice(0, 50) : list);
+      })
       .catch(reportError);
-  }, [areaId, onlyDifficult]);
+  }, [areaId, onlyDifficult, ahead, kind, scope, node]);
   useEffect(load, [load]);
 
   const card = queue?.[0];
@@ -46,7 +64,7 @@ export function LearnSession() {
         setQueue((q) => {
           const rest = (q ?? []).slice(1);
           // In der Lernphase kurz darauf erneut zeigen (wenn heute noch fällig)
-          if (!onlyDifficult && Date.parse(updated.due) - Date.now() < 20 * 60000) return [...rest, updated];
+          if (!onlyDifficult && !ahead && Date.parse(updated.due) - Date.now() < 20 * 60000) return [...rest, updated];
           return rest;
         });
         bump();
@@ -56,7 +74,7 @@ export function LearnSession() {
         setBusy(false);
       }
     },
-    [card, busy, bump, onlyDifficult],
+    [card, busy, bump, onlyDifficult, ahead],
   );
 
   useEffect(() => {
@@ -80,13 +98,23 @@ export function LearnSession() {
     <div className="page learn">
       <header className="page-head learn-head">
         <div className="row">
-          <h1 className="page-title-static grow">Lernen</h1>
+          <h1 className="page-title-static grow">Lernen{label ? ` · ${label}` : ""}</h1>
+          <label className="small row">
+            <input type="checkbox" checked={ahead} onChange={(e) => setAhead(e.target.checked)} /> auch nicht fällige (vorziehen)
+          </label>
           <label className="small row">
             <input type="checkbox" checked={onlyDifficult} onChange={(e) => setOnlyDifficult(e.target.checked)} /> nur schwierige Karten üben
           </label>
           <IconButton label="Sitzung beenden" onClick={() => open({ type: "cards" })}>
             <X size={16} />
           </IconButton>
+        </div>
+        <div className="seg" role="tablist" aria-label="Kartenart">
+          {KIND_FILTERS.map((f) => (
+            <button key={f.label} role="tab" aria-selected={kind === f.kind} className={kind === f.kind ? "is-active" : ""} onClick={() => setKind(f.kind)}>
+              {f.label}
+            </button>
+          ))}
         </div>
         <div className="learn-progress">
           <div className="learn-bar" style={{ width: `${(done / Math.max(1, done + queue.length)) * 100}%` }} />

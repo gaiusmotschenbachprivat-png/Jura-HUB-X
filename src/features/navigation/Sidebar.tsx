@@ -56,6 +56,12 @@ export function Sidebar() {
 
   const activeId = viewId(view);
   const stats = useCardStats();
+  // Fällige Karten auch am App-Symbol (Home-Bildschirm), sofern das Gerät es erlaubt
+  useEffect(() => {
+    const n = stats?.due_now ?? 0;
+    const nav = navigator as Navigator & { setAppBadge?: (n?: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
+    void (n > 0 ? nav.setAppBadge?.(n) : nav.clearAppBadge?.())?.catch(() => {});
+  }, [stats?.due_now]);
   const [knowledgeType, setKnowledgeType] = useState<string | null>(null);
   useEffect(() => {
     if (view.type !== "knowledge") return setKnowledgeType(null);
@@ -215,7 +221,7 @@ export function Sidebar() {
             icon={<GraduationCap size={15} />}
             label="Karteikarten"
             badge={stats?.due_now || undefined}
-            active={view.type === "cards" || view.type === "learn"}
+            active={view.type === "cards" || view.type === "learn" || view.type === "schema-train"}
             onClick={() => open({ type: "cards" })}
           />
           <NavItem icon={<CalendarCheck size={15} />} label="Aufgaben & Prüfungen" active={view.type === "planning"} onClick={() => open({ type: "planning" })} />

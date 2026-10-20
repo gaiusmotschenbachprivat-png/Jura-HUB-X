@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Copy, FileText, Loader2, MoreHorizontal, SquareStack, Trash2 } from "lucide-react";
+import { AlertTriangle, Check, Copy, FileText, GraduationCap, Loader2, MoreHorizontal, SquareStack, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -244,6 +244,12 @@ function Loaded({ initial }: { initial: Knowledge }) {
               <input value={(k.data as unknown as SchemaData).norm ?? ""} placeholder="z. B. § 433 Abs. 2 BGB" onChange={(e) => setData<SchemaData>({ norm: e.target.value })} />
             </Field>
             <p className="xs muted">Ein Schema ist eine Arbeitshilfe und keine allgemeingültige Vorgabe. Prüfe es gegen Vorlesung, Lehrbuch und Rechtsprechung.</p>
+            <div className="row">
+              <Button size="sm" variant="primary" icon={<GraduationCap size={14} />} onClick={() => open({ type: "schema-train", id: k.id }, { title: `${k.title} üben` })}>
+                Schema üben
+              </Button>
+              <span className="xs muted">Reihenfolge legen oder Punkt für Punkt abfragen</span>
+            </div>
             <SchemaEditor items={(k.data as unknown as SchemaData).items ?? []} onChange={(items) => setData<SchemaData>({ items })} />
             <Field label="Anmerkungen">
               <textarea rows={3} value={(k.data as unknown as SchemaData).notes ?? ""} onChange={(e) => setData<SchemaData>({ notes: e.target.value })} />
