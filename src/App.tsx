@@ -154,7 +154,8 @@ function Shell() {
     };
   }, []);
 
-  const showSecondary = view.type === "note" && secondary;
+  // Dieselbe Notiz nie in beiden Hälften (sonst überschrieben sich die Änderungen)
+  const showSecondary = view.type === "note" && secondary && !(secondary.type === "note" && secondary.id === view.id) ? secondary : null;
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < NARROW_WIDTH);
     onResize();
@@ -188,10 +189,10 @@ function Shell() {
                 <Splitter value={effSecondary} min={320} max={maxSecondary} side="right" label="Breite der geteilten Ansicht" onChange={(v) => setPref("secondaryWidth", v)} />
               )}
               <section className="secondary" style={stacked ? { height: effSecondaryH } : { width: effSecondary }} aria-label="Geteilte Ansicht">
-                {secondary.type === "document" ? (
-                  <DocumentViewer key={secondary.id} id={secondary.id} page={secondary.page} compact linkTargetNoteId={view.id} />
+                {showSecondary.type === "document" ? (
+                  <DocumentViewer key={showSecondary.id} id={showSecondary.id} page={showSecondary.page} compact linkTargetNoteId={view.type === "note" ? view.id : undefined} />
                 ) : (
-                  <NoteEditor key={secondary.id} id={secondary.id} compact />
+                  <NoteEditor key={showSecondary.id} id={showSecondary.id} compact />
                 )}
               </section>
             </>

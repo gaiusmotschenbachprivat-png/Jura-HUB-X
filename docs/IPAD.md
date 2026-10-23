@@ -54,6 +54,16 @@ sind, schwebt der Kontextbereich nur bei Bedarf über dem Inhalt.
 Schreibposition ein, darunter „Folie 12 · Titel“ als Verweis auf genau diese Seite; die Seite
 wird außerdem mit der Notiz verknüpft. Danach lässt sich direkt weiterschreiben.
 
+## Zwei Mitschriften nebeneinander
+
+Spalten-Symbol im Notizkopf („Zweite Notiz daneben öffnen“) → Notiz wählen (zuerst die anderen
+Vorlesungen derselben Veranstaltung). Oder im Baum lange drücken bzw. Rechtsklick → „Neben der
+offenen Notiz öffnen“. Beide Notizen sind voll bearbeitbar und speichern jeweils für sich. Im
+Querformat nebeneinander, hochkant untereinander; der Trenner lässt sich ziehen. Oben in der
+zweiten Notiz: **tauschen**, nebeneinander/untereinander, als Hauptansicht öffnen, schließen.
+Die zweite Notiz zeigt eine kompakte, wischbare Werkzeugleiste. Dieselbe Notiz wird nie in beiden
+Hälften geöffnet – sonst würden sich die Änderungen gegenseitig überschreiben.
+
 ## Mit dem Pencil in PDFs schreiben
 
 Stift-Symbol in der PDF-Leiste → **Stift**, **Textmarker**, **Radierer** (ganze Striche), vier

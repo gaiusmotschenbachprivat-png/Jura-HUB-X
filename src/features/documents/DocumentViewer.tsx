@@ -22,6 +22,7 @@ import { DocIcon, TextStatus } from "./DocumentList";
 import { AnnotationPopover, SelectionToolbar } from "./AnnotationPopups";
 import { PdfViewer, type PdfSelection } from "./PdfViewer";
 import { rememberSlides } from "./Slides";
+import { useSplitLayoutToggle } from "../editor/SplitNotes";
 import { CardDialog } from "../learn/CardDialog";
 
 /**
@@ -54,13 +55,7 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
   useEffect(() => {
     if (compact && linkTargetNoteId) rememberSlides(linkTargetNoteId, id, page);
   }, [compact, linkTargetNoteId, id, page]);
-  const stackedNow = useApp((s) => s.splitLayout === "stacked" || (s.splitLayout === "auto" && s.splitAutoStacked));
-  const toggleLayout = () => {
-    const st = useApp.getState();
-    const target = stackedNow ? "side" : "stacked";
-    // Entspricht das Ziel der Automatik, bleibt es automatisch (Drehen des iPads)
-    st.setPref("splitLayout", (target === "stacked") === st.splitAutoStacked ? "auto" : target);
-  };
+  const { stacked: stackedNow, toggle: toggleLayout } = useSplitLayoutToggle();
 
   useEffect(() => {
     let alive = true;

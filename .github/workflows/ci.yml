@@ -71,6 +71,8 @@ jobs:
         run: node tests/e2e-web/lernen-e2e.mjs
       - name: Abgleich zweier Geräte, Lesemodus, Diktat
         run: node tests/e2e-web/alltag-e2e.mjs
+      - name: Zwei Mitschriften nebeneinander
+        run: node tests/e2e-web/zweinotizen-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

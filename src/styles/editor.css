@@ -225,3 +225,11 @@
 @keyframes dict-pulse { 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .dictation-dot { animation: none; } }
 .note.is-reading .note-head { width: 100%; max-width: 800px; margin: 0 auto; padding-left: 40px; padding-right: 40px; }
+
+/* Zweite Notiz in der geteilten Ansicht: kompakt, damit Platz zum Schreiben bleibt */
+.note.is-compact .note-meta { display: none; }
+.note.is-compact .note-crumb { display: none; }
+.note.is-compact .note-title { font-size: var(--fs-xl); }
+.note.is-compact .toolbar { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.note.is-compact .toolbar::-webkit-scrollbar { display: none; }
+.note.is-compact .toolbar .tb-group { flex-wrap: nowrap; flex: none; }

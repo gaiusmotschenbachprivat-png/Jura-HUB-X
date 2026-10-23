@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { BookOpen, ExternalLink, GraduationCap, History, ListTree, MoreHorizontal, PencilLine, Printer, Unlink } from "lucide-react";
+import { ArrowLeftRight, BookOpen, Columns2, ExternalLink, GraduationCap, History, ListTree, Maximize2, MoreHorizontal, PencilLine, Printer, Rows2, Unlink, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -27,6 +27,7 @@ import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
 import { SlidesButton } from "../documents/Slides";
 import { DictationButton, insertTimestamp } from "./Dictation";
+import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, type NormRef } from "./normLinks";
@@ -249,6 +250,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     const onDrawing = (e: Event) => {
       const d = (e as CustomEvent<DrawingEditDetail>).detail;
       if (editor.state.doc.nodeAt(d.pos)?.type.name !== "image" || !editor.view.dom.isConnected) return;
+      if (!editor.view.dom.contains(document.activeElement) && !editor.view.dom.querySelector(":hover")) return;
       setDrawing({ pos: d.pos, data: d.drawing });
     };
     // Folie aus der geteilten Ansicht: Bild + Verweis auf die Seite, dann weiterschreiben
@@ -428,6 +430,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               </IconButton>
             )}
             {!compact && !reading && <DictationButton editor={editor} />}
+            {!compact && !reading && treeNode && <SecondNoteButton node={treeNode} />}
+            {compact && <SecondaryNoteControls noteId={note.node_id} />}
             <IconButton label="KI-Lernhilfen" onClick={(e) => menu.openBelow(e.currentTarget, studyItems())}>
               <GraduationCap size={16} />
             </IconButton>
@@ -686,5 +690,33 @@ function ExternalLinkDialog({ initial, onSave, onClose }: { initial: string; onS
         </Field>
       </form>
     </Dialog>
+  );
+}
+
+/** Steuerung der zweiten Notiz: tauschen, Anordnung, als Hauptansicht, schließen. */
+function SecondaryNoteControls({ noteId }: { noteId: string }) {
+  const { stacked, toggle } = useSplitLayoutToggle();
+  const open = useApp((s) => s.open);
+  return (
+    <>
+      <IconButton label="Notizen tauschen" onClick={swapNotes}>
+        <ArrowLeftRight size={15} />
+      </IconButton>
+      <IconButton label={stacked ? "Nebeneinander anzeigen" : "Untereinander anzeigen"} onClick={toggle}>
+        {stacked ? <Columns2 size={15} /> : <Rows2 size={15} />}
+      </IconButton>
+      <IconButton
+        label="Als Hauptansicht öffnen"
+        onClick={() => {
+          useApp.getState().openSecondary(null);
+          open({ type: "note", id: noteId });
+        }}
+      >
+        <Maximize2 size={15} />
+      </IconButton>
+      <IconButton label="Zweite Notiz schließen" onClick={() => useApp.getState().openSecondary(null)}>
+        <X size={16} />
+      </IconButton>
+    </>
   );
 }

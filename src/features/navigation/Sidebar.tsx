@@ -18,6 +18,7 @@ import {
   Settings,
   Share2,
   Trash2,
+  Columns2,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -29,6 +30,7 @@ import { SORT_LABEL, type SortMode } from "../../lib/noteTypes";
 import { buildTree } from "../../lib/tree";
 import { reportError, useApp, viewId } from "../../state/store";
 import { IconButton } from "../../ui/Button";
+import { openNoteBeside } from "../editor/SplitNotes";
 import { useMenu, type MenuItem } from "../../ui/Menu";
 import { AreaDot, MOD } from "../../ui/misc";
 import { createNode, defaultTitle, openNode, renameNode, trashNode } from "./actions";
@@ -125,6 +127,9 @@ export function Sidebar() {
             onSelect: () => quickCreate(n, k),
           }))),
       { label: "Weitere (Fall, Zusammenfassung …)", icon: <Plus size={14} />, onSelect: () => setNewReq(req) },
+      ...(n.kind === "note" && useApp.getState().view.type === "note" && (useApp.getState().view as { id: string }).id !== n.id
+        ? [{ separator: true, label: "" }, { label: "Neben der offenen Notiz öffnen", icon: <Columns2 size={14} />, onSelect: () => openNoteBeside(n.id) }]
+        : []),
       { separator: true, label: "" },
       { label: "Umbenennen", icon: <Pencil size={14} />, shortcut: "F2", onSelect: () => setRenaming(n.id) },
       {
