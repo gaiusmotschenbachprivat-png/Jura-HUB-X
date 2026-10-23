@@ -54,6 +54,17 @@ sind, schwebt der Kontextbereich nur bei Bedarf über dem Inhalt.
 Schreibposition ein, darunter „Folie 12 · Titel“ als Verweis auf genau diese Seite; die Seite
 wird außerdem mit der Notiz verknüpft. Danach lässt sich direkt weiterschreiben.
 
+## Farbige Kästen: Beispiel, Gesetzestext, Definition, Fall …
+
+Absatz (oder mehrere) markieren bzw. Cursor hineinsetzen → Symbol **„Kasten“** in der
+Werkzeugleiste → Art wählen: **Beispiel** (blau), **Gesetzestext** (violett, Serifenschrift),
+**Definition** (grün), **Fall** (rot), **Merke** (ocker), **Problem / Streitstand** (orange),
+**Hinweis** (grau). Der Kasten hat eine dezente Hinterlegung, einen farbigen Rand links und oben
+eine kleine Beschriftung. Diese **antippen**: Art ändern, Überschrift ergänzen (z. B.
+„Gesetzestext · § 433 BGB“), Kasten auflösen (der Text bleibt). Im Kasten weiterschreiben wie
+gewohnt; **Enter auf einer leeren Zeile** am Ende verlässt ihn. Kästen erscheinen auch im Druck,
+im Word-Export (hinterlegt, mit Rand) und im Markdown-Export (als Zitatblock mit Beschriftung).
+
 ## Gliederung antippen → zur Stelle in der Mitschrift
 
 In der nummerierten **Gliederung** oben (Liste unter „Gliederung“, „Inhalt“ oder „Übersicht“)

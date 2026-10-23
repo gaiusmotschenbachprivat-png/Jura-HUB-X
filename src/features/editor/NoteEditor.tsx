@@ -29,6 +29,8 @@ import { SlidesButton } from "../documents/Slides";
 import { DictationButton, insertTimestamp } from "./Dictation";
 import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes";
 import { OUTLINE_JUMP_EVENT, type OutlineJumpDetail } from "./outlineJump";
+import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
+import { CALLOUTS, calloutInfo } from "../../lib/callouts";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, type NormRef } from "./normLinks";
@@ -118,6 +120,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [harvest, setHarvest] = useState(false);
   const [reading, setReading] = useState(false);
   const [backTo, setBackTo] = useState<OutlineJumpDetail | null>(null);
+  const [calloutTitle, setCalloutTitle] = useState<{ pos: number; title: string; label: string } | null>(null);
   const focusBefore = useRef(false);
   const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -315,9 +318,38 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       timer = setTimeout(() => setBackTo(null), 15000);
     };
     dom.addEventListener(OUTLINE_JUMP_EVENT, onJump);
+    // Beschriftung eines Kastens angetippt: Art ändern, Überschrift, auflösen
+    const onCallout = (e: Event) => {
+      const d = (e as CustomEvent<CalloutEditDetail>).detail;
+      const node = editor.state.doc.nodeAt(d.pos);
+      if (node?.type.name !== "callout" || !editor.isEditable) return;
+      const setAttrs = (attrs: Record<string, unknown>) =>
+        editor
+          .chain()
+          .command(({ tr }) => {
+            tr.setNodeMarkup(d.pos, undefined, { ...node.attrs, ...attrs });
+            return true;
+          })
+          .run();
+      menu.openAt({ clientX: d.x, clientY: d.y }, [
+        ...CALLOUTS.map((k) => ({
+          label: k.kind === node.attrs.kind ? `✓ ${k.label}` : k.label,
+          icon: <span className="callout-dot" style={{ background: k.color }} />,
+          onSelect: () => setAttrs({ kind: k.kind }),
+        })),
+        { separator: true, label: "" },
+        { label: node.attrs.title ? "Überschrift ändern …" : "Überschrift ergänzen (z. B. § 433 BGB) …", onSelect: () => setCalloutTitle({ pos: d.pos, title: String(node.attrs.title ?? ""), label: calloutInfo(node.attrs.kind).label }) },
+        {
+          label: "Kasten auflösen (Text bleibt)",
+          onSelect: () => editor.chain().focus().setTextSelection(d.pos + 2).unsetCallout().run(),
+        },
+      ]);
+    };
+    dom.addEventListener(CALLOUT_EDIT_EVENT, onCallout);
     return () => {
       clearTimeout(timer);
       dom.removeEventListener(OUTLINE_JUMP_EVENT, onJump);
+      dom.removeEventListener(CALLOUT_EDIT_EVENT, onCallout);
     };
   }, [editor]);
 
@@ -517,6 +549,25 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           <FootnoteList editor={editor} onEdit={setFootnote} />
         </div>
       </div>
+      {calloutTitle && (
+        <CalloutTitleDialog
+          initial={calloutTitle.title}
+          label={calloutTitle.label}
+          onClose={() => setCalloutTitle(null)}
+          onSave={(title) => {
+            const node = editor.state.doc.nodeAt(calloutTitle.pos);
+            if (node?.type.name === "callout")
+              editor
+                .chain()
+                .command(({ tr }) => {
+                  tr.setNodeMarkup(calloutTitle.pos, undefined, { ...node.attrs, title: title.trim().slice(0, 120) });
+                  return true;
+                })
+                .run();
+            setCalloutTitle(null);
+          }}
+        />
+      )}
       {backTo && (
         <button
           className="outline-back"
@@ -750,5 +801,34 @@ function SecondaryNoteControls({ noteId }: { noteId: string }) {
         <X size={16} />
       </IconButton>
     </>
+  );
+}
+
+function CalloutTitleDialog({ initial, label, onSave, onClose }: { initial: string; label: string; onSave: (t: string) => void; onClose: () => void }) {
+  const [t, setT] = useState(initial);
+  return (
+    <Dialog
+      title={`Überschrift für „${label}“`}
+      onClose={onClose}
+      footer={
+        <>
+          <Button onClick={onClose}>Abbrechen</Button>
+          <Button variant="primary" onClick={() => onSave(t)}>
+            Übernehmen
+          </Button>
+        </>
+      }
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          onSave(t);
+        }}
+      >
+        <Field label="Überschrift (leer = nur die Art)" hint="z. B. „§ 433 BGB“, „Trierer Weinversteigerung“ oder „Fall 3“">
+          <input autoFocus value={t} maxLength={120} onChange={(e) => setT(e.target.value)} />
+        </Field>
+      </form>
+    </Dialog>
   );
 }

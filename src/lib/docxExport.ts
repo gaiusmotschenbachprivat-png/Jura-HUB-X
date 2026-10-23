@@ -28,6 +28,7 @@ import {
   type ParagraphChild,
 } from "docx";
 
+import { calloutInfo, calloutLabel } from "./callouts";
 import type { PMMark, PMNode } from "./pm";
 import { fontSizePt, primaryFont } from "./textFormat";
 
@@ -275,6 +276,37 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
             }),
         );
         out.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+        out.push(new Paragraph({ children: [] }));
+        break;
+      }
+      case "callout": {
+        // Kasten: einspaltige Tabelle mit heller Hinterlegung und farbigem Rand links
+        const info = calloutInfo(n.attrs?.kind);
+        const color = info.color.replace("#", "").toUpperCase();
+        const none = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+        const inner = blocks(n.content, ctx);
+        out.push(
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none },
+            rows: [
+              new TableRow({
+                cantSplit: false,
+                children: [
+                  new TableCell({
+                    shading: { type: ShadingType.CLEAR, fill: info.fill, color: "auto" },
+                    borders: { left: { style: BorderStyle.SINGLE, size: 24, color }, top: none, bottom: none, right: none },
+                    margins: { left: 160, right: 160, top: 80, bottom: 80 },
+                    children: [
+                      new Paragraph({ children: [new TextRun({ text: calloutLabel(n.attrs?.kind, n.attrs?.title).toUpperCase(), bold: true, size: 16, color })] }),
+                      ...(inner.length ? inner : [new Paragraph({ children: [] })]),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        );
         out.push(new Paragraph({ children: [] }));
         break;
       }

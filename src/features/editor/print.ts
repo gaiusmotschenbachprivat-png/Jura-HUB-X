@@ -107,6 +107,16 @@ ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
 ul[data-type="taskList"] li { display: flex; gap: 0.4em; }
 ul[data-type="taskList"] li > label input { margin: 0.25em 0 0; }
 hr { border: 0; border-top: 0.5pt solid #777; }
+.callout { margin: 8pt 0; padding: 4pt 10pt 6pt; border-left: 2.5pt solid var(--c, #2f5fb3); background: var(--f, #EEF3FB); break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.callout::before { content: attr(data-label); display: block; font: bold 8pt sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: var(--c, #2f5fb3); margin-bottom: 2pt; }
+.callout > :last-child { margin-bottom: 0; }
+.callout-beispiel { --c: #2f5fb3; --f: #EEF3FB; }
+.callout-gesetz { --c: #6b4fa3; --f: #F3EFF9; }
+.callout-definition { --c: #2e7d5b; --f: #EDF6F1; }
+.callout-fall { --c: #a3354a; --f: #F9EEF0; }
+.callout-merke { --c: #a86a12; --f: #FBF4E6; }
+.callout-problem { --c: #b4471f; --f: #FBEFEA; }
+.callout-hinweis { --c: #5b6676; --f: #F1F3F6; }
 .pb { break-after: page; height: 0; border: 0; }
 .footnote { float: footnote; font-size: 9pt; line-height: 1.25; text-align: left; font-style: normal; font-weight: normal; }
 ::footnote-call { content: counter(footnote); vertical-align: super; font-size: 65%; line-height: 0; }

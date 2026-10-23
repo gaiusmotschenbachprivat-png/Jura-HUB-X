@@ -37,6 +37,7 @@ import {
   Underline,
   Undo2,
   Waypoints,
+  PanelTop,
 } from "lucide-react";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -47,6 +48,7 @@ import { IconButton } from "../../ui/Button";
 import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
 import { BAUSTEINE } from "../../lib/gutachten";
+import { CALLOUTS } from "../../lib/callouts";
 import { FONT_SIZES, FONTS, HIGHLIGHT_COLORS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
 import { insertWithPlaceholder } from "./Gutachten";
 
@@ -110,6 +112,7 @@ export function Toolbar({
       ordered: e.isActive("orderedList"),
       task: e.isActive("taskList"),
       quote: e.isActive("blockquote"),
+      callout: e.isActive("callout"),
       codeBlock: e.isActive("codeBlock"),
       table: e.isActive("table"),
       align: (["center", "right", "justify"] as const).find((a) => e.isActive({ textAlign: a })) ?? "left",
@@ -321,6 +324,22 @@ export function Toolbar({
         </IconButton>
         <IconButton label="Checkliste" active={s.task} onClick={() => c().toggleTaskList().run()}>
           <CheckSquare size={16} />
+        </IconButton>
+        <IconButton
+          label="Kasten: Beispiel, Gesetzestext, Definition, Fall …"
+          active={s.callout}
+          onClick={(e) =>
+            menu.openBelow(e.currentTarget, [
+              ...CALLOUTS.map((k) => ({
+                label: k.label,
+                icon: <span className="callout-dot" style={{ background: k.color }} />,
+                onSelect: () => c().setCallout(k.kind).run(),
+              })),
+              ...(s.callout ? [{ separator: true, label: "" }, { label: "Kasten auflösen", onSelect: () => c().unsetCallout().run() }] : []),
+            ])
+          }
+        >
+          <PanelTop size={16} />
         </IconButton>
         <IconButton label="Zitat / Definition" active={s.quote} onClick={() => c().toggleBlockquote().run()}>
           <Quote size={16} />

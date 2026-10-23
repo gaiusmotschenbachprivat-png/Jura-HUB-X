@@ -13,6 +13,7 @@ import { CharacterCount, Placeholder } from "@tiptap/extensions";
 import StarterKit from "@tiptap/starter-kit";
 
 import { AssetImage } from "./AssetImage";
+import { Callout } from "./callout";
 import { Footnote, PageBreak, ParagraphFormat } from "./formatting";
 import { NormLinks } from "./normLinks";
 import { OutlineJump } from "./outlineJump";
@@ -62,6 +63,7 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
     SearchReplace,
     NormLinks,
     OutlineJump,
+    Callout,
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: true, cellMinWidth: 60 } }),

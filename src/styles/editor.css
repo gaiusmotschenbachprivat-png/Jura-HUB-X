@@ -254,3 +254,34 @@
   font-weight: 600; box-shadow: var(--shadow); cursor: pointer;
 }
 @media print { .prose .outline-jump, .outline-back { display: none !important; } }
+
+/* Farbige Kästen: Beispiel, Gesetzestext, Definition, Fall, Merke, Problem, Hinweis */
+.callout { --c: #2f5fb3; }
+.prose .callout, .callout {
+  position: relative; margin: 12px 0; padding: 6px 14px 8px; border-left: 3px solid var(--c);
+  border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--c) 7%, var(--bg, #fff));
+}
+.callout.callout-beispiel { --c: #2f5fb3; }
+.callout.callout-gesetz { --c: #6b4fa3; }
+.callout.callout-definition { --c: #2e7d5b; }
+.callout.callout-fall { --c: #a3354a; }
+.callout.callout-merke { --c: #a86a12; }
+.callout.callout-problem { --c: #b4471f; }
+.callout.callout-hinweis { --c: #5b6676; }
+.callout-gesetz .callout-body, .callout-gesetz > p { font-family: var(--font-serif, Georgia, serif); }
+.prose .callout .callout-body > :first-child { margin-top: 2px; }
+.prose .callout .callout-body > :last-child { margin-bottom: 0; }
+.callout-label {
+  display: inline-block; margin: 0 0 2px -2px; padding: 1px 6px; border: 0; border-radius: 4px; background: none;
+  font: 650 0.72em/1.4 var(--font-sans, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--c); cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.callout-label:hover, .callout-label:focus-visible { background: color-mix(in srgb, var(--c) 14%, transparent); outline: none; }
+.callout-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+/* Ohne Editor (Vorschau, Druck): Beschriftung aus dem Attribut */
+.callout[data-label]:not(:has(> .callout-label))::before {
+  content: attr(data-label); display: block; margin-bottom: 2px;
+  font: 650 0.72em/1.4 var(--font-sans, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--c);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .callout { background: color-mix(in srgb, var(--c) 16%, var(--bg, #1b1f27)); } }
+:root[data-theme="dark"] .callout { background: color-mix(in srgb, var(--c) 16%, var(--bg, #1b1f27)); }
