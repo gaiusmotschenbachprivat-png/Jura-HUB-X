@@ -233,3 +233,24 @@
 .note.is-compact .toolbar { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .note.is-compact .toolbar::-webkit-scrollbar { display: none; }
 .note.is-compact .toolbar .tb-group { flex-wrap: nowrap; flex: none; }
+
+/* Gliederung → Mitschrift */
+.note { position: relative; }
+.prose .outline-jump {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; margin-left: 8px; vertical-align: middle;
+  border-radius: 50%; border: 1px solid var(--line-strong); background: var(--bg); color: var(--accent);
+  font: 600 13px/1 var(--font-sans, system-ui); cursor: pointer; padding: 0; user-select: none; -webkit-user-select: none;
+}
+.prose .outline-jump.has-target { background: color-mix(in srgb, var(--accent) 10%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.prose .outline-jump.is-new { color: var(--text-3); border-style: dashed; }
+.prose .outline-jump:hover { border-color: var(--accent); }
+@media (pointer: coarse) { .prose .outline-jump { width: 30px; height: 30px; } }
+.prose .outline-flash { animation: outline-flash 1.6s ease-out; border-radius: 4px; }
+@keyframes outline-flash { 0%, 30% { background: color-mix(in srgb, var(--accent) 22%, transparent); } 100% { background: transparent; } }
+@media (prefers-reduced-motion: reduce) { .prose .outline-flash { animation: none; } }
+.outline-back {
+  position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: calc(44px + env(safe-area-inset-bottom, 0px));
+  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--accent);
+  font-weight: 600; box-shadow: var(--shadow); cursor: pointer;
+}
+@media print { .prose .outline-jump, .outline-back { display: none !important; } }

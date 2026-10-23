@@ -73,6 +73,8 @@ jobs:
         run: node tests/e2e-web/alltag-e2e.mjs
       - name: Zwei Mitschriften nebeneinander
         run: node tests/e2e-web/zweinotizen-e2e.mjs
+      - name: Gliederung antippen, Sprung in die Mitschrift
+        run: node tests/e2e-web/gliederung-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

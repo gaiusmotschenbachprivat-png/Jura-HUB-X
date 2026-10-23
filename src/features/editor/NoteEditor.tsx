@@ -28,6 +28,7 @@ import { NoteMetaBar } from "./NoteMetaBar";
 import { SlidesButton } from "../documents/Slides";
 import { DictationButton, insertTimestamp } from "./Dictation";
 import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes";
+import { OUTLINE_JUMP_EVENT, type OutlineJumpDetail } from "./outlineJump";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, type NormRef } from "./normLinks";
@@ -116,6 +117,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [bibOpen, setBibOpen] = useState(false);
   const [harvest, setHarvest] = useState(false);
   const [reading, setReading] = useState(false);
+  const [backTo, setBackTo] = useState<OutlineJumpDetail | null>(null);
   const focusBefore = useRef(false);
   const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -301,6 +303,23 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     },
     [reading],
   );
+
+  // Nach einem Sprung aus der Gliederung: „zurück zur Gliederung“ anbieten
+  useEffect(() => {
+    if (!editor) return;
+    const dom = editor.view.dom;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onJump = (e: Event) => {
+      setBackTo((e as CustomEvent<OutlineJumpDetail>).detail);
+      clearTimeout(timer);
+      timer = setTimeout(() => setBackTo(null), 15000);
+    };
+    dom.addEventListener(OUTLINE_JUMP_EVENT, onJump);
+    return () => {
+      clearTimeout(timer);
+      dom.removeEventListener(OUTLINE_JUMP_EVENT, onJump);
+    };
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -498,6 +517,19 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           <FootnoteList editor={editor} onEdit={setFootnote} />
         </div>
       </div>
+      {backTo && (
+        <button
+          className="outline-back"
+          onClick={() => {
+            const pos = Math.min(backTo.from + 2, editor.state.doc.content.size);
+            editor.chain().setTextSelection(pos).scrollIntoView().run();
+            (editor.view.nodeDOM(backTo.from) as HTMLElement | null)?.scrollIntoView({ block: "center", behavior: "smooth" });
+            setBackTo(null);
+          }}
+        >
+          ↑ Zurück zur Gliederung
+        </button>
+      )}
       <div className="note-foot xs muted tnum">
         <span>{words} Wörter</span>
         <span>Zuletzt gespeichert {formatRelative(lastSavedAt ?? note.updated_at)}</span>

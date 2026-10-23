@@ -15,6 +15,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { AssetImage } from "./AssetImage";
 import { Footnote, PageBreak, ParagraphFormat } from "./formatting";
 import { NormLinks } from "./normLinks";
+import { OutlineJump } from "./outlineJump";
 import { SearchReplace } from "./searchReplace";
 
 /** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
@@ -60,6 +61,7 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
     PageBreak,
     SearchReplace,
     NormLinks,
+    OutlineJump,
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: true, cellMinWidth: 60 } }),

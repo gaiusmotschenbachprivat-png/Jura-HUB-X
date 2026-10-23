@@ -54,6 +54,21 @@ sind, schwebt der Kontextbereich nur bei Bedarf über dem Inhalt.
 Schreibposition ein, darunter „Folie 12 · Titel“ als Verweis auf genau diese Seite; die Seite
 wird außerdem mit der Notiz verknüpft. Danach lässt sich direkt weiterschreiben.
 
+## Gliederung antippen → zur Stelle in der Mitschrift
+
+In der nummerierten **Gliederung** oben (Liste unter „Gliederung“, „Inhalt“ oder „Übersicht“)
+steht hinter jedem Punkt ein kleines Symbol:
+
+- **↓** – zu der Stelle springen, an der der Punkt in der Mitschrift behandelt wird. Erkannt wird
+  sie an einer gleichlautenden Überschrift („Erklärung StGB“ oder „1. Erklärung StGB“), an einem
+  Absatz mit demselben Anfang („Erklärung StGB: …“) oder an derselben Nummer („5. …“).
+- **+** – die Stelle gibt es noch nicht: Antippen legt sie als Überschrift am Ende der Mitschrift
+  an (vor „Offene Fragen“), der Cursor steht direkt darin – weiterschreiben.
+
+Nach einem Sprung bringt **„↑ Zurück zur Gliederung“** wieder nach oben. Die Symbole sind nur
+Anzeige, sie werden nicht gespeichert, gedruckt oder exportiert. Im Lesemodus springt ↓ ebenfalls,
+angelegt wird dort nichts.
+
 ## Zwei Mitschriften nebeneinander
 
 Spalten-Symbol im Notizkopf („Zweite Notiz daneben öffnen“) → Notiz wählen (zuerst die anderen
