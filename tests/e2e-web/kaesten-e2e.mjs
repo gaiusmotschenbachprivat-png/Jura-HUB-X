@@ -81,6 +81,7 @@ try {
   await dlg.getByRole("textbox").fill("§ 433 BGB");
   await dlg.getByRole("button", { name: "Übernehmen" }).click();
   await dlg.waitFor({ state: "detached" });
+  await page.waitForFunction(() => !!window.getSelection()?.anchorNode?.parentElement?.closest(".callout") && !!document.activeElement?.closest(".ProseMirror"), null, { timeout: 3000 }).catch(() => {});
   check("Nach dem Dialog steht die Schreibmarke im Kasten", await page.evaluate(() => !!document.activeElement?.closest(".ProseMirror") && !!window.getSelection()?.anchorNode?.parentElement?.closest(".callout")));
   check("Beschriftung mit Überschrift", (await box.locator(".callout-label").innerText()).toLowerCase() === "gesetzestext · § 433 bgb");
 
