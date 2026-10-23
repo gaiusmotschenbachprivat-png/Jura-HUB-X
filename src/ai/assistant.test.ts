@@ -209,4 +209,28 @@ describe("Juristischer Assistent – Ablauf", () => {
     const broken = { ...a.snapshot(), messages: [...a.history, { role: "user" as const, content: "x" }, { role: "assistant" as const, content: [toolUse("t", "norm_abrufen", {})] }] };
     expect(new LegalAssistant({ llm, store: s, task: "recherche", restore: broken as never }).history).toHaveLength(2);
   });
+
+  it("Zitatprüfung: im Wortlaut einer abgerufenen Norm genannte Vorschriften sind Verweise", async () => {
+    const s = createLegalMock();
+    await s.legalSourceSave({ kind: "gesetz", title: "Mustergesetz", abbreviation: "MustG" }, [
+      { norm: "§ 5", absatz: 1, heading: "Ruhen", text: "(1) Die Frist ruht bei Taten nach den §§ 10 bis 12a, 14, 20 Absatz 1 Satz 1 Nummer 3, auch in Verbindung mit Absatz 2, 31 und nach § 40." },
+      { norm: "§ 10", absatz: null, heading: "A", text: "Text A." },
+      { norm: "§ 12a", absatz: null, heading: "B", text: "Text B." },
+      { norm: "§ 31", absatz: null, heading: "C", text: "Text C." },
+      { norm: "§ 40", absatz: null, heading: "D", text: "Text D." },
+      { norm: "§ 41", absatz: null, heading: "E", text: "Text E." },
+      { norm: "§ 3", absatz: null, heading: "F", text: "Text F." },
+    ]);
+    const reg = new SourceRegistry();
+    reg.register(await s.legalNorm("MustG", "§ 5", null));
+    const r = await verifyAnswer("Genannt sind §§ 10, 12a, 31 und 40 MustG (§ 5 Abs. 1 MustG). Dazu § 41 MustG und § 3 MustG.", reg, s);
+    const by = Object.fromEntries(r.checks.map((c) => [c.label, c.status]));
+    expect(by["§ 5 Abs. 1 MustG"]).toBe("belegt");
+    expect(by["§ 12a MustG"]).toBe("verweis");
+    expect(by["§ 31 MustG"]).toBe("verweis");
+    expect(by["§ 40 MustG"]).toBe("verweis");
+    expect(by["§ 41 MustG"]).toBe("nicht_belegt");
+    expect(by["§ 3 MustG"]).toBe("nicht_belegt");
+    expect(r.ok).toBe(false);
+  });
 });

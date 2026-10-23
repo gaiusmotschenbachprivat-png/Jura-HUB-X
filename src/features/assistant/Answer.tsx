@@ -20,6 +20,7 @@ const STATUS_TEXT: Record<CitationCheck["status"], string> = {
   absatz_nicht_belegt: "Absatz nicht belegt",
   nicht_belegt: "nicht belegt",
   existiert_nicht: "existiert nicht",
+  verweis: "nur als Verweis genannt",
   ohne_gesetz: "ohne Gesetzesangabe",
 };
 
@@ -142,6 +143,7 @@ export function AnswerCard({ result, onSaveNote }: { result: AskResult; onSaveNo
           Zitatprüfung: {c.belegt} belegt
           {c.nicht_belegt + c.absatz_nicht_belegt ? ` · ${c.nicht_belegt + c.absatz_nicht_belegt} nicht belegt` : ""}
           {c.existiert_nicht ? ` · ${c.existiert_nicht} existieren nicht` : ""}
+          {c.verweis ? ` · ${c.verweis} als Verweis genannt` : ""}
           {c.ohne_gesetz ? ` · ${c.ohne_gesetz} ohne Gesetz` : ""}
           {result.report.unknownSourceIds.length ? ` · unbekannte Quellen: ${result.report.unknownSourceIds.join(", ")}` : ""}
           {result.revised ? " · nach automatischer Überarbeitung" : ""}

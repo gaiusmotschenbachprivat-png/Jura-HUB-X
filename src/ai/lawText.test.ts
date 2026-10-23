@@ -74,6 +74,15 @@ describe("Gesetz als PDF/Text", () => {
     expect(by("§ 2")[1]!.text).toBe("(2) Wird die Strafdrohung während der Begehung der Tat geändert, so ist das Gesetz anzuwenden, das bei Beendigung der Tat gilt.");
     expect(law.chunks.some((c) => /Seite \d|Ein Service|gesetze-im-internet/.test(c.text))).toBe(false);
   });
+  it("letzte Norm eines Abschnitts behält ihre Gliederung", () => {
+    const text = STGB.replace("§ 243 Besonders schwerer Fall des Diebstahls\n- Seite 1", "§ 243 Besonders schwerer Fall des Diebstahls\n§ 249 Raub\n- Seite 1") +
+      "\nZwanzigster Abschnitt\nRaub und Erpressung\n§ 249 Raub\n(1) Wer mit Gewalt gegen eine Person eine fremde bewegliche Sache wegnimmt, wird bestraft.";
+    const l = parseLawText(text, { origin: "StGB.pdf" });
+    const h = (n: string) => l.chunks.find((c) => c.norm === n)!.heading;
+    expect(h("§ 243")).toBe("Besonders schwerer Fall des Diebstahls – Neunzehnter Abschnitt Diebstahl und Unterschlagung");
+    expect(h("§ 249")).toBe("Raub – Zwanzigster Abschnitt Raub und Erpressung");
+    expect(l.chunks.filter((c) => c.norm === "§ 243").every((c) => !c.text.includes("Zwanzigster"))).toBe(true);
+  });
   it("umbrochene Verweise und „§§ … (weggefallen)“ sind keine neuen Normen", () => {
     expect(by("§ 6")[0]!.text).toContain("§ 309 Abs. 2 und des § 310;");
     expect(law.chunks.filter((c) => c.text.includes("weggefallen")).map((c) => c.norm)).toEqual(["§ 220"]);

@@ -118,13 +118,14 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
 
   const chunks: NewLegalChunk[] = [];
   let gliederung = "";
-  let cur: { norm: string; title: string; lines: string[] } | null = null;
+  let cur: { norm: string; title: string; gliederung: string; lines: string[] } | null = null;
   let last: NormKey | null = null;
   let pendingStructure = false;
 
   const flush = () => {
     if (!cur) return;
-    const heading = [cur.title, gliederung].filter(Boolean).join(" – ");
+    // Gliederung vom Beginn der Norm – eine folgende Abschnittsüberschrift gehört schon zur nächsten
+    const heading = [cur.title, cur.gliederung].filter(Boolean).join(" – ");
     // Absätze „(1) …“ als eigene Abschnitte, sonst die ganze Norm
     const parts: string[] = [];
     for (const l of cur.lines) {
@@ -167,7 +168,7 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
         flush();
         last = k;
         const isPara = m[1]!.startsWith("§");
-        cur = { norm: `${isPara ? "§" : "Art."} ${m[2]}${m[3]}`, title: m[4]!.trim(), lines: [] };
+        cur = { norm: `${isPara ? "§" : "Art."} ${m[2]}${m[3]}`, title: m[4]!.trim(), gliederung, lines: [] };
         pendingStructure = false;
         continue;
       }

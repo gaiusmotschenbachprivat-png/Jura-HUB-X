@@ -7,6 +7,8 @@
  * - absatz_nicht_belegt: Norm liegt vor, der zitierte Absatz aber nicht
  * - nicht_belegt: nicht unter den abgerufenen Quellen (Wissen des Modells)
  * - existiert_nicht: das Gesetz ist importiert, die Norm/der Absatz gibt es darin nicht → wahrscheinlich erfunden
+ * - verweis: nur als Verweis im Wortlaut einer abgerufenen Norm genannt (z. B. „§§ 174 bis 174c“
+ *   in § 78b StGB); der eigene Wortlaut wurde nicht abgerufen (nur Hinweis)
  * - ohne_gesetz: Norm ohne Gesetzesangabe (nur Hinweis)
  */
 import type { LegalHit, LegalSource } from "../api/types";
@@ -15,7 +17,7 @@ import { findCitations, formatNorm, normalizeCaseRef, normKey, type Citation } f
 import type { LegalStore } from "./retrieval";
 import type { SourceRegistry } from "./sources/registry";
 
-export type CheckStatus = "belegt" | "absatz_nicht_belegt" | "nicht_belegt" | "existiert_nicht" | "ohne_gesetz";
+export type CheckStatus = "belegt" | "absatz_nicht_belegt" | "nicht_belegt" | "existiert_nicht" | "verweis" | "ohne_gesetz";
 
 export interface CitationCheck {
   label: string;
@@ -55,7 +57,7 @@ export async function verifyAnswer(text: string, registry: SourceRegistry, store
   }
   const used = [...text.matchAll(/\[Q(\d+)\]/g)].map((m) => `Q${m[1]}`);
   const unknownSourceIds = [...new Set(used.filter((id) => !registry.byId(id)))];
-  const counts = { belegt: 0, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 0, ohne_gesetz: 0 } as Record<CheckStatus, number>;
+  const counts = { belegt: 0, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 0, verweis: 0, ohne_gesetz: 0 } as Record<CheckStatus, number>;
   for (const ch of checks) counts[ch.status]++;
   const ok = counts.nicht_belegt === 0 && counts.existiert_nicht === 0 && counts.absatz_nicht_belegt === 0 && unknownSourceIds.length === 0;
   return { checks, unknownSourceIds, hasDisclaimer: text.includes(DISCLAIMER), ok, counts };
@@ -88,12 +90,27 @@ async function checkNorm(
     if (c.absatz && inDb.some((h) => h.absatz !== null) && !inDb.some((h) => h.absatz === c.absatz)) {
       return { ...base, status: "existiert_nicht", detail: `${key} ${c.law} hat keinen Absatz ${c.absatz}.`, sources: [] };
     }
+    const refs = regs.filter((r) => r.hit.kind === "gesetz" && lc(r.hit.abbreviation) === lc(c.law) && mentions(r.hit.text, key));
+    if (refs.length) {
+      const ids = refs.map((r) => r.id);
+      return { ...base, status: "verweis", detail: `Wird in ${ids.slice(0, 3).join(", ")} genannt; der Wortlaut von ${key} selbst wurde nicht abgerufen.`, sources: ids };
+    }
     return { ...base, status: "nicht_belegt", detail: "Die Norm ist importiert, wurde aber nicht als Quelle abgerufen.", sources: [] };
   }
   if (imported.has(lc(c.law))) {
     return { ...base, status: "existiert_nicht", detail: `${key} ist im importierten ${c.law} nicht enthalten.`, sources: [] };
   }
   return { ...base, status: "nicht_belegt", detail: `Das Gesetz ${c.law} ist nicht importiert.`, sources: [] };
+}
+
+/** Nennt der Normtext die Vorschrift (z. B. „§§ 174 bis 174c, 176“ oder „nach § 211“)? */
+export function mentions(text: string, key: string): boolean {
+  const m = /^(§|Art\.)\s(\d+[a-z]?)$/.exec(key);
+  if (!m) return false;
+  const sign = m[1] === "§" ? "§§?" : "Art(?:\\.|ikel)";
+  // „Absatz 1 Satz 1 Nummer 3“: Zahlen hinter Absatz/Satz/Nummer sind keine Paragraphen
+  const notSub = "(?<!(?:Abs\\.|Absatz|Satz|S\\.|Nr\\.|Nummer|Buchstabe|Halbsatz|Art\\.|Artikel)\\s)";
+  return new RegExp(`${sign}\\s*(?:[^;§]{0,150}?[\\s,(])?${notSub}${m[2]}(?![\\da-z])`).test(text);
 }
 
 function checkCase(c: Extract<Citation, { type: "case" }>, regs: readonly { id: string; hit: LegalHit }[]): CitationCheck {

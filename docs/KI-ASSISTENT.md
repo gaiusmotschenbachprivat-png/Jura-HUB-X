@@ -86,7 +86,9 @@ Rechtsquellen und Einstellungen.
 3. Frage senden (⌘/Strg + Enter). Die Antwort enthält Quellenkennungen wie **[Q3]** – ein Klick
    zeigt den Wortlaut und die Fassung der Quelle.
 4. Unter der Antwort steht das Ergebnis der **Zitatprüfung**. Nicht belegte Zitate sind gelb
-   markiert, mit Begründung.
+   markiert, mit Begründung. Vorschriften, die nur im Wortlaut einer abgerufenen Norm genannt
+   werden (z. B. „§§ 174 bis 174c“ in § 78b StGB), gelten als **Verweis** – kein Fehler, aber
+   ihr eigener Wortlaut liegt nicht vor.
 5. **„An Anthropic gesendet“** zeigt genau den (anonymisierten) Text, der übertragen wurde.
 6. **„Als Notiz speichern“** legt die Antwort als Notiz an (als „ungeprüft“ gekennzeichnet).
 7. **Verlauf** (Uhr-Symbol): Jede Unterhaltung wird nach der Antwort auf dem Gerät gespeichert.

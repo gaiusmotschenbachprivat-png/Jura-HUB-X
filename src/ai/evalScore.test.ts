@@ -13,7 +13,7 @@ function result(text: string, report: Partial<VerifyReport> = {}, tools: string[
       unknownSourceIds: [],
       hasDisclaimer: true,
       ok: true,
-      counts: { belegt: 2, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 0, ohne_gesetz: 0 },
+      counts: { belegt: 2, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 0, verweis: 0, ohne_gesetz: 0 },
       ...report,
     },
     sources: [],
@@ -44,7 +44,7 @@ describe("Bewertung der Evaluation", () => {
   it("fehlende Norm und Halluzination", () => {
     const s = scoreAnswer(
       q,
-      result("Übergabe nach § 433 Abs. 1 BGB.", { counts: { belegt: 1, absatz_nicht_belegt: 0, nicht_belegt: 1, existiert_nicht: 1, ohne_gesetz: 0 } }),
+      result("Übergabe nach § 433 Abs. 1 BGB.", { counts: { belegt: 1, absatz_nicht_belegt: 0, nicht_belegt: 1, existiert_nicht: 1, verweis: 0, ohne_gesetz: 0 } }),
     );
     expect(s.norm_recall).toBe(0.5);
     expect(s.normen_fehlend).toEqual(["§ 433 Abs. 2 BGB"]);
@@ -54,9 +54,9 @@ describe("Bewertung der Evaluation", () => {
   });
   it("Fallen: richtige Antwort sagt, dass es das nicht gibt", () => {
     const falle: EvalQuestion = { ...q, erwartete_normen: [], erwartete_stichworte: [], falle: true };
-    const ok = scoreAnswer(falle, result("§ 999 StGB existiert nicht.", { counts: { belegt: 0, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 1, ohne_gesetz: 0 } }));
+    const ok = scoreAnswer(falle, result("§ 999 StGB existiert nicht.", { counts: { belegt: 0, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 1, verweis: 0, ohne_gesetz: 0 } }));
     expect(ok.bestanden).toBe(true);
-    const bad = scoreAnswer(falle, result("§ 999 StGB regelt die Strafbarkeit von …", { counts: { belegt: 0, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 1, ohne_gesetz: 0 } }));
+    const bad = scoreAnswer(falle, result("§ 999 StGB regelt die Strafbarkeit von …", { counts: { belegt: 0, absatz_nicht_belegt: 0, nicht_belegt: 0, existiert_nicht: 1, verweis: 0, ohne_gesetz: 0 } }));
     expect(bad.bestanden).toBe(false);
   });
   it("Werkzeuge und Zusammenfassung", () => {
