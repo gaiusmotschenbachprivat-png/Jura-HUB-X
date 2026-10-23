@@ -296,6 +296,7 @@ export function createService(env: Env) {
     legalSearch: async (terms: string[], kinds: Parameters<typeof legal.search>[2], limit: number) => legal.search(db(), terms, kinds ?? null, limit),
     legalNorm: async (abbreviation: string, norm: string, absatz: number | null) => legal.norm(db(), abbreviation, norm, absatz ?? null),
     legalChunks: async (ids: string[]) => legal.chunks(db(), ids),
+    legalSourceTexts: async (id: string) => legal.sourceTexts(db(), id),
     aiChatsList: async () => aiChats.list(db()),
     aiChatGet: async (id: string) => aiChats.get(db(), id),
     aiChatSave: async (chat: Parameters<typeof aiChats.save>[1]) => aiChats.save(db(), chat),

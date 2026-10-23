@@ -64,8 +64,10 @@ Ohne Quellen kann der Assistent nichts belegen. Unter **KI-Assistent → Rechtsq
   Auch aus PDF, DOCX und TXT werden die einzelnen Paragraphen und Absätze erkannt; Titel,
   Abkürzung (z. B. StGB) und Stand liest Studium OS aus dem Kopf der Datei, sonst trägst du die
   Abkürzung selbst ein. Nur so findet der Normabruf („§ 242 StGB“) die Vorschrift.
-  Hast du ein Gesetz vor Version 0.19 als PDF importiert, lösche es unter „Rechtsquellen“ und
-  importiere es neu – damals wurde es als einfacher Text ohne Paragraphen gespeichert.
+  Ein vor Version 0.19 als PDF/Text importiertes Gesetz (damals als einfacher Text ohne
+  Paragraphen gespeichert) wird ab 0.19.1 automatisch einmalig als Gesetz neu aufbereitet –
+  beim Öffnen der Rechtsquellen oder vor der nächsten Frage. Ein Neu-Import der Datei liefert
+  den genauesten Text.
 - **Urteile, Kommentare, eigene Texte** als PDF, DOCX, TXT oder MD mit Angaben wie Gericht,
   Aktenzeichen, Datum, Fassung.
 

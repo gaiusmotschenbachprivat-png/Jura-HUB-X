@@ -178,6 +178,8 @@ export interface Backend {
   legalSearch(terms: string[], kinds: LegalKind[] | null, limit: number): Promise<LegalHit[]>;
   legalNorm(abbreviation: string, norm: string, absatz: number | null): Promise<LegalHit[]>;
   legalChunks(ids: string[]): Promise<LegalHit[]>;
+  /** Texte aller Abschnitte einer Quelle in Reihenfolge */
+  legalSourceTexts(id: string): Promise<string[]>;
   /** Gespeicherte Unterhaltungen des KI-Assistenten (nur lokal), neueste zuerst */
   aiChatsList(): Promise<AiChatMeta[]>;
   aiChatGet(id: string): Promise<AiChat>;

@@ -6,7 +6,7 @@
 import type { Backend } from "../../api/backend";
 import type { LegalKind, LegalSource, NewLegalSource } from "../../api/types";
 import { parseGiiArchive } from "./gii";
-import { lawHeader, looksLikeLaw, parseLawText } from "./lawText";
+import { lawHeader, lawTextFromChunks, looksLikeLaw, parseLawText } from "./lawText";
 import { chunkText } from "./text";
 
 /** Häufig gebrauchte Gesetze für die Schnellauswahl (Abkürzung bei gesetze-im-internet.de). */
@@ -88,4 +88,46 @@ export async function importFile(
   if (!chunks.length) throw new Error("In der Datei wurde kein Text gefunden (gescannte PDFs ohne Texterkennung werden nicht unterstützt).");
   const source: NewLegalSource = { ...meta, title: meta.title.trim() || name.replace(/\.[^.]+$/, ""), origin: name };
   return backend.legalSourceSave(source, chunks);
+}
+
+export const LAW_UPGRADE_SETTING = "ai.lawUpgrade";
+
+/**
+ * Vor 0.19 wurden Gesetze aus PDF/DOCX/TXT als einfacher Text gespeichert (ohne
+ * Paragraphen) – der Normabruf fand sie nicht. Solche Quellen werden einmalig
+ * aus den gespeicherten Abschnitten als Gesetz neu aufbereitet; die alte Quelle
+ * wird danach entfernt. Gibt es das Gesetz schon (z. B. neu importiert), bleibt
+ * alles unverändert. Jede Quelle wird nur einmal geprüft.
+ */
+export async function upgradeTextLaws(
+  backend: Pick<Backend, "legalSourcesList" | "legalSourceTexts" | "legalSourceSave" | "legalSourceDelete" | "settingsAll" | "settingSet">,
+): Promise<LegalSource[]> {
+  const settings = await backend.settingsAll();
+  const raw = settings[LAW_UPGRADE_SETTING];
+  const checked = new Set(Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string") : []);
+  const sources = await backend.legalSourcesList();
+  const todo = sources.filter((s) => s.kind !== "gesetz" && s.chunk_count >= 3 && /\.(pdf|docx|txt|md)$/i.test(s.origin) && !checked.has(s.id));
+  if (!todo.length) return [];
+  const laws = new Set(sources.filter((s) => s.kind === "gesetz").map((s) => s.abbreviation.toLowerCase()));
+  const done: LegalSource[] = [];
+  for (const s of todo) {
+    checked.add(s.id);
+    try {
+      const text = lawTextFromChunks((await backend.legalSourceTexts(s.id)).map((t) => ({ text: t })));
+      if (!looksLikeLaw(text)) continue;
+      const law = parseLawText(text, { origin: s.origin });
+      const abbr = law.source.abbreviation;
+      if (!abbr || laws.has(abbr.toLowerCase())) continue;
+      const saved = await backend.legalSourceSave(law.source, law.chunks);
+      await backend.legalSourceDelete(s.id);
+      checked.delete(s.id);
+      laws.add(abbr.toLowerCase());
+      done.push(saved);
+    } catch {
+      // kein Gesetz (oder nicht lesbar): Quelle bleibt, wie sie ist
+    }
+  }
+  const ids = new Set(sources.map((s) => s.id));
+  await backend.settingSet(LAW_UPGRADE_SETTING, [...checked].filter((id) => ids.has(id)).slice(-300));
+  return done;
 }

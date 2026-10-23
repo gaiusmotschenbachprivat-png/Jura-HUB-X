@@ -30,6 +30,27 @@ interface NormKey {
 const keyOf = (num: string, suffix: string): NormKey => ({ n: Number(num), s: suffix });
 const after = (a: NormKey, b: NormKey | null) => !b || a.n > b.n || (a.n === b.n && a.s > b.s);
 
+/**
+ * Text eines Gesetzes aus den Abschnitten eines früheren Text-Imports (vor 0.19
+ * wurden Gesetz-PDFs in Stücke zu 1500 Zeichen zerlegt) wieder zusammensetzen.
+ * Beim Zerlegen gingen einzelne Zeilenumbrüche verloren; sie werden hier vor
+ * Absatznummern „(2)“ und Gliederungsüberschriften wieder eingefügt.
+ */
+export function lawTextFromChunks(chunks: readonly { text: string }[], max = 1500): string {
+  let out = "";
+  let prev = "";
+  for (const c of chunks) {
+    // Stücke mit voller Länge wurden mitten im Text abgeschnitten
+    out += (out ? ([...prev].length >= max ? "" : "\n") : "") + c.text;
+    prev = c.text;
+  }
+  const level = "(?:Buch|Teil|Abschnitt|Unterabschnitt|Titel|Untertitel|Kapitel)";
+  return out
+    .replace(/([.;:]) (\(\d+[a-z]?\) )/g, "$1\n$2")
+    .replace(new RegExp(`([.;:)]) (${ORDINAL} ${level}|(?:Allgemeiner|Besonderer) Teil)(?=\\s|$)`, "gm"), "$1\n$2")
+    .replace(new RegExp(`^(${ORDINAL} ${level}) (?=\\S)`, "gm"), "$1\n");
+}
+
 export interface ParsedLaw {
   source: NewLegalSource;
   chunks: NewLegalChunk[];

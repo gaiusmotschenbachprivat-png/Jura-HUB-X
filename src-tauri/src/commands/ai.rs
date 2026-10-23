@@ -60,6 +60,11 @@ pub async fn legal_norm(state: St<'_>, abbreviation: String, norm: String, absat
 }
 
 #[tauri::command]
+pub async fn legal_source_texts(state: St<'_>, id: String) -> CmdResult<Vec<String>> {
+    state.with(|c| legal::source_texts(c, &id))
+}
+
+#[tauri::command]
 pub async fn legal_chunks(state: St<'_>, ids: Vec<String>) -> CmdResult<Vec<LegalHit>> {
     state.with(|c| legal::chunks(c, &ids))
 }

@@ -11,10 +11,23 @@ import { LegalAssistant, type AskResult, type AssistantSnapshot, type Task } fro
 import { aiErrorMessage, appClient } from "../../ai/client";
 import { Anonymizer, configFromSettings } from "../../ai/privacy/anonymize";
 import { PROFILE_SETTING, profileFromSettings } from "../../ai/config";
-import { reportError } from "../../state/store";
+import { reportError, useApp } from "../../state/store";
+import { upgradeTextLaws } from "../../ai/sources/importer";
 import { addSpend } from "./AiProfile";
 
 export const HISTORY_SETTING = "ai.history";
+
+let upgradeRun: Promise<void> | null = null;
+/** Einmal je Sitzung: früher als Text importierte Gesetze in Paragraphen zerlegen. */
+export function upgradeOldLaws(): Promise<void> {
+  upgradeRun ??= upgradeTextLaws(api)
+    .then((done) => {
+      for (const s of done)
+        useApp.getState().toast(`„${s.abbreviation}“ war als einfacher Text gespeichert und wurde jetzt als Gesetz mit ${s.chunk_count.toLocaleString("de-DE")} Abschnitten aufbereitet.`, "success");
+    })
+    .catch(reportError);
+  return upgradeRun;
+}
 
 export type Entry =
   | { role: "user"; text: string; document?: string }
@@ -87,6 +100,7 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     set({ busy: true, entries: [...get().entries, { role: "user", text: question, document }] });
     try {
       let a = get().assistant;
+      await upgradeOldLaws();
       if (!a) {
         const settings = await api.settingsAll();
         const systemPrompt = typeof settings["ai.systemPrompt"] === "string" ? (settings["ai.systemPrompt"] as string) : undefined;

@@ -127,6 +127,7 @@ pub fn run() {
             ai::legal_search,
             ai::legal_norm,
             ai::legal_chunks,
+            ai::legal_source_texts,
             ai::ai_chats_list,
             ai::ai_chat_get,
             ai::ai_chat_save,

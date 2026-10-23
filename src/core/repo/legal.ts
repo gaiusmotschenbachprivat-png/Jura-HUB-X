@@ -152,6 +152,12 @@ export function norm(db: Db, abbreviation: string, normName: string, absatz: num
     .map(hit);
 }
 
+/** Texte aller Abschnitte einer Quelle in ihrer Reihenfolge (zum erneuten Aufbereiten). */
+export function sourceTexts(db: Db, id: string): string[] {
+  requireId(id);
+  return db.all<{ text: string }>("SELECT text FROM legal_chunks WHERE source_id = ?1 ORDER BY position", [id]).map((r) => r.text);
+}
+
 export function chunks(db: Db, ids: string[]): LegalHit[] {
   const list = (Array.isArray(ids) ? ids : []).filter((x) => typeof x === "string").slice(0, 200);
   if (!list.length) return [];

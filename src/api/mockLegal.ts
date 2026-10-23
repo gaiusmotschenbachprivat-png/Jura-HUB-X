@@ -10,6 +10,7 @@ type LegalApi = Pick<
   | "legalSearch"
   | "legalNorm"
   | "legalChunks"
+  | "legalSourceTexts"
   | "aiChatsList"
   | "aiChatGet"
   | "aiChatSave"
@@ -75,6 +76,9 @@ export function createLegalMock(): LegalApi {
       return hits.filter(
         (h) => h.kind === "gesetz" && h.abbreviation.toLowerCase() === abbreviation.toLowerCase() && h.norm === norm && (absatz == null || h.absatz == null || h.absatz === absatz),
       );
+    },
+    async legalSourceTexts(id) {
+      return hits.filter((h) => h.source_id === id).sort((a, b) => a.position - b.position).map((h) => h.text);
     },
     async legalChunks(ids) {
       return hits.filter((h) => ids.includes(h.chunk_id));

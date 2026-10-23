@@ -17,7 +17,7 @@ import { htmlToDoc } from "../editor/exportImport";
 import { createNode } from "../navigation/actions";
 import { isVault, MIN_PIN, openKey, sealKey, type KeyVault } from "../../ai/keyVault";
 import { AnswerCard } from "./Answer";
-import { useAssistant } from "./state";
+import { upgradeOldLaws, useAssistant } from "./state";
 import { ProfileSelect, useAiProfile } from "./AiProfile";
 import { HistoryButton } from "./ChatHistory";
 
@@ -299,7 +299,7 @@ function Sources({ status }: { status: AiStatus }) {
   const toast = useApp((s) => s.toast);
   const load = () => api.legalSourcesList().then(setList).catch(reportError);
   useEffect(() => {
-    void load();
+    void upgradeOldLaws().then(load);
   }, []);
 
   const fetchLaw = async (a: string) => {

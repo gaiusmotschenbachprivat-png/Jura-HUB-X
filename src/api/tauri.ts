@@ -120,6 +120,7 @@ export function createTauriBackend(): Backend {
     legalSearch: (terms, kinds, limit) => c("legal_search", { terms, kinds, limit }),
     legalNorm: (abbreviation, norm, absatz) => c("legal_norm", { abbreviation, norm, absatz }),
     legalChunks: (ids) => c("legal_chunks", { ids }),
+    legalSourceTexts: (id) => c("legal_source_texts", { id }),
     aiChatsList: () => c("ai_chats_list"),
     aiChatGet: (id) => c("ai_chat_get", { id }),
     aiChatSave: (chat) => c("ai_chat_save", { chat }),

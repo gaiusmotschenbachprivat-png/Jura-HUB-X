@@ -348,6 +348,14 @@ pub fn norm(conn: &Connection, abbreviation: &str, norm_name: &str, absatz: Opti
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
+/// Texte aller Abschnitte einer Quelle in ihrer Reihenfolge (zum erneuten Aufbereiten).
+pub fn source_texts(conn: &Connection, id: &str) -> Result<Vec<String>> {
+    require_id(id)?;
+    let mut st = conn.prepare("SELECT text FROM legal_chunks WHERE source_id = ?1 ORDER BY position")?;
+    let rows = st.query_map([id], |r| r.get::<_, String>(0))?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
+}
+
 pub fn chunks(conn: &Connection, ids: &[String]) -> Result<Vec<LegalHit>> {
     let list: Vec<&String> = ids.iter().take(200).collect();
     if list.is_empty() {

@@ -129,8 +129,7 @@ scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehe
   Details und Datenschutz: [KI-ASSISTENT.md](KI-ASSISTENT.md).
 - **Gesetze als PDF:** Die PDF-Fassung von gesetze-im-internet.de (z. B. StGB) wird jetzt in
   einzelne Paragraphen zerlegt – der Assistent findet „§ 242 StGB“ dann wie beim XML-Import.
-  Ein früher (vor 0.19) als PDF importiertes Gesetz unter „Rechtsquellen“ löschen und neu
-  importieren.
+  Ein früher (vor 0.19) als PDF importiertes Gesetz wird automatisch umgewandelt.
 
 ## Diktat, Zeitstempel, Lesemodus
 

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import type { NewLegalChunk, NewLegalSource } from "../api/types";
-import { importFile } from "./sources/importer";
+import { createLegalMock } from "../api/mockLegal";
+import { importFile, upgradeTextLaws } from "./sources/importer";
+import { chunkText } from "./sources/text";
 import { looksLikeLaw, parseLawText } from "./sources/lawText";
 
 // Aufbau wie die PDF-Fassung von gesetze-im-internet.de (gekürzt)
@@ -92,5 +94,24 @@ describe("Gesetz als PDF/Text", () => {
     const text = STGB.replace("Strafgesetzbuch (StGB)", "Strafgesetzbuch");
     await expect(importFile(backend, "gesetz.txt", new TextEncoder().encode(text), { kind: "gesetz", title: "" })).rejects.toThrow(/Abkürzung/);
     await expect(importFile(backend, "gesetz.txt", new TextEncoder().encode(text), { kind: "gesetz", title: "", abbreviation: "StGB" })).resolves.toBeDefined();
+  });
+
+  it("früher als Text gespeichertes Gesetz wird einmalig als Gesetz neu aufbereitet", async () => {
+    const legal = createLegalMock();
+    const settings: Record<string, unknown> = {};
+    const backend = { ...legal, settingsAll: async () => ({ ...settings }), settingSet: async (k: string, v: unknown) => void (settings[k] = v) };
+    // so hat Version 0.18 eine Gesetz-PDF gespeichert: Textstücke ohne Paragraphen
+    const old = await legal.legalSourceSave({ kind: "dokument", title: "StGB", origin: "StGB.pdf" }, chunkText(STGB, 300));
+    const urteil = await legal.legalSourceSave({ kind: "urteil", title: "BGH-Urteil", origin: "urteil.pdf" }, ["Leitsatz", "Tatbestand", "Gründe"].map((t) => ({ norm: "", absatz: null, heading: t, text: `${t}: …` })));
+    expect(await legal.legalNorm("StGB", "§ 242", null)).toEqual([]);
+    const done = await upgradeTextLaws(backend);
+    expect(done.map((s) => s.abbreviation)).toEqual(["StGB"]);
+    expect((await legal.legalNorm("StGB", "§ 2", 2))[0]?.text).toMatch(/^\(2\) Wird die Strafdrohung.*Beendigung der Tat gilt\.$/);
+    const list = await legal.legalSourcesList();
+    expect(list.map((s) => s.id)).not.toContain(old.id);
+    expect(list.map((s) => s.id)).toContain(urteil.id);
+    // zweiter Lauf: nichts mehr zu tun, das Urteil wird nicht erneut geprüft
+    expect(await upgradeTextLaws(backend)).toEqual([]);
+    expect(settings["ai.lawUpgrade"]).toEqual([urteil.id]);
   });
 });
