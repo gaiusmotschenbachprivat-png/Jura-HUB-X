@@ -227,7 +227,7 @@ try {
   const mc = page.locator(".card", { hasText: "Modell und Kosten" });
   await mc.waitFor();
   const mcText = await mc.innerText();
-  check("Einstellungen: drei Modelle mit Preisbeispiel und Verbrauch", (mcText.match(/mit 5 € etwa [\d.,]+ Fragen/g) ?? []).length === 3 && mcText.includes("Bisher verbraucht"), mcText.slice(0, 300));
+  check("Einstellungen: drei Modelle mit Preisbeispiel und Verbrauch", (mcText.match(/mit 5 € etwa [\d.,]+ Fragen/g) ?? []).length === 3 && mcText.includes("Bisher verbraucht"), mcText.slice(250, 650));
   await shot("ki-kosten");
   await page.getByRole("tab", { name: /Fragen/ }).click();
   if (await panel.isVisible()) await panel.getByRole("button", { name: "Schließen" }).click();
