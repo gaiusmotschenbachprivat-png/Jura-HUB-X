@@ -225,7 +225,7 @@ try {
   await panel.getByRole("button", { name: "Vollansicht" }).click();
   await page.getByRole("tab", { name: /Einstellungen/ }).click();
   const mc = page.locator(".card", { hasText: "Modell und Kosten" });
-  await mc.waitFor();
+  await mc.getByText(/Bisher verbraucht/).waitFor({ timeout: 10000 });
   const mcText = await mc.innerText();
   check("Einstellungen: drei Modelle mit Preisbeispiel und Verbrauch", (mcText.match(/mit 5 € etwa [\d.,]+ Fragen/g) ?? []).length === 3 && mcText.includes("Bisher verbraucht"), mcText.slice(250, 650));
   await shot("ki-kosten");
