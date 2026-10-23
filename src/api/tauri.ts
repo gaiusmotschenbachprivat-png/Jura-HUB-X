@@ -120,6 +120,11 @@ export function createTauriBackend(): Backend {
     legalSearch: (terms, kinds, limit) => c("legal_search", { terms, kinds, limit }),
     legalNorm: (abbreviation, norm, absatz) => c("legal_norm", { abbreviation, norm, absatz }),
     legalChunks: (ids) => c("legal_chunks", { ids }),
+    aiChatsList: () => c("ai_chats_list"),
+    aiChatGet: (id) => c("ai_chat_get", { id }),
+    aiChatSave: (chat) => c("ai_chat_save", { chat }),
+    aiChatDelete: (id) => c("ai_chat_delete", { id }),
+    aiChatsClear: () => c("ai_chats_clear"),
     aiStatus: () => c("ai_status"),
     aiSetSessionKey: async () => {
       throw { code: "invalid", message: "In der Desktop-App kommt der Schlüssel aus der Umgebungsvariable ANTHROPIC_API_KEY." };

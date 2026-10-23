@@ -26,6 +26,15 @@ export class SourceRegistry {
     });
   }
 
+  /** Quellen einer gespeicherten Unterhaltung wieder eintragen (Kennungen bleiben gleich). */
+  restore(list: readonly RegisteredSource[]) {
+    for (const r of list) {
+      if (!r?.hit?.chunk_id || !/^Q\d+$/.test(r.id) || this.byChunk.has(r.hit.chunk_id)) continue;
+      this.byChunk.set(r.hit.chunk_id, r);
+      this.list.push(r);
+    }
+  }
+
   get all(): readonly RegisteredSource[] {
     return this.list;
   }

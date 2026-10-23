@@ -103,6 +103,7 @@ der Oberfläche als „nicht geprüft“ markiert und erscheinen nie als geprüf
 | `tasks` | Aufgaben, offene Fragen, Lernziele | `kind`, `title`, `node_id`, `due_date`, `done_at` |
 | `exams` | Prüfungstermine | `title`, `date`, `time`, `place`, `kind`, `node_id` |
 | `annotations` | PDF-Markierungen, Kommentare, Lesezeichen, Handschrift (ab Schema 5) | `document_id`, `page`, `kind` (`highlight`/`bookmark`/`ink`), `color`, `rects` (relativ zur Seite, 0–1), `quote`, `comment`, `ink` (Striche, Breite 2000 = Seitenbreite) |
+| `ai_chats` | Verlauf des KI-Assistenten (ab Schema 6, nur lokal) | `title`, `task`, `own_docs`, `entries` (Anzeige mit Originalangaben), `state` (anonymisierter API-Verlauf, Quellen, Platzhalter-Zuordnung) |
 
 **Inhalt von `knowledge.data` je Typ** (unbekannte Felder werden beim Speichern verworfen):
 

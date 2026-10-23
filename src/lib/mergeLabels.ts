@@ -18,4 +18,5 @@ export const MERGE_LABEL: Record<string, string> = {
   annotations: "Markierungen und Handschrift",
   legal_sources: "Rechtsquellen",
   legal_chunks: "Normen",
+  ai_chats: "KI-Unterhaltungen",
 };

@@ -7,6 +7,7 @@
  *    (`updated_at`, Papierkorb/Archiv zählen als Änderung).
  *  - Notizen: Die unterlegene Fassung bleibt als Version erhalten
  *    („Abgleich: andere Fassung“) – es geht kein Text verloren.
+ *  - KI-Unterhaltungen: die zuletzt fortgesetzte Fassung gilt.
  *  - Versionen, Verknüpfungen, Wiederholungen, Gesetze: Vereinigung.
  *  - Einstellungen und Backup-Verlauf bleiben gerätebezogen.
  * Endgültig Gelöschtes (z. B. geleerter Papierkorb) wird nicht übertragen und
@@ -20,7 +21,7 @@ import { newId, now, wordCount } from "./util";
 type Row = Record<string, unknown>;
 
 /** Tabellen mit eigener Kennung und Änderungszeit: jüngere Änderung gewinnt. */
-const STAMPED = ["areas", "nodes", "documents", "knowledge", "flashcards", "tasks", "exams", "annotations"] as const;
+const STAMPED = ["areas", "nodes", "documents", "knowledge", "flashcards", "tasks", "exams", "annotations", "ai_chats"] as const;
 /** Unveränderliche Einträge (nur hinzufügen) mit ihrem Schlüssel. */
 const UNION: Record<string, string[]> = {
   note_versions: ["id"],
@@ -53,6 +54,7 @@ const ORDER = [
   "annotations",
   "legal_sources",
   "legal_chunks",
+  "ai_chats",
 ] as const;
 
 

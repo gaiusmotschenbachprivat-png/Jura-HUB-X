@@ -6,6 +6,7 @@
 import type { Backend } from "../../api/backend";
 import type { LegalKind, LegalSource, NewLegalSource } from "../../api/types";
 import { parseGiiArchive } from "./gii";
+import { lawHeader, looksLikeLaw, parseLawText } from "./lawText";
 import { chunkText } from "./text";
 
 /** Häufig gebrauchte Gesetze für die Schnellauswahl (Abkürzung bei gesetze-im-internet.de). */
@@ -34,6 +35,8 @@ export async function importLaw(backend: Pick<Backend, "lawFetch" | "legalSource
 export interface FileMeta {
   kind: LegalKind;
   title: string;
+  /** Abkürzung eines Gesetzes (z. B. „StGB“); leer = aus der Datei erkennen */
+  abbreviation?: string;
   court?: string;
   file_number?: string;
   decision_date?: string;
@@ -72,6 +75,15 @@ export async function importFile(
     return backend.legalSourceSave(law.source, law.chunks);
   }
   const text = await readText(name, bytes);
+  // Gesetze (auch als PDF/DOCX/TXT) in Normen und Absätze zerlegen – sonst findet der Normabruf sie nicht.
+  // Ohne Auswahl „Gesetz“ nur, wenn die Datei eindeutig ein Gesetz ist (Kopf „Titel (Abk.)“ und viele §-Überschriften).
+  const isLaw = meta.kind === "gesetz" || (looksLikeLaw(text) && !!lawHeader(text.split("\n").map((l) => l.trim()).filter(Boolean)).abbreviation);
+  if (isLaw) {
+    const law = parseLawText(text, { title: meta.title, abbreviation: meta.abbreviation, origin: name });
+    if (!law.source.abbreviation)
+      throw new Error("Die Abkürzung des Gesetzes wurde nicht erkannt. Bitte im Feld „Abkürzung“ eintragen (z. B. StGB) und erneut importieren.");
+    return backend.legalSourceSave(law.source, law.chunks);
+  }
   const chunks = chunkText(text);
   if (!chunks.length) throw new Error("In der Datei wurde kein Text gefunden (gescannte PDFs ohne Texterkennung werden nicht unterstützt).");
   const source: NewLegalSource = { ...meta, title: meta.title.trim() || name.replace(/\.[^.]+$/, ""), origin: name };

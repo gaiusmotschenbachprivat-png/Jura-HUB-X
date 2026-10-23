@@ -164,4 +164,49 @@ describe("Juristischer Assistent – Ablauf", () => {
   it("textOf liest nur Textblöcke", () => {
     expect(textOf(msg([{ type: "thinking", thinking: "", signature: "x" }, text("A"), text("B")], "end_turn"))).toBe("AB");
   });
+
+  it("setzt eine gespeicherte Unterhaltung fort (Verlauf, Quellen, Platzhalter)", async () => {
+    const s = await store();
+    const llm1 = new FakeLlm([() => msg([{ type: "thinking", thinking: "…", signature: "sig" }, text("Herr [PERSON_1] muss zahlen (§ 1 Abs. 2 MustG) [Q2].\n\n" + DISCLAIMER)], "end_turn")]);
+    const a = new LegalAssistant({ llm: llm1, store: s, task: "recherche" });
+    await a.ask("Muss Herr Müller als Käufer der Mustersache zahlen?");
+    // wie beim Speichern: über JSON
+    const saved = JSON.parse(JSON.stringify(a.snapshot()));
+    expect(JSON.stringify(saved.messages)).not.toContain("Müller");
+
+    const llm2 = new FakeLlm([
+      (p) => {
+        // früherer Verlauf samt Denkblock geht mit, neue Frage hängt hinten an
+        expect(p.messages).toHaveLength(3);
+        expect(JSON.stringify(p.messages[1])).toContain('"signature":"sig"');
+        const last = JSON.stringify(p.messages[2]);
+        expect(last).toContain("[PERSON_1]");
+        expect(last).not.toContain("Müller");
+        return msg([text("Ja, [PERSON_1] schuldet den Musterpreis [Q2].\n\n" + DISCLAIMER)], "end_turn");
+      },
+    ]);
+    const b = new LegalAssistant({ llm: llm2, store: s, task: "recherche", restore: saved });
+    const r = await b.ask("Und was gilt, wenn Herr Müller nicht zahlt?");
+    expect(r.text).toContain("Ja, Müller schuldet");
+    // Kennungen bleiben gleich, keine doppelten Quellen
+    expect(r.sources.filter((x) => x.id === "Q2")).toHaveLength(1);
+    expect(r.report.unknownSourceIds).toEqual([]);
+  });
+
+  it("lässt den Verlauf nach einem Abbruch unverändert", async () => {
+    const s = await store();
+    const llm = new FakeLlm([
+      () => msg([text("Erste Antwort. " + DISCLAIMER)], "end_turn"),
+      () => msg([toolUse("tu1", "norm_abrufen", { gesetz: "MustG", norm: "§ 2" })], "tool_use"),
+      // danach: kein Schritt mehr → Fehler wie bei einem Netzabbruch
+    ]);
+    const a = new LegalAssistant({ llm, store: s, task: "recherche" });
+    await a.ask("Erste Frage");
+    expect(a.history).toHaveLength(2);
+    await expect(a.ask("Zweite Frage")).rejects.toThrow();
+    expect(a.history).toHaveLength(2);
+    // ein gespeicherter Verlauf mit offenem Werkzeugaufruf wird bis zur letzten Antwort gekürzt
+    const broken = { ...a.snapshot(), messages: [...a.history, { role: "user" as const, content: "x" }, { role: "assistant" as const, content: [toolUse("t", "norm_abrufen", {})] }] };
+    expect(new LegalAssistant({ llm, store: s, task: "recherche", restore: broken as never }).history).toHaveLength(2);
+  });
 });

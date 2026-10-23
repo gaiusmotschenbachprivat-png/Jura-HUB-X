@@ -256,3 +256,9 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .ai-profile-card.is-active { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .ai-profile-card input { margin-top: 3px; }
 .ai-cost { white-space: nowrap; }
+
+/* Verlauf */
+.ai-history-row { display: flex; align-items: center; gap: 4px; border-radius: 8px; }
+.ai-history-row .slide-pick { min-width: 0; }
+.ai-history-row.is-current { background: var(--bg-hover); }
+.ai-history-row .nowrap { white-space: nowrap; }

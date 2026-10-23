@@ -122,6 +122,16 @@ scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehe
   (Tippfehler, Normangaben), „gewusst/nicht gewusst“ entscheidest du. Danach lassen sich nur
   die verpassten Punkte wiederholen; das letzte Ergebnis wird je Schema gemerkt.
 
+## KI-Assistent: Verlauf und Gesetze als PDF
+
+- **Verlauf** (Uhr-Symbol im Assistenten): Unterhaltungen werden nach jeder Antwort auf dem iPad
+  gespeichert und lassen sich später öffnen, fortsetzen oder löschen. Abschaltbar im Verlauf.
+  Details und Datenschutz: [KI-ASSISTENT.md](KI-ASSISTENT.md).
+- **Gesetze als PDF:** Die PDF-Fassung von gesetze-im-internet.de (z. B. StGB) wird jetzt in
+  einzelne Paragraphen zerlegt – der Assistent findet „§ 242 StGB“ dann wie beim XML-Import.
+  Ein früher (vor 0.19) als PDF importiertes Gesetz unter „Rechtsquellen“ löschen und neu
+  importieren.
+
 ## Diktat, Zeitstempel, Lesemodus
 
 - **Diktat** (Mikrofon im Notizkopf): Gesprochenes landet an der Schreibposition, beginnend mit

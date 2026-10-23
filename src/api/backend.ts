@@ -1,4 +1,7 @@
 import type {
+  AiChat,
+  AiChatInput,
+  AiChatMeta,
   AiHttpResponse,
   AiStatus,
   LegalHit,
@@ -175,6 +178,12 @@ export interface Backend {
   legalSearch(terms: string[], kinds: LegalKind[] | null, limit: number): Promise<LegalHit[]>;
   legalNorm(abbreviation: string, norm: string, absatz: number | null): Promise<LegalHit[]>;
   legalChunks(ids: string[]): Promise<LegalHit[]>;
+  /** Gespeicherte Unterhaltungen des KI-Assistenten (nur lokal), neueste zuerst */
+  aiChatsList(): Promise<AiChatMeta[]>;
+  aiChatGet(id: string): Promise<AiChat>;
+  aiChatSave(chat: AiChatInput): Promise<AiChatMeta>;
+  aiChatDelete(id: string): Promise<void>;
+  aiChatsClear(): Promise<void>;
   /** Ist die Claude API nutzbar (Schlüssel vorhanden)? */
   aiStatus(): Promise<AiStatus>;
   /** Browser-Version: API-Schlüssel nur für diese Sitzung (nur im Arbeitsspeicher). */

@@ -59,6 +59,11 @@ const PATTERNS: [Category, RegExp][] = [
   ["aktenzeichen_eigen", /\b(?:Unser|Ihr)\s+Az\.?:?\s*[\w/.-]+/gi],
 ];
 
+export interface AnonymizerSnapshot {
+  tokens: [string, string][];
+  counters: [string, number][];
+}
+
 export class Anonymizer {
   private byValue = new Map<string, string>();
   private byToken = new Map<string, string>();
@@ -106,6 +111,24 @@ export class Anonymizer {
   /** Setzt die Originalangaben wieder ein (für die Anzeige). */
   deanonymize(text: string): string {
     return text.replace(/\[(?:PERSON|EMAIL|TELEFON|IBAN|ADRESSE|GEBURTSDATUM|AKTENZEICHEN|BEGRIFF)_\d+\]/g, (t) => this.byToken.get(t) ?? t);
+  }
+
+  /** Zuordnung Platzhalter → Original (für eine gespeicherte Unterhaltung; bleibt lokal). */
+  snapshot(): AnonymizerSnapshot {
+    return { tokens: [...this.byToken.entries()], counters: [...this.counters.entries()] };
+  }
+
+  /** Zuordnung einer gespeicherten Unterhaltung wiederherstellen. */
+  restore(s: AnonymizerSnapshot | undefined) {
+    if (!s || !Array.isArray(s.tokens)) return;
+    for (const pair of s.tokens) {
+      if (!Array.isArray(pair) || typeof pair[0] !== "string" || typeof pair[1] !== "string") continue;
+      this.byToken.set(pair[0], pair[1]);
+      this.byValue.set(pair[1], pair[0]);
+    }
+    for (const pair of Array.isArray(s.counters) ? s.counters : []) {
+      if (Array.isArray(pair) && typeof pair[0] === "string" && Number.isInteger(pair[1])) this.counters.set(pair[0], Math.max(this.counters.get(pair[0]) ?? 0, pair[1]));
+    }
   }
 
   /** Anzahl der ersetzten Angaben (für die Anzeige „3 Angaben anonymisiert“). */

@@ -552,6 +552,38 @@ export interface NewAnnotation {
   ink?: string;
 }
 
+// ---------- KI-Assistent: Verlauf ----------
+
+export type AiTask = "recherche" | "vertrag" | "schriftsatz";
+
+/** Eine gespeicherte Unterhaltung (ohne Inhalt, für die Liste). */
+export interface AiChatMeta {
+  id: string;
+  title: string;
+  task: AiTask;
+  own_docs: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Gespeicherte Unterhaltung samt Inhalt (JSON-Texte, nur lokal). */
+export interface AiChat extends AiChatMeta {
+  /** Anzeige (mit Originalangaben) */
+  entries: string;
+  /** Verlauf für die Claude API (anonymisiert), Quellen, Platzhalter-Zuordnung */
+  state: string;
+}
+
+export interface AiChatInput {
+  /** null = neue Unterhaltung */
+  id: string | null;
+  title: string;
+  task: AiTask;
+  own_docs: boolean;
+  entries: string;
+  state: string;
+}
+
 // ---------- KI-Assistent: Rechtsquellen ----------
 
 export type LegalKind = "gesetz" | "urteil" | "kommentar" | "dokument";

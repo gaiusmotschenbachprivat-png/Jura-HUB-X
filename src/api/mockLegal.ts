@@ -1,6 +1,6 @@
 /** Rechtsquellen im Arbeitsspeicher (Browser-Vorschau mit ?demo und Oberflächentests). */
 import type { Backend } from "./backend";
-import type { LegalHit, LegalSource } from "./types";
+import type { AiChat, LegalHit, LegalSource } from "./types";
 
 type LegalApi = Pick<
   Backend,
@@ -10,6 +10,11 @@ type LegalApi = Pick<
   | "legalSearch"
   | "legalNorm"
   | "legalChunks"
+  | "aiChatsList"
+  | "aiChatGet"
+  | "aiChatSave"
+  | "aiChatDelete"
+  | "aiChatsClear"
   | "aiStatus"
   | "aiSetSessionKey"
   | "aiHttp"
@@ -19,6 +24,7 @@ type LegalApi = Pick<
 export function createLegalMock(): LegalApi {
   const sources = new Map<string, LegalSource>();
   const hits: LegalHit[] = [];
+  const chats = new Map<string, AiChat>();
   let seq = 0;
   const notAvailable = async (): Promise<never> => {
     throw { code: "invalid", message: "In der Vorschau nicht verfügbar." };
@@ -72,6 +78,29 @@ export function createLegalMock(): LegalApi {
     },
     async legalChunks(ids) {
       return hits.filter((h) => ids.includes(h.chunk_id));
+    },
+    async aiChatsList() {
+      return [...chats.values()].map(({ entries: _e, state: _s, ...m }) => m).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
+    },
+    async aiChatGet(id) {
+      const c = chats.get(id);
+      if (!c) throw { code: "not_found", message: "Unterhaltung nicht gefunden." };
+      return { ...c };
+    },
+    async aiChatSave(input) {
+      const ts = new Date().toISOString();
+      const old = input.id ? chats.get(input.id) : undefined;
+      if (input.id && !old) throw { code: "not_found", message: "Unterhaltung nicht gefunden." };
+      const c: AiChat = { id: old?.id ?? `chat-${++seq}`, title: input.title.trim() || "Unterhaltung", task: input.task, own_docs: input.own_docs, entries: input.entries, state: input.state, created_at: old?.created_at ?? ts, updated_at: ts };
+      chats.set(c.id, c);
+      const { entries: _e, state: _s, ...m } = c;
+      return m;
+    },
+    async aiChatDelete(id) {
+      chats.delete(id);
+    },
+    async aiChatsClear() {
+      chats.clear();
     },
     async aiStatus() {
       return { available: false, key_source: "none", can_fetch_laws: false };

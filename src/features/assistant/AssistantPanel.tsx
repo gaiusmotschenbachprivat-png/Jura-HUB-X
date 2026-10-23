@@ -12,6 +12,7 @@ import type { AiStatus } from "../../api/types";
 import { parseDoc, plainText } from "../../lib/pm";
 import { reportError, useApp, type View } from "../../state/store";
 import { Chat, Consent, KeySetup, type ContextSource } from "./AssistantView";
+import { HistoryButton } from "./ChatHistory";
 import { useAssistant } from "./state";
 
 interface PanelState {
@@ -108,6 +109,7 @@ function AssistantPanel() {
       <header className="ai-panel-head">
         <Sparkles size={16} />
         <strong className="grow">KI-Assistent</strong>
+        <HistoryButton disabled={busy} />
         <button className="icon-btn" title="Neue Unterhaltung" aria-label="Neue Unterhaltung" onClick={reset} disabled={busy || !entries}>
           <RotateCcw size={16} />
         </button>

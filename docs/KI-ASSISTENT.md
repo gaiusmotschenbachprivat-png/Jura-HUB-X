@@ -60,7 +60,12 @@ Ohne Quellen kann der Assistent nichts belegen. Unter **KI-Assistent → Rechtsq
 - **Desktop:** Gesetze auf Knopfdruck von gesetze-im-internet.de laden (BGB, StGB, GG, KSchG …
   oder jede andere Abkürzung aus der Adresse, z. B. `bauno_by`).
 - **iPad/Browser:** gesetze-im-internet.de erlaubt Browsern keinen direkten Abruf. Lade beim
-  Gesetz die „XML“-Datei herunter und importiere sie als Datei.
+  Gesetz die „XML“- oder die „PDF“-Datei herunter und importiere sie als Datei (Art „Gesetz“).
+  Auch aus PDF, DOCX und TXT werden die einzelnen Paragraphen und Absätze erkannt; Titel,
+  Abkürzung (z. B. StGB) und Stand liest Studium OS aus dem Kopf der Datei, sonst trägst du die
+  Abkürzung selbst ein. Nur so findet der Normabruf („§ 242 StGB“) die Vorschrift.
+  Hast du ein Gesetz vor Version 0.19 als PDF importiert, lösche es unter „Rechtsquellen“ und
+  importiere es neu – damals wurde es als einfacher Text ohne Paragraphen gespeichert.
 - **Urteile, Kommentare, eigene Texte** als PDF, DOCX, TXT oder MD mit Angaben wie Gericht,
   Aktenzeichen, Datum, Fassung.
 
@@ -82,7 +87,10 @@ Rechtsquellen und Einstellungen.
    markiert, mit Begründung.
 5. **„An Anthropic gesendet“** zeigt genau den (anonymisierten) Text, der übertragen wurde.
 6. **„Als Notiz speichern“** legt die Antwort als Notiz an (als „ungeprüft“ gekennzeichnet).
-   Unterhaltungen selbst werden nicht gespeichert.
+7. **Verlauf** (Uhr-Symbol): Jede Unterhaltung wird nach der Antwort auf dem Gerät gespeichert.
+   Im Verlauf kannst du sie wieder öffnen, **weiterfragen** (Claude kennt dann die bisherige
+   Unterhaltung, Quellenkennungen und Platzhalter bleiben gleich) oder löschen. „Unterhaltungen
+   speichern“ lässt sich dort abschalten.
 
 ### Modell und Kosten
 
@@ -162,7 +170,9 @@ der Antwort.
 - **Gesetz (Desktop):** Abkürzung aus der Adresse von gesetze-im-internet.de eingeben, z. B.
   `https://www.gesetze-im-internet.de/bdsg_2018/` → `bdsg_2018`. Eine neue Fassung ersetzt die
   alte automatisch.
-- **Gesetz (iPad):** dort „XML“ herunterladen → **Datei importieren**, Art „Gesetz“.
+- **Gesetz (iPad):** dort „XML“ oder „PDF“ herunterladen → **Datei importieren**, Art „Gesetz“.
+  Beim PDF werden Seitenkopf/-fuß und Inhaltsübersicht übersprungen; Abschnittsüberschriften
+  („Zweiter Abschnitt – Die Tat“) kommen in die Gliederung des jeweiligen Paragraphen.
 - **Landesrecht** (z. B. BayVwVfG) steht nicht bei gesetze-im-internet.de: als PDF/TXT mit Art
   „Dokument“ importieren. Die Zitatprüfung kann solche Normen dann über den Text belegen, aber
   nicht als Gesetz erkennen.
@@ -265,7 +275,11 @@ dort vorher die Gesetze als Dateien in `eval/.cache/<abk>.zip` bereitstellen ode
   lückenlos** – Namen von Beteiligten unter „Eigene Begriffe“ eintragen. Gerichtsaktenzeichen,
   Normen, Daten und Fallbuchstaben bleiben bewusst erhalten.
 - **Protokolle:** Studium OS protokolliert vom Assistenten nur Methode, Pfad, Statuscode und Dauer
-  – nie Inhalte, nie den Schlüssel. Unterhaltungen werden nicht gespeichert.
+  – nie Inhalte, nie den Schlüssel.
+- **Verlauf:** Unterhaltungen liegen nur in der lokalen Datenbank (Tabelle `ai_chats`, ab
+  Schema 6) und damit auch in deinen Backups und im Abgleich mit dem zweiten Gerät – mit den
+  Originalangaben und der Zuordnung zu den Platzhaltern. Beim Fortsetzen geht wie bei jeder
+  Frage nur der anonymisierte Verlauf an Anthropic. Abschaltbar und löschbar im Verlauf.
 - **DSGVO:** Werden personenbezogene Daten Dritter verarbeitet, brauchst du eine Rechtsgrundlage
   (Art. 6 DSGVO), musst Informationspflichten beachten und bei Übermittlung in die USA die
   Voraussetzungen der Art. 44 ff. DSGVO (z. B. Angemessenheitsbeschluss/Data Privacy Framework,

@@ -19,6 +19,7 @@ import { isVault, MIN_PIN, openKey, sealKey, type KeyVault } from "../../ai/keyV
 import { AnswerCard } from "./Answer";
 import { useAssistant } from "./state";
 import { ProfileSelect, useAiProfile } from "./AiProfile";
+import { HistoryButton } from "./ChatHistory";
 
 type Tab = "fragen" | "quellen" | "einstellungen";
 
@@ -217,6 +218,7 @@ export function Chat({ available, compact, context }: { available: boolean; comp
         )}
         <span className="grow" />
         <ProfileSelect disabled={busy} />
+        {!compact && <HistoryButton disabled={busy} />}
         {!compact && (
           <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={reset} disabled={busy || !entries.length}>
             Neue Unterhaltung
@@ -228,7 +230,7 @@ export function Chat({ available, compact, context }: { available: boolean; comp
         {entries.length === 0 && (
           <p className="small muted">
             Stelle eine Frage. Der Assistent sucht zuerst in deinen Rechtsquellen (Reiter „Rechtsquellen“), nutzt Werkzeuge wie Normabruf und Fristenrechner und prüft
-            danach jedes Zitat. Unterhaltungen werden nicht gespeichert – sichere wichtige Antworten als Notiz.
+            danach jedes Zitat. Unterhaltungen werden auf diesem Gerät gespeichert (Verlauf-Symbol) – wichtige Antworten kannst du zusätzlich als Notiz sichern.
           </p>
         )}
         {entries.map((e, i) =>
@@ -293,7 +295,7 @@ function Sources({ status }: { status: AiStatus }) {
   const [list, setList] = useState<LegalSource[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [abbr, setAbbr] = useState("");
-  const [meta, setMeta] = useState({ kind: "urteil" as LegalKind, title: "", court: "", file_number: "", decision_date: "", version: "" });
+  const [meta, setMeta] = useState({ kind: "urteil" as LegalKind, title: "", court: "", file_number: "", decision_date: "", version: "", abbreviation: "" });
   const toast = useApp((s) => s.toast);
   const load = () => api.legalSourcesList().then(setList).catch(reportError);
   useEffect(() => {
@@ -321,7 +323,7 @@ function Sources({ status }: { status: AiStatus }) {
       const name = p.split(/[\\/]/).pop() ?? p;
       const s = await importFile(api, name, await api.readExternalFile(p), meta);
       toast(`„${s.title}“: ${s.chunk_count.toLocaleString("de-DE")} Abschnitte importiert.`, "success");
-      setMeta({ ...meta, title: "", court: "", file_number: "", decision_date: "" });
+      setMeta({ ...meta, title: "", court: "", file_number: "", decision_date: "", abbreviation: "" });
       void load();
     } catch (e) {
       toast(errorMessage(e), "error");
@@ -384,13 +386,19 @@ function Sources({ status }: { status: AiStatus }) {
               <option value="urteil">Urteil / Beschluss</option>
               <option value="kommentar">Kommentar / Aufsatz</option>
               <option value="dokument">Eigenes Dokument</option>
-              <option value="gesetz">Gesetz (XML/ZIP)</option>
+              <option value="gesetz">Gesetz (XML, ZIP, PDF, DOCX, TXT)</option>
             </select>
           </label>
           <label>
             Titel
             <input value={meta.title} onChange={(e) => setMeta({ ...meta, title: e.target.value })} placeholder="leer = Dateiname" />
           </label>
+          {meta.kind === "gesetz" && (
+            <label>
+              Abkürzung
+              <input value={meta.abbreviation ?? ""} onChange={(e) => setMeta({ ...meta, abbreviation: e.target.value })} placeholder="leer = aus der Datei, z. B. StGB" />
+            </label>
+          )}
           {meta.kind === "urteil" && (
             <>
               <label>

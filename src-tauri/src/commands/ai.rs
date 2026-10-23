@@ -11,6 +11,7 @@ use std::time::{Duration, Instant};
 use reqwest::header::{HeaderMap, HeaderName, HeaderValue};
 use reqwest::{redirect, Client, Url};
 use serde::Serialize;
+use studium_core::repo::ai_chats::{self, AiChat, AiChatInput, AiChatMeta};
 use studium_core::repo::legal::{self, LegalHit, LegalSource, NewLegalChunk, NewLegalSource};
 use tauri::ipc::Response;
 
@@ -61,6 +62,33 @@ pub async fn legal_norm(state: St<'_>, abbreviation: String, norm: String, absat
 #[tauri::command]
 pub async fn legal_chunks(state: St<'_>, ids: Vec<String>) -> CmdResult<Vec<LegalHit>> {
     state.with(|c| legal::chunks(c, &ids))
+}
+
+// ---- Verlauf (nur lokal) ----
+
+#[tauri::command]
+pub async fn ai_chats_list(state: St<'_>) -> CmdResult<Vec<AiChatMeta>> {
+    state.with(ai_chats::list)
+}
+
+#[tauri::command]
+pub async fn ai_chat_get(state: St<'_>, id: String) -> CmdResult<AiChat> {
+    state.with(|c| ai_chats::get(c, &id))
+}
+
+#[tauri::command]
+pub async fn ai_chat_save(state: St<'_>, chat: AiChatInput) -> CmdResult<AiChatMeta> {
+    state.with(|c| ai_chats::save(c, chat))
+}
+
+#[tauri::command]
+pub async fn ai_chat_delete(state: St<'_>, id: String) -> CmdResult<()> {
+    state.with(|c| ai_chats::remove(c, &id))
+}
+
+#[tauri::command]
+pub async fn ai_chats_clear(state: St<'_>) -> CmdResult<()> {
+    state.with(ai_chats::clear)
 }
 
 // ---- Status ----

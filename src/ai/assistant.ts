@@ -23,7 +23,7 @@ import vertrag from "../../prompts/aufgaben/vertrag.md?raw";
 import type { LlmClient } from "./client";
 import { AI_PROFILES, type AiProfile, DISCLAIMER, MAX_REVISIONS, MAX_TOKENS, MAX_TOOL_ROUNDS, profileParams, RETRIEVAL_LIMIT } from "./config";
 import { requestCostUsd } from "./cost";
-import { Anonymizer } from "./privacy/anonymize";
+import { Anonymizer, type AnonymizerSnapshot } from "./privacy/anonymize";
 import { LegalRetriever, type Retriever } from "./retrieval";
 import { formatSources, SourceRegistry, type RegisteredSource } from "./sources/registry";
 import { toolsFor, type AssistantTool, type ToolContext } from "./tools";
@@ -47,6 +47,17 @@ export interface AssistantOptions {
   profile?: AiProfile;
   /** nur für Tests/Evaluation: anderes Modell erzwingen */
   model?: string;
+  /** gespeicherte Unterhaltung fortsetzen */
+  restore?: AssistantSnapshot;
+}
+
+/** Alles, was zum Fortsetzen einer Unterhaltung nötig ist (bleibt auf dem Gerät). */
+export interface AssistantSnapshot {
+  v: 1;
+  /** Verlauf, wie er an die Claude API ging (anonymisiert, mit Denkblöcken) */
+  messages: BetaMessageParam[];
+  sources: RegisteredSource[];
+  anonymizer: AnonymizerSnapshot;
 }
 
 export interface AskResult {
@@ -80,6 +91,17 @@ export class LegalAssistant {
     this.tools = toolsFor({ ownDocuments: !!opts.ownDocuments });
     this.retriever = opts.retriever ?? new LegalRetriever(opts.store);
     this.system = (opts.systemPrompt?.trim() || DEFAULT_SYSTEM_PROMPT).trim();
+    const r = opts.restore;
+    if (r && r.v === 1 && Array.isArray(r.messages)) {
+      this.messages = validHistory(r.messages);
+      this.registry.restore(Array.isArray(r.sources) ? r.sources : []);
+      this.anonymizer.restore(r.anonymizer);
+    }
+  }
+
+  /** Stand zum Speichern (nur nach einer abgeschlossenen Frage aufrufen). */
+  snapshot(): AssistantSnapshot {
+    return { v: 1, messages: this.messages, sources: [...this.registry.all], anonymizer: this.anonymizer.snapshot() };
   }
 
   /** Modellwahl ändern; gilt ab der nächsten Frage (der Verlauf bleibt). */
@@ -111,6 +133,18 @@ export class LegalAssistant {
 
   /** Stellt eine Frage (bei Vertragsprüfung: `document` = Vertragstext). */
   async ask(question: string, document?: string): Promise<AskResult> {
+    // Bricht die Anfrage ab (Netz, Schlüssel …), bleibt der Verlauf wie vorher –
+    // sonst stünde eine unbeantwortete Frage bzw. ein offener Werkzeugaufruf darin.
+    const before = this.messages.length;
+    try {
+      return await this.askInner(question, document);
+    } catch (e) {
+      this.messages.length = before;
+      throw e;
+    }
+  }
+
+  private async askInner(question: string, document?: string): Promise<AskResult> {
     const usage = { input: 0, output: 0, cacheRead: 0, requests: 0, costUsd: 0 };
     const toolCalls: AskResult["toolCalls"] = [];
     const q = this.anonymizer.anonymize(question.trim());
@@ -200,6 +234,19 @@ export class LegalAssistant {
       content: "Höchstzahl an Werkzeugaufrufen erreicht. Antworte jetzt mit den vorliegenden Quellen.",
     }));
   }
+}
+
+/** Gespeicherten Verlauf übernehmen, aber nur bis zur letzten vollständigen Antwort. */
+function validHistory(ms: BetaMessageParam[]): BetaMessageParam[] {
+  const ok = ms.filter((m) => m && (m.role === "user" || m.role === "assistant") && (typeof m.content === "string" || Array.isArray(m.content)));
+  let end = ok.length;
+  while (end > 0) {
+    const m = ok[end - 1]!;
+    const toolUse = Array.isArray(m.content) && m.content.some((b) => (b as { type?: string }).type === "tool_use");
+    if (m.role === "assistant" && !toolUse) break;
+    end--;
+  }
+  return ok.slice(0, end);
 }
 
 export function textOf(m: BetaMessage): string {

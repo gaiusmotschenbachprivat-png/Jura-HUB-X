@@ -1,6 +1,7 @@
 //! Datenzugriff je Entität. Jede Funktion, die mehrere Tabellen ändert,
 //! arbeitet in einer Transaktion.
 
+pub mod ai_chats;
 pub mod annotations;
 pub mod areas;
 pub mod cards;

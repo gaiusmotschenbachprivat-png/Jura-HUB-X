@@ -246,6 +246,56 @@ try {
   await page.getByPlaceholder("PIN").waitFor({ state: "detached", timeout: 20000 });
   await page.locator(".ai-panel .ai-input textarea").fill("Test");
   check("Nach Neustart mit PIN entsperrt", await page.locator(".ai-panel").getByRole("button", { name: "Senden" }).isEnabled());
+
+  // 8. Verlauf: Unterhaltungen bleiben nach dem Neustart erhalten und lassen sich fortsetzen
+  const p2 = page.locator(".ai-panel");
+  await p2.locator(".ai-input textarea").fill("");
+  await p2.getByRole("button", { name: "Verlauf" }).click();
+  const hist = page.locator(".dialog", { hasText: "Verlauf" });
+  await hist.locator(".ai-history-row").first().waitFor({ timeout: 10000 });
+  const rows = await hist.locator(".ai-history-row").allInnerTexts();
+  check("Verlauf zeigt beide Unterhaltungen (neueste zuerst)", rows.length === 2 && rows[0].includes("Fasse die Notiz") && rows[1].includes("Muss Herr Müller"), rows.join(" | "));
+  await shot("ki-verlauf");
+  await hist.locator(".slide-pick", { hasText: "Muss Herr Müller" }).click();
+  await hist.waitFor({ state: "detached" });
+  await p2.locator(".ai-card").first().waitFor();
+  check("Gespeicherte Antwort wieder angezeigt (mit Originalnamen)", (await p2.locator(".ai-card").first().innerText()).includes("Herr Müller"));
+  await p2.locator(".ai-card").first().locator(".src-chip", { hasText: "Q2" }).first().click();
+  check("Quellen der gespeicherten Antwort einsehbar", (await p2.locator(".ai-source").first().innerText()).includes("MustG"));
+  const before = requests.length;
+  script.push(() => message([{ type: "text", text: "Herr [PERSON_1] schuldet weiterhin den Musterpreis [Q2]." }], "end_turn"));
+  await p2.locator(".ai-input textarea").fill("Und wenn Herr Müller nicht zahlt?");
+  await p2.getByRole("button", { name: "Senden" }).click();
+  await p2.locator(".ai-card").nth(1).waitFor({ timeout: 30000 });
+  const cont = requests[before]?.body;
+  const contJson = JSON.stringify(cont?.messages ?? "");
+  check(
+    "Fortsetzen schickt den bisherigen Verlauf mit (anonymisiert, gleiche Platzhalter)",
+    requests.length === before + 1 && cont.messages.length > 3 && contJson.includes("Musterpreis zahlen") && contJson.includes("[PERSON_1]") && !contJson.includes("Müller"),
+    `${cont?.messages?.length} Nachrichten`,
+  );
+  check("Antwort nach dem Fortsetzen zurückübersetzt", (await p2.locator(".ai-card").nth(1).innerText()).includes("Herr Müller schuldet"));
+  let list = [];
+  for (let i = 0; i < 30; i++) {
+    list = await page.evaluate(async () => window.__STUDIUM_API__.aiChatsList());
+    if (list[0]?.title.startsWith("Muss Herr Müller")) break;
+    await sleep(150);
+  }
+  check("Fortgesetzte Unterhaltung aktualisiert statt verdoppelt", list.length === 2 && list[0].title.startsWith("Muss Herr Müller"), list.map((c) => c.title).join(" | "));
+  await p2.getByRole("button", { name: "Verlauf" }).click();
+  await hist.getByRole("button", { name: /„Fasse die Notiz.*löschen/ }).click();
+  await page.locator(".dialog", { hasText: "Unterhaltung löschen?" }).getByRole("button", { name: "Löschen" }).click();
+  await page.waitForFunction(async () => (await window.__STUDIUM_API__.aiChatsList()).length === 1, null, { timeout: 10000 }).catch(() => {});
+  check("Unterhaltung lässt sich löschen", (await page.evaluate(async () => window.__STUDIUM_API__.aiChatsList())).length === 1);
+  await hist.getByLabel("Unterhaltungen speichern").uncheck();
+  await page.keyboard.press("Escape");
+  await p2.getByRole("button", { name: "Neue Unterhaltung" }).click();
+  script.push(() => message([{ type: "text", text: "Ohne Verlauf." }], "end_turn"));
+  await p2.locator(".ai-input textarea").fill("Nicht speichern");
+  await p2.getByRole("button", { name: "Senden" }).click();
+  await p2.locator(".ai-card").first().waitFor({ timeout: 30000 });
+  await sleep(600);
+  check("Ausgeschalteter Verlauf speichert nichts", (await page.evaluate(async () => window.__STUDIUM_API__.aiChatsList())).length === 1);
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Testlauf ohne Abbruch", false, e.message);

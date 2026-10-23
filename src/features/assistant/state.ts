@@ -1,12 +1,20 @@
-/** Zustand des KI-Assistenten (nur im Arbeitsspeicher; Unterhaltungen werden nicht gespeichert). */
+/**
+ * Zustand des KI-Assistenten. Unterhaltungen werden nach jeder Antwort lokal
+ * gespeichert (Verlauf, abschaltbar unter „ai.history“) und lassen sich später
+ * fortsetzen – gesendet wird dabei nur, was auch ohne Speichern ginge.
+ */
 import { create } from "zustand";
 
 import { api } from "../../api";
-import { LegalAssistant, type AskResult, type Task } from "../../ai/assistant";
+import type { AiChatMeta } from "../../api/types";
+import { LegalAssistant, type AskResult, type AssistantSnapshot, type Task } from "../../ai/assistant";
 import { aiErrorMessage, appClient } from "../../ai/client";
 import { Anonymizer, configFromSettings } from "../../ai/privacy/anonymize";
 import { PROFILE_SETTING, profileFromSettings } from "../../ai/config";
+import { reportError } from "../../state/store";
 import { addSpend } from "./AiProfile";
+
+export const HISTORY_SETTING = "ai.history";
 
 export type Entry =
   | { role: "user"; text: string; document?: string }
@@ -19,11 +27,41 @@ interface AssistantState {
   entries: Entry[];
   busy: boolean;
   assistant: LegalAssistant | null;
+  /** gespeicherte Unterhaltung, die gerade offen ist */
+  chatId: string | null;
+  /** Stand einer geladenen Unterhaltung, bis der Assistent dafür erzeugt wird */
+  restore: AssistantSnapshot | null;
+  chats: AiChatMeta[];
   setTask(t: Task): void;
   setOwnDocs(v: boolean): void;
   reset(): void;
   ask(question: string, document?: string): Promise<void>;
+  loadChats(): Promise<void>;
+  openChat(id: string): Promise<void>;
+  deleteChat(id: string): Promise<void>;
+  clearChats(): Promise<void>;
 }
+
+const FRESH = { entries: [] as Entry[], assistant: null, chatId: null, restore: null };
+
+/** Für die Anzeige gespeichert; Quellen stehen einmal im Verlauf statt in jeder Antwort. */
+function storedEntries(entries: Entry[]) {
+  return entries.map((e) => (e.role === "assistant" ? { ...e, result: { ...e.result, sources: [] } } : e));
+}
+
+function loadedEntries(raw: unknown, snapshot: AssistantSnapshot | null): Entry[] {
+  if (!Array.isArray(raw)) return [];
+  const sources = snapshot?.sources ?? [];
+  return raw.filter((e): e is Entry => !!e && typeof e === "object" && ["user", "assistant", "error"].includes((e as Entry).role)).map((e) => (e.role === "assistant" ? { ...e, result: { ...e.result, sources } } : e));
+}
+
+const parse = (s: string): unknown => {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
+  }
+};
 
 const stripMarks = (s: string) => s.replace(/[\u0002\u0003]/g, "");
 
@@ -38,12 +76,12 @@ async function ownDocuments(query: string) {
 export const useAssistant = create<AssistantState>((set, get) => ({
   task: "recherche",
   ownDocs: false,
-  entries: [],
   busy: false,
-  assistant: null,
-  setTask: (task) => set({ task, entries: [], assistant: null }),
-  setOwnDocs: (ownDocs) => set({ ownDocs, assistant: null, entries: [] }),
-  reset: () => set({ entries: [], assistant: null }),
+  chats: [],
+  ...FRESH,
+  setTask: (task) => set({ task, ...FRESH }),
+  setOwnDocs: (ownDocs) => set({ ownDocs, ...FRESH }),
+  reset: () => set({ ...FRESH }),
   async ask(question, document) {
     if (get().busy || !question.trim()) return;
     set({ busy: true, entries: [...get().entries, { role: "user", text: question, document }] });
@@ -59,8 +97,9 @@ export const useAssistant = create<AssistantState>((set, get) => ({
           systemPrompt,
           anonymizer: new Anonymizer(configFromSettings(settings["ai.anonymize"])),
           ownDocuments: get().ownDocs ? ownDocuments : undefined,
+          restore: get().restore ?? undefined,
         });
-        set({ assistant: a });
+        set({ assistant: a, restore: null });
       }
       // Modellwahl bei jeder Frage neu lesen (kann zwischendurch geändert werden)
       a.setProfile(profileFromSettings((await api.settingsAll())[PROFILE_SETTING]));
@@ -69,8 +108,47 @@ export const useAssistant = create<AssistantState>((set, get) => ({
       set({ entries: [...get().entries, { role: "assistant", result }] });
     } catch (e) {
       set({ entries: [...get().entries, { role: "error", text: aiErrorMessage(e) }] });
-    } finally {
-      set({ busy: false });
     }
+    // Gespeichert wird, solange `busy` gilt – so ändert sich der Verlauf währenddessen nicht
+    await save().catch(reportError);
+    set({ busy: false });
+  },
+  async loadChats() {
+    set({ chats: await api.aiChatsList() });
+  },
+  async openChat(id) {
+    if (get().busy) return;
+    const chat = await api.aiChatGet(id);
+    const st = parse(chat.state) as AssistantSnapshot | null;
+    const snapshot = st && st.v === 1 && Array.isArray(st.messages) ? st : null;
+    set({ task: chat.task, ownDocs: chat.own_docs, entries: loadedEntries(parse(chat.entries), snapshot), assistant: null, chatId: chat.id, restore: snapshot });
+  },
+  async deleteChat(id) {
+    await api.aiChatDelete(id);
+    if (get().chatId === id) set({ chatId: null });
+    await get().loadChats();
+  },
+  async clearChats() {
+    await api.aiChatsClear();
+    set({ chatId: null, chats: [] });
   },
 }));
+
+/** Nach jeder Frage: Unterhaltung lokal sichern (sofern der Verlauf eingeschaltet ist). */
+async function save() {
+  const st = useAssistant.getState();
+  if (!st.entries.some((e) => e.role === "assistant")) return;
+  if ((await api.settingsAll())[HISTORY_SETTING] === false) return;
+  const snapshot = st.assistant?.snapshot() ?? st.restore;
+  if (!snapshot) return;
+  const first = st.entries.find((e) => e.role === "user");
+  const meta = await api.aiChatSave({
+    id: st.chatId,
+    title: first?.role === "user" ? first.text.slice(0, 200) : "Unterhaltung",
+    task: st.task,
+    own_docs: st.ownDocs,
+    entries: JSON.stringify(storedEntries(st.entries)),
+    state: JSON.stringify(snapshot),
+  });
+  useAssistant.setState({ chatId: meta.id });
+}

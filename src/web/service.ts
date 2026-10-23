@@ -30,6 +30,7 @@ import * as areas from "../core/repo/areas";
 import * as cards from "../core/repo/cards";
 import * as documents from "../core/repo/documents";
 import * as knowledge from "../core/repo/knowledge";
+import * as aiChats from "../core/repo/aiChats";
 import * as legal from "../core/repo/legal";
 import * as links from "../core/repo/links";
 import * as nodes from "../core/repo/nodes";
@@ -295,6 +296,11 @@ export function createService(env: Env) {
     legalSearch: async (terms: string[], kinds: Parameters<typeof legal.search>[2], limit: number) => legal.search(db(), terms, kinds ?? null, limit),
     legalNorm: async (abbreviation: string, norm: string, absatz: number | null) => legal.norm(db(), abbreviation, norm, absatz ?? null),
     legalChunks: async (ids: string[]) => legal.chunks(db(), ids),
+    aiChatsList: async () => aiChats.list(db()),
+    aiChatGet: async (id: string) => aiChats.get(db(), id),
+    aiChatSave: async (chat: Parameters<typeof aiChats.save>[1]) => aiChats.save(db(), chat),
+    aiChatDelete: async (id: string) => aiChats.remove(db(), id),
+    aiChatsClear: async () => aiChats.clear(db()),
 
     imageStore: async (data: Uint8Array) => documents.storeImage(ctx(), data),
     imageBytes: async (sha: string) => documents.imageBytes(ctx(), sha),
