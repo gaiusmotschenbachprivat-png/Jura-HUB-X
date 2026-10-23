@@ -21,7 +21,8 @@ import recherche from "../../prompts/aufgaben/recherche.md?raw";
 import schriftsatz from "../../prompts/aufgaben/schriftsatz.md?raw";
 import vertrag from "../../prompts/aufgaben/vertrag.md?raw";
 import type { LlmClient } from "./client";
-import { DISCLAIMER, EFFORT, FALLBACK_BETA, MAX_REVISIONS, MAX_TOKENS, MAX_TOOL_ROUNDS, MODEL, RETRIEVAL_LIMIT } from "./config";
+import { AI_PROFILES, type AiProfile, DISCLAIMER, MAX_REVISIONS, MAX_TOKENS, MAX_TOOL_ROUNDS, profileParams, RETRIEVAL_LIMIT } from "./config";
+import { requestCostUsd } from "./cost";
 import { Anonymizer } from "./privacy/anonymize";
 import { LegalRetriever, type Retriever } from "./retrieval";
 import { formatSources, SourceRegistry, type RegisteredSource } from "./sources/registry";
@@ -42,6 +43,9 @@ export interface AssistantOptions {
   retriever?: Retriever;
   /** Suche in eigenen Notizen/Dokumenten (nur mit Zustimmung) */
   ownDocuments?: ToolContext["ownDocuments"];
+  /** Modellwahl (Genau / Sparsam / Sehr günstig); Standard: Genau */
+  profile?: AiProfile;
+  /** nur für Tests/Evaluation: anderes Modell erzwingen */
   model?: string;
 }
 
@@ -58,7 +62,7 @@ export interface AskResult {
   toolCalls: { name: string; input: unknown }[];
   /** Was in dieser Runde an Anthropic ging (nur die Nutzernachricht, anonymisiert) */
   sentPreview: string;
-  usage: { input: number; output: number; cacheRead: number; requests: number };
+  usage: { input: number; output: number; cacheRead: number; requests: number; /** geschätzte Kosten in US-Dollar */ costUsd: number };
   /** Modell, das geantwortet hat (bei Ausweichen ggf. ein anderes) */
   model: string;
 }
@@ -78,13 +82,19 @@ export class LegalAssistant {
     this.system = (opts.systemPrompt?.trim() || DEFAULT_SYSTEM_PROMPT).trim();
   }
 
+  /** Modellwahl ändern; gilt ab der nächsten Frage (der Verlauf bleibt). */
+  setProfile(p: AiProfile) {
+    this.opts.profile = p;
+  }
+
   get history(): readonly BetaMessageParam[] {
     return this.messages;
   }
 
   private params(): MessageCreateParamsNonStreaming {
+    const p = profileParams(this.opts.profile ?? AI_PROFILES.genau);
     return {
-      model: this.opts.model ?? MODEL,
+      model: this.opts.model ?? p.model,
       max_tokens: MAX_TOKENS,
       // Stabiler Anfang (Prompt + Aufgabe + Werkzeuge) wird zwischengespeichert
       system: [
@@ -93,16 +103,15 @@ export class LegalAssistant {
       ],
       tools: this.tools.map((t) => t.definition),
       messages: this.messages,
-      output_config: { effort: EFFORT },
+      output_config: { effort: p.effort },
       // Lehnt ein Sicherheitsfilter ab, beantwortet Anthropics empfohlenes Ausweichmodell die Anfrage
-      betas: [FALLBACK_BETA],
-      fallbacks: "default",
+      ...p.extra,
     };
   }
 
   /** Stellt eine Frage (bei Vertragsprüfung: `document` = Vertragstext). */
   async ask(question: string, document?: string): Promise<AskResult> {
-    const usage = { input: 0, output: 0, cacheRead: 0, requests: 0 };
+    const usage = { input: 0, output: 0, cacheRead: 0, requests: 0, costUsd: 0 };
     const toolCalls: AskResult["toolCalls"] = [];
     const q = this.anonymizer.anonymize(question.trim());
     const doc = document?.trim() ? this.anonymizer.anonymize(document.trim()) : "";
@@ -128,6 +137,7 @@ export class LegalAssistant {
       usage.input += res.usage.input_tokens ?? 0;
       usage.output += res.usage.output_tokens ?? 0;
       usage.cacheRead += res.usage.cache_read_input_tokens ?? 0;
+      usage.costUsd += requestCostUsd(res.model, res.usage);
       // Vollständigen Inhalt anhängen (Denk- und Ausweichblöcke bleiben erhalten)
       this.messages.push({ role: "assistant", content: res.content as BetaMessageParam["content"] });
       final = res;

@@ -12,7 +12,8 @@ import studySystem from "../../prompts/lernen/system.md?raw";
 import uebungsfall from "../../prompts/lernen/uebungsfall.md?raw";
 import { textOf } from "./assistant";
 import type { LlmClient } from "./client";
-import { EFFORT, FALLBACK_BETA, MAX_TOKENS, MODEL } from "./config";
+import { AI_PROFILES, type AiProfile, MAX_TOKENS, profileParams } from "./config";
+import { requestCostUsd } from "./cost";
 import { Anonymizer } from "./privacy/anonymize";
 
 export type StudyTask = "aufbereiten" | "karteikarten" | "uebungsfall" | "korrektur";
@@ -75,31 +76,35 @@ export interface StudyResult<T> {
   sent: string;
   model: string;
   anonymized: number;
+  /** geschätzte Kosten in US-Dollar */
+  costUsd: number;
 }
 
 export interface StudyOptions {
   llm: LlmClient;
   anonymizer?: Anonymizer;
+  profile?: AiProfile;
+  /** nur für Tests: anderes Modell erzwingen */
   model?: string;
 }
 
 async function call(o: StudyOptions, task: StudyTask, user: string, schema?: Record<string, unknown>) {
+  const p = profileParams(o.profile ?? AI_PROFILES.genau);
   const params: MessageCreateParamsNonStreaming = {
-    model: o.model ?? MODEL,
+    model: o.model ?? p.model,
     max_tokens: MAX_TOKENS,
     system: [
       { type: "text", text: studySystem.trim() },
       { type: "text", text: STUDY_PROMPTS[task].trim(), cache_control: { type: "ephemeral" } },
     ],
     messages: [{ role: "user", content: user }],
-    output_config: schema ? { effort: EFFORT, format: { type: "json_schema", schema } } : { effort: EFFORT },
-    betas: [FALLBACK_BETA],
-    fallbacks: "default",
+    output_config: schema ? { effort: p.effort, format: { type: "json_schema", schema } } : { effort: p.effort },
+    ...p.extra,
   };
   const res = await o.llm.create(params);
   if (res.stop_reason === "refusal") throw new Error("Claude hat diese Anfrage abgelehnt.");
   if (res.stop_reason === "max_tokens") throw new Error("Die Antwort wurde zu lang und ist abgeschnitten. Bitte mit weniger Stoff erneut versuchen.");
-  return { text: textOf(res), model: res.model };
+  return { text: textOf(res), model: res.model, costUsd: requestCostUsd(res.model, res.usage) };
 }
 
 function material(label: string, text: string): string {
@@ -117,7 +122,7 @@ export async function prepareNotes(o: StudyOptions, title: string, text: string)
   const an = o.anonymizer ?? new Anonymizer();
   const user = `${material("mitschrift", an.anonymize(`Titel: ${title}\n\n${text}`))}`;
   const r = await call(o, "aufbereiten", user);
-  return { value: an.deanonymize(r.text), sent: user, model: r.model, anonymized: an.count };
+  return { value: an.deanonymize(r.text), sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }
 
 /** Unterlagen → Karteikarten-Vorschläge. */
@@ -133,7 +138,7 @@ export async function suggestCards(o: StudyOptions, title: string, text: string)
       front: an.deanonymize(k.vorderseite.trim()),
       back: an.deanonymize(k.rueckseite.trim()),
     }));
-  return { value: cards, sent: user, model: r.model, anonymized: an.count };
+  return { value: cards, sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }
 
 export type Difficulty = "anfaenger" | "fortgeschritten" | "examen";
@@ -150,7 +155,7 @@ export async function createCase(o: StudyOptions, title: string, text: string, d
   const r = await call(o, "uebungsfall", user, CASE_SCHEMA as unknown as Record<string, unknown>);
   const d = parseJson<Record<string, string>>(r.text);
   const v = (k: string) => an.deanonymize(String(d[k] ?? "").trim());
-  return { value: { title: v("titel"), facts: v("sachverhalt"), question: v("fallfrage"), hint: v("bearbeitungshinweis"), sketch: v("loesungsskizze") }, sent: user, model: r.model, anonymized: an.count };
+  return { value: { title: v("titel"), facts: v("sachverhalt"), question: v("fallfrage"), hint: v("bearbeitungshinweis"), sketch: v("loesungsskizze") }, sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }
 
 /** Lösung → Rückmeldung (Markdown). */
@@ -163,5 +168,5 @@ export async function reviewSolution(o: StudyOptions, c: { facts: string; questi
     material("loesung", an.anonymize(solution)),
   ].join("\n\n");
   const r = await call(o, "korrektur", user);
-  return { value: an.deanonymize(r.text), sent: user, model: r.model, anonymized: an.count };
+  return { value: an.deanonymize(r.text), sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }

@@ -4,6 +4,9 @@ import { Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { aiErrorMessage, appClient } from "../../ai/client";
+import { PROFILE_SETTING, profileFromSettings } from "../../ai/config";
+import { formatCost } from "../../ai/cost";
+import { addSpend, ProfileSelect } from "./AiProfile";
 import { Anonymizer, configFromSettings } from "../../ai/privacy/anonymize";
 import { createCase, prepareNotes, reviewSolution, suggestCards, type CardSuggestion, type Difficulty, type TrainingCase } from "../../ai/study";
 import { api } from "../../api";
@@ -66,6 +69,7 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
   const [cards, setCards] = useState<(CardSuggestion & { on: boolean })[] | null>(null);
   const [difficulty, setDifficulty] = useState<Difficulty>("anfaenger");
   const [sent, setSent] = useState<string | null>(null);
+  const [cost, setCost] = useState<number | null>(null);
   const [showSketch, setShowSketch] = useState(false);
   const training = (node.meta?.training ?? null) as { facts: string; question: string; sketch: string } | null;
 
@@ -78,17 +82,24 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
     setError(null);
     try {
       const s = await api.settingsAll();
-      const o = { llm: await appClient(api), anonymizer: new Anonymizer(configFromSettings(s["ai.anonymize"])) };
+      const o = { llm: await appClient(api), anonymizer: new Anonymizer(configFromSettings(s["ai.anonymize"])), profile: profileFromSettings(s[PROFILE_SETTING]) };
+      const spend = (usd: number) => {
+        setCost(usd);
+        void addSpend(usd);
+      };
       if (mode === "aufbereiten") {
         const r = await prepareNotes(o, node.title, text);
+        spend(r.costUsd);
         setMd(r.value);
         setSent(r.sent);
       } else if (mode === "karteikarten") {
         const r = await suggestCards(o, node.title, text);
+        spend(r.costUsd);
         setCards(r.value.map((c) => ({ ...c, on: true })));
         setSent(r.sent);
       } else if (mode === "uebungsfall") {
         const r = await createCase(o, node.title, text, difficulty);
+        spend(r.costUsd);
         const n = await createNode({
           areaId: node.area_id,
           parentId: node.parent_id,
@@ -101,6 +112,7 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
         onClose();
       } else if (training) {
         const r = await reviewSolution(o, training, solutionText(text));
+        spend(r.costUsd);
         setMd(r.value);
         setSent(r.sent);
       }
@@ -128,7 +140,10 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
 
   const footer = (
     <>
-      <span className="grow xs muted">{sent ? "Anonymisiert an Anthropic gesendet. Ergebnis ungeprüft – bitte kontrollieren." : ""}</span>
+      <span className="grow xs muted">
+        {sent ? `Anonymisiert an Anthropic gesendet${cost != null ? ` · Kosten ${formatCost(cost)}` : ""}. Ergebnis ungeprüft – bitte kontrollieren.` : ""}
+      </span>
+      {ready && !md && !cards && <ProfileSelect disabled={busy} />}
       <Button onClick={onClose}>Schließen</Button>
       {ready && !md && !cards && (
         <Button variant="primary" icon={<Sparkles size={15} />} disabled={busy || tooShort || (mode === "korrektur" && !training)} onClick={() => void run()}>

@@ -84,6 +84,25 @@ Rechtsquellen und Einstellungen.
 6. **„Als Notiz speichern“** legt die Antwort als Notiz an (als „ungeprüft“ gekennzeichnet).
    Unterhaltungen selbst werden nicht gespeichert.
 
+### Modell und Kosten
+
+Die API wird nach Verbrauch abgerechnet (Guthaben in der Anthropic-Konsole). Über **„Modell“**
+im Assistenten und in den KI-Lernhilfen (oder Einstellungen → „Modell und Kosten“) wählst du:
+
+| Wahl | Modell | Preis je Mio. Tokens (ein/aus) | Frage an den Assistenten (Beispiel) |
+|---|---|---|---|
+| **Genau** (Standard) | Claude Opus 5.5, Denktiefe hoch | 4 $ / 20 $ | ca. 9 Cent |
+| **Sparsam** | Claude Sonnet 5.5, Denktiefe mittel | 2 $ / 10 $ | ca. 4 Cent |
+| **Sehr günstig** | Claude Haiku 5.5, Denktiefe mittel | 0,10 $ / 0,50 $ | ca. 0,2 Cent |
+
+Beispiel: 12 000 Tokens hinein (Frage, Quellen, Anweisungen), 2 500 heraus. Unter jeder
+Antwort steht das Modell und die geschätzte Kosten; die Einstellungen zeigen den geschätzten
+Gesamtverbrauch dieses Geräts (zurücksetzbar). Genau abgerechnet wird in der Konsole unter
+„Usage“. „Sehr günstig“ hat kein serverseitiges Ausweichmodell, falls ein Sicherheitsfilter
+ablehnt, und ist bei kniffligen Fällen schwächer – für Karteikarten-Vorschläge reicht es meist.
+Tipp: Automatisches Aufladen in der Konsole ausgeschaltet lassen, dann kann nie mehr als das
+aufgeladene Guthaben verbraucht werden.
+
 ### KI-Lernhilfen in jeder Notiz
 
 Das Hut-Symbol neben dem Notiztitel („KI-Lernhilfen“) bietet:

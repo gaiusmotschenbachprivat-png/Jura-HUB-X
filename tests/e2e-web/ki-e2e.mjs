@@ -95,7 +95,9 @@ await page.route("https://api.anthropic.com/**", async (route) => {
   requests.push({ url: req.url(), headers: req.headers(), body: req.postDataJSON() });
   const next = script.shift();
   if (!next) return route.fulfill({ status: 500, headers: cors, body: "{}" });
-  return route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(next()) });
+  // Antwort trägt das angefragte Modell (wie die echte API)
+  const reply = { ...next(), model: req.postDataJSON()?.model ?? "claude-opus-5-5" };
+  return route.fulfill({ status: 200, headers: { ...cors, "content-type": "application/json" }, body: JSON.stringify(reply) });
 });
 // Kein anderer Netzverkehr außer der App selbst
 const foreign = [];
@@ -189,8 +191,39 @@ try {
   const ctxBody = JSON.stringify(requests[3]?.body.messages ?? "");
   check("Notiztext wird (anonymisiert) mitgeschickt", ctxBody.includes("Aktuelle Notiz") && ctxBody.includes("Musterpreis") && !ctxBody.includes("Müller"));
   check("Antwort in der Seitenleiste mit Originalnamen", (await panel.locator(".ai-card").innerText()).includes("Herrn Müller"));
+  check("Kosten der Antwort angezeigt", /Opus 5\.5 · ca\. [\d,]+ Cent/.test(await panel.locator(".ai-cost").last().innerText()), await panel.locator(".ai-cost").last().innerText());
   await shot("ki-seitenleiste");
-  await panel.getByRole("button", { name: "Schließen" }).click();
+
+  // 6b. Modellwahl: Sparsam (Sonnet) und Sehr günstig (Haiku, ohne Ausweichmodell)
+  const askPanel = async (q) => {
+    const n = await panel.locator(".ai-card").count();
+    await panel.locator(".ai-input textarea").fill(q);
+    await panel.getByRole("button", { name: "Senden" }).click();
+    await panel.locator(".ai-card").nth(n).waitFor({ timeout: 30000 });
+  };
+  await panel.getByLabel("KI-Modell").selectOption("sparsam");
+  script.push(() => message([{ type: "text", text: "Kurz: Es besteht eine Zahlungspflicht." }], "end_turn"));
+  await askPanel("Und in einem Satz?");
+  const son = requests.at(-1)?.body;
+  check("„Sparsam“: Claude Sonnet 5.5, mittlere Denktiefe, mit Ausweichmodell", son?.model === "claude-sonnet-5-5" && son?.output_config?.effort === "medium" && son?.fallbacks === "default", JSON.stringify({ m: son?.model, e: son?.output_config }));
+  await panel.getByLabel("KI-Modell").selectOption("guenstig");
+  script.push(() => message([{ type: "text", text: "Ja, Zahlungspflicht." }], "end_turn"));
+  await askPanel("Ganz kurz?");
+  const hai = requests.at(-1);
+  check("„Sehr günstig“: Claude Haiku 5.5 ohne Ausweichmodell", hai?.body.model === "claude-haiku-5-5" && !("fallbacks" in hai.body) && !String(hai.headers["anthropic-beta"] ?? "").includes("server-side-fallback"), JSON.stringify(hai?.body.model));
+  check("Kostenanzeige nennt das Modell", (await panel.locator(".ai-cost").last().innerText()).startsWith("Haiku 5.5"));
+  const spent = await page.evaluate(async () => (await window.__STUDIUM_API__.settingsAll())["ai.spent"]);
+  check("Verbrauch wird mitgezählt", spent?.requests >= 5 && spent?.usd > 0, JSON.stringify(spent));
+  await panel.getByLabel("KI-Modell").selectOption("genau");
+  await panel.getByRole("button", { name: "Vollansicht" }).click();
+  await page.getByRole("tab", { name: /Einstellungen/ }).click();
+  const mc = page.locator(".card", { hasText: "Modell und Kosten" });
+  await mc.waitFor();
+  const mcText = await mc.innerText();
+  check("Einstellungen: drei Modelle mit Preisbeispiel und Verbrauch", (mcText.match(/mit 5 € etwa [\d.]+ Fragen/g) ?? []).length === 3 && mcText.includes("Bisher verbraucht"), mcText.slice(0, 300));
+  await shot("ki-kosten");
+  await page.getByRole("tab", { name: /Fragen/ }).click();
+  if (await panel.isVisible()) await panel.getByRole("button", { name: "Schließen" }).click();
 
   // 7. Neustart: PIN statt Schlüssel
   await page.reload();

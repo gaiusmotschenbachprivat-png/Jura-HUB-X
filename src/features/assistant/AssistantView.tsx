@@ -6,7 +6,9 @@ import type { AiStatus, LegalKind, LegalSource } from "../../api/types";
 import { DEFAULT_SYSTEM_PROMPT, type Task } from "../../ai/assistant";
 import { configFromSettings, DEFAULT_CONFIG, type AnonymizeConfig, type Category } from "../../ai/privacy/anonymize";
 import { COMMON_LAWS, importFile, importLaw, readText } from "../../ai/sources/importer";
-import { formatDateTime } from "../../lib/format";
+import { formatDate, formatDateTime } from "../../lib/format";
+import { AI_PROFILES } from "../../ai/config";
+import { formatCost, requestCostUsd, requestsFor, SPENT_SETTING } from "../../ai/cost";
 import { markdownToHtml } from "../../lib/docxImport";
 import { reportError, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
@@ -16,6 +18,7 @@ import { createNode } from "../navigation/actions";
 import { isVault, MIN_PIN, openKey, sealKey, type KeyVault } from "../../ai/keyVault";
 import { AnswerCard } from "./Answer";
 import { useAssistant } from "./state";
+import { ProfileSelect, useAiProfile } from "./AiProfile";
 
 type Tab = "fragen" | "quellen" | "einstellungen";
 
@@ -213,6 +216,7 @@ export function Chat({ available, compact, context }: { available: boolean; comp
           </label>
         )}
         <span className="grow" />
+        <ProfileSelect disabled={busy} />
         {!compact && (
           <Button size="sm" variant="ghost" icon={<RotateCcw size={13} />} onClick={reset} disabled={busy || !entries.length}>
             Neue Unterhaltung
@@ -494,6 +498,7 @@ function AiSettings({ onRevoke }: { onRevoke: () => void }) {
   };
   return (
     <div className="stack settings-section">
+      <ModelAndCost />
       <section className="card">
         <h3>
           <ShieldCheck size={16} /> Anonymisierung vor dem Senden
@@ -654,6 +659,57 @@ function WebKeySetup({ onChange }: { onChange: () => void }) {
           </Button>
         </div>
       </form>
+    </section>
+  );
+}
+
+/** Modellwahl mit Preisbeispielen und geschätztem Verbrauch. */
+function ModelAndCost() {
+  const { profile, change, spent } = useAiProfile();
+  const toast = useApp((s) => s.toast);
+  // Beispiel: Frage an den Assistenten mit Quellen ≈ 12 000 Tokens hinein, 2 500 heraus (inkl. Denken)
+  const example = (model: string, effortFactor: number) => requestCostUsd(model, { input_tokens: 12_000, output_tokens: Math.round(2_500 * effortFactor) });
+  return (
+    <section className="card">
+      <h3>Modell und Kosten</h3>
+      <div className="ai-profiles" role="radiogroup" aria-label="KI-Modell">
+        {Object.values(AI_PROFILES).map((p) => {
+          const per = example(p.model, p.effort === "high" ? 1 : 0.7);
+          return (
+            <label key={p.id} className={`ai-profile-card ${profile.id === p.id ? "is-active" : ""}`}>
+              <input type="radio" name="ai-profile" checked={profile.id === p.id} onChange={() => void change(p.id)} />
+              <span className="grow stack-tight">
+                <strong>{p.label}</strong>
+                <span className="xs muted">{p.hint}</span>
+                <span className="xs">
+                  Frage an den Assistenten: {formatCost(per)} · mit 5 € etwa {requestsFor(5, per).toLocaleString("de-DE")} Fragen
+                </span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      <p className="xs muted">Schätzung aus den Token-Zahlen jeder Antwort (Preise der Anthropic-Preisliste, 1 $ ≈ 0,90 €). Lange Texte und ausführliche Antworten kosten mehr. Genau abgerechnet wird in der Anthropic-Konsole unter „Usage“.</p>
+      {spent && (
+        <div className="row wrap small">
+          <span>
+            Bisher verbraucht (geschätzt, dieses Gerät): <strong>{formatCost(spent.usd)}</strong> · {spent.requests} Anfragen seit {formatDate(spent.since)}
+          </span>
+          <span className="grow" />
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={async () => {
+              await api.settingSet(SPENT_SETTING, { usd: 0, requests: 0, since: new Date().toISOString() }).catch(reportError);
+              useApp.getState().bump();
+              toast("Zähler zurückgesetzt.", "success");
+            }}
+          >
+            Zähler zurücksetzen
+          </Button>
+        </div>
+      )}
+      <p className="xs muted">Tipp: In der Anthropic-Konsole das automatische Aufladen ausgeschaltet lassen – dann kann nie mehr als das aufgeladene Guthaben verbraucht werden.</p>
     </section>
   );
 }

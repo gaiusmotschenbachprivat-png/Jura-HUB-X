@@ -21,7 +21,7 @@ function result(text: string, report: Partial<VerifyReport> = {}, tools: string[
     stopReason: "end_turn",
     toolCalls: tools.map((name) => ({ name, input: {} })),
     sentPreview: "",
-    usage: { input: 1000, output: 500, cacheRead: 0, requests: 1 },
+    usage: { input: 1000, output: 500, cacheRead: 0, requests: 1, costUsd: 0.014 },
     model: "claude-opus-5-5",
   };
 }

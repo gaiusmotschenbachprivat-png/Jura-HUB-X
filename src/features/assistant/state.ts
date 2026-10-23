@@ -5,6 +5,8 @@ import { api } from "../../api";
 import { LegalAssistant, type AskResult, type Task } from "../../ai/assistant";
 import { aiErrorMessage, appClient } from "../../ai/client";
 import { Anonymizer, configFromSettings } from "../../ai/privacy/anonymize";
+import { PROFILE_SETTING, profileFromSettings } from "../../ai/config";
+import { addSpend } from "./AiProfile";
 
 export type Entry =
   | { role: "user"; text: string; document?: string }
@@ -60,7 +62,10 @@ export const useAssistant = create<AssistantState>((set, get) => ({
         });
         set({ assistant: a });
       }
+      // Modellwahl bei jeder Frage neu lesen (kann zwischendurch geändert werden)
+      a.setProfile(profileFromSettings((await api.settingsAll())[PROFILE_SETTING]));
       const result = await a.ask(question, document);
+      void addSpend(result.usage.costUsd, result.usage.requests);
       set({ entries: [...get().entries, { role: "assistant", result }] });
     } catch (e) {
       set({ entries: [...get().entries, { role: "error", text: aiErrorMessage(e) }] });

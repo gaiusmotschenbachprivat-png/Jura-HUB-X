@@ -7,6 +7,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, Copy, FileDown, Info } from "
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 
 import type { AskResult } from "../../ai/assistant";
+import { formatCost } from "../../ai/cost";
 import { hitLabel } from "../../ai/retrieval";
 import type { RegisteredSource } from "../../ai/sources/registry";
 import type { CitationCheck } from "../../ai/verify";
@@ -52,6 +53,9 @@ function Inline({ text, bad, onSource }: { text: string; bad: CitationCheck[]; o
     </>
   );
 }
+
+const MODEL_LABEL: Record<string, string> = { "claude-opus-5-5": "Opus 5.5", "claude-sonnet-5-5": "Sonnet 5.5", "claude-haiku-5-5": "Haiku 5.5" };
+const modelLabel = (m: string) => MODEL_LABEL[m] ?? m;
 
 export function Markdown({ text, bad = [], onSource }: { text: string; bad?: CitationCheck[]; onSource: (id: string) => void }) {
   const blocks: ReactNode[] = [];
@@ -186,10 +190,11 @@ export function AnswerCard({ result, onSaveNote }: { result: AskResult; onSaveNo
           Kopieren
         </Button>
         <span className="grow" />
-        <span className="xs muted" title="Tokens: Eingabe / Ausgabe / aus Zwischenspeicher">
-          {result.model} · {result.usage.requests} Anfragen · {result.usage.input.toLocaleString("de-DE")} / {result.usage.output.toLocaleString("de-DE")}{" "}
-          Tokens
-          {result.usage.cacheRead ? ` · ${result.usage.cacheRead.toLocaleString("de-DE")} aus Cache` : ""}
+        <span
+          className="xs muted ai-cost"
+          title={`${result.usage.requests} Anfrage(n) · Tokens: ${result.usage.input.toLocaleString("de-DE")} Eingabe / ${result.usage.output.toLocaleString("de-DE")} Ausgabe${result.usage.cacheRead ? ` / ${result.usage.cacheRead.toLocaleString("de-DE")} aus Zwischenspeicher` : ""}. Geschätzt; genau abgerechnet wird in der Anthropic-Konsole.`}
+        >
+          {modelLabel(result.model)} · {formatCost(result.usage.costUsd)}
         </span>
       </div>
       <ChevronDown size={0} />

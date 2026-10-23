@@ -248,3 +248,11 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .quiz-result.stack { align-items: flex-start; }
 .schema-train-hint { margin-top: 24px; }
 .quiz .schema-num { min-width: 2.4em; }
+
+/* Modellwahl und Kosten */
+.ai-profile select { min-height: 30px; padding: 2px 6px; }
+.ai-profiles { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.ai-profile-card { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-md); cursor: pointer; }
+.ai-profile-card.is-active { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.ai-profile-card input { margin-top: 3px; }
+.ai-cost { white-space: nowrap; }
