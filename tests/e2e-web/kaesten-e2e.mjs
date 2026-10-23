@@ -80,17 +80,18 @@ try {
   const dlg = page.getByRole("dialog", { name: /Überschrift für/ });
   await dlg.getByRole("textbox").fill("§ 433 BGB");
   await dlg.getByRole("button", { name: "Übernehmen" }).click();
+  await dlg.waitFor({ state: "detached" });
+  check("Nach dem Dialog steht die Schreibmarke im Kasten", await page.evaluate(() => !!document.activeElement?.closest(".ProseMirror") && !!window.getSelection()?.anchorNode?.parentElement?.closest(".callout")));
   check("Beschriftung mit Überschrift", (await box.locator(".callout-label").innerText()).toLowerCase() === "gesetzestext · § 433 bgb");
 
   // 3. Im Kasten weiterschreiben, mit Enter auf leerer Zeile heraus
-  await box.locator("p").last().click();
-  await page.keyboard.press("End");
+  // Schreibmarke steht nach dem Dialog bereits am Ende des Kastens
   await page.keyboard.press("Enter");
   await page.keyboard.type("(2) Der Käufer ist verpflichtet, den Kaufpreis zu zahlen.");
   await page.keyboard.press("Enter");
   await page.keyboard.press("Enter");
   await page.keyboard.type("Danach normal weiter.");
-  check("Zweiter Absatz im Kasten", (await box.locator("p").count()) === 2);
+  check("Zweiter Absatz im Kasten", (await box.locator("p").count()) === 2, JSON.stringify(await page.locator(".ProseMirror").innerText()));
   check("Enter auf leerer Zeile verlässt den Kasten", !(await box.innerText()).includes("Danach normal weiter") && (await page.locator(".ProseMirror > p", { hasText: "Danach normal weiter" }).count()) === 1);
 
   // 4. Weitere Arten: Beispiel

@@ -563,6 +563,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
                   tr.setNodeMarkup(calloutTitle.pos, undefined, { ...node.attrs, title: title.trim().slice(0, 120) });
                   return true;
                 })
+                // Schreibmarke ans Ende des Kastens, damit direkt weitergeschrieben werden kann
+                .focus(calloutTitle.pos + (node?.nodeSize ?? 2) - 2)
                 .run();
             setCalloutTitle(null);
           }}
