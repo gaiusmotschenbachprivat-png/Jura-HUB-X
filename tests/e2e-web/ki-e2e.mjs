@@ -22,6 +22,7 @@ const results = [];
 const check = (name, ok, extra = "") => {
   results.push({ name, ok });
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}${extra ? "  – " + extra : ""}`);
+  if (!ok && process.env.GITHUB_ACTIONS) console.log(`::error::${name} – ${String(extra).replace(/\n/g, " ").slice(0, 600)}`);
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -212,7 +213,13 @@ try {
   const hai = requests.at(-1);
   check("„Sehr günstig“: Claude Haiku 5.5 ohne Ausweichmodell", hai?.body.model === "claude-haiku-5-5" && !("fallbacks" in hai.body) && !String(hai.headers["anthropic-beta"] ?? "").includes("server-side-fallback"), JSON.stringify(hai?.body.model));
   check("Kostenanzeige nennt das Modell", (await panel.locator(".ai-cost").last().innerText()).startsWith("Haiku 5.5"));
-  const spent = await page.evaluate(async () => (await window.__STUDIUM_API__.settingsAll())["ai.spent"]);
+  // Der Zähler wird nach der Antwort im Hintergrund gespeichert – kurz darauf warten
+  let spent = null;
+  for (let i = 0; i < 40; i++) {
+    spent = await page.evaluate(async () => (await window.__STUDIUM_API__.settingsAll())["ai.spent"]);
+    if (spent?.requests >= 5) break;
+    await sleep(150);
+  }
   check("Verbrauch wird mitgezählt", spent?.requests >= 5 && spent?.usd > 0, JSON.stringify(spent));
   await panel.getByLabel("KI-Modell").selectOption("genau");
   await panel.getByRole("button", { name: "Vollansicht" }).click();
