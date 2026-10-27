@@ -284,17 +284,19 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     const onSlide = (e: Event) => {
       const d = (e as CustomEvent<InsertSlideDetail>).detail;
       if (compact || d.noteId !== note.node_id || !editor.view.dom.isConnected) return;
-      const href = `studium:document/${d.documentId}#page=${d.page}`;
+      // page 0: Bild-Folie (ganze Datei statt einer PDF-Seite)
+      const href = d.page ? `studium:document/${d.documentId}#page=${d.page}` : `studium:document/${d.documentId}`;
+      const label = d.page ? `Folie ${d.page} · ${d.title}` : d.title;
       editor
         .chain()
         .focus()
         .insertContent([
-          { type: "image", attrs: { src: d.src, alt: `Folie ${d.page} – ${d.title}` } },
-          { type: "paragraph", content: [{ type: "text", text: `Folie ${d.page} · ${d.title}`, marks: [{ type: "link", attrs: { href } }, { type: "italic" }] }] },
+          { type: "image", attrs: { src: d.src, alt: d.page ? `Folie ${d.page} – ${d.title}` : d.title } },
+          { type: "paragraph", content: [{ type: "text", text: label, marks: [{ type: "link", attrs: { href } }, { type: "italic" }] }] },
           { type: "paragraph" },
         ])
         .run();
-      useApp.getState().toast(`Folie ${d.page} übernommen.`, "success");
+      useApp.getState().toast(d.page ? `Folie ${d.page} übernommen.` : "Folie übernommen.", "success");
     };
     window.addEventListener(INSERT_SLIDE_EVENT, onSlide);
     window.addEventListener(MATH_EDIT_EVENT, onMath);
@@ -708,7 +710,28 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       {study && treeNode && (
         <StudyDialog mode={study} node={treeNode} text={plainText(editor.getJSON() as PMNode)} editor={editor} onClose={() => setStudy(null)} />
       )}
-      {normPop && <NormPopover refInfo={normPop.ref} anchor={normPop.rect} onClose={() => setNormPop(null)} />}
+      {normPop && (
+        <NormPopover
+          refInfo={normPop.ref}
+          anchor={normPop.rect}
+          onClose={() => setNormPop(null)}
+          onInsert={
+            editor?.isEditable
+              ? (t) => {
+                  // als Gesetzestext-Kasten hinter den Absatz mit dem Zitat
+                  const { $from } = editor.state.selection;
+                  const pos = $from.depth >= 1 ? $from.after(1) : editor.state.doc.content.size;
+                  const paras = [...t.paragraphs, ...(t.source ? [`(${t.source})`] : [])].map((x) => ({ type: "paragraph", content: [{ type: "text", text: x }] }));
+                  editor
+                    .chain()
+                    .focus()
+                    .insertContentAt(pos, { type: "callout", attrs: { kind: "gesetz", title: t.title }, content: paras })
+                    .run();
+                }
+              : undefined
+          }
+        />
+      )}
       {bibOpen && <BibliographyDialog editor={editor} onClose={() => setBibOpen(false)} />}
       {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} />}
       {printDoc && <PrintView doc={printDoc} title={title} onClose={() => setPrintDoc(null)} />}

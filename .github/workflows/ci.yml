@@ -77,6 +77,8 @@ jobs:
         run: node tests/e2e-web/gliederung-e2e.mjs
       - name: Farbige Kästen im Skript
         run: node tests/e2e-web/kaesten-e2e.mjs
+      - name: Bilder als Folien, Gesetz ergänzen, Wortlaut kopieren
+        run: node tests/e2e-web/bildfolien-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

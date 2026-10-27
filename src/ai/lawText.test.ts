@@ -63,7 +63,7 @@ describe("Gesetz als PDF/Text", () => {
     expect(law.source.version).toContain("zuletzt geändert durch Art. 1 G v. 20.3.2026");
   });
   it("Normen ab dem Gesetzestext, Inhaltsübersicht übersprungen", () => {
-    expect([...new Set(law.chunks.map((c) => c.norm))]).toEqual(["§ 1", "§ 2", "§ 6", "§ 220", "§ 242", "§ 243"]);
+    expect([...new Set(law.chunks.map((c) => c.norm))]).toEqual(["§ 1", "§ 2", "§ 6", "§ 7", "§ 8", "§ 9", "§ 220", "§ 242", "§ 243"]);
     expect(by("§ 220")[0]!.text).toBe("(weggefallen)");
     expect(by("§ 1")).toHaveLength(1);
   });
@@ -85,7 +85,8 @@ describe("Gesetz als PDF/Text", () => {
   });
   it("umbrochene Verweise und „§§ … (weggefallen)“ sind keine neuen Normen", () => {
     expect(by("§ 6")[0]!.text).toContain("§ 309 Abs. 2 und des § 310;");
-    expect(law.chunks.filter((c) => c.text.includes("weggefallen")).map((c) => c.norm)).toEqual(["§ 220"]);
+    // „§§ 7 bis 9 (weggefallen)“ ergibt je Nummer einen Eintrag „(weggefallen)“
+    expect(law.chunks.filter((c) => c.text.includes("weggefallen")).map((c) => c.norm)).toEqual(["§ 7", "§ 8", "§ 9", "§ 220"]);
   });
   it("Erkennung „sieht aus wie ein Gesetz“", () => {
     expect(looksLikeLaw(STGB.replace(/§ /g, "§ ").repeat(2))).toBe(true);
@@ -196,5 +197,47 @@ Eigentum an der Sache zu verschaffen.
     expect(h("§ 105").map((c) => c.absatz)).toEqual([1, 2]);
     expect(h("§ 433")[1]!.text).toMatch(/^\(2\) Der Käufer ist verpflichtet/);
     expect(h("§ 433")[0]!.heading).toBe("Vertragstypische Pflichten beim Kaufvertrag – Untertitel 1 Allgemeine Vorschriften");
+  });
+
+  it("BGB-Form: Inhaltsübersicht ohne Paragraphen, Sammelzeilen im Kopf, Fußnoten", () => {
+    const bgb = `Bürgerliches Gesetzbuch (BGB)
+BGB
+Stand: Neugefasst durch Bek. v. 2.1.2002 I 42, 2909; 2003, 738;
+(+++ Zur Anwendung d.
+§§ 558 bis 559d, 561, 568 Abs. 1, 569 Abs. 3 bis 5,
+§§ 573 bis 573d, 575, 575a Abs. 1, 3, 4, §§ 577, 577a
+vgl. Art. 229 § 3 BGBEG +++)
+Inhaltsübersicht
+B u c h 1
+A l l g e m e i n e r T e i l
+Abschnitt 1
+Personen
+Fußnote
+(+++ Amtliche Inhaltsübersicht ohne Paragraphenangaben seit dem 1.1.2010 +++)
+Buch 1
+Allgemeiner Teil
+Abschnitt 1
+Personen
+§ 1 Beginn der Rechtsfähigkeit
+Die Rechtsfähigkeit des Menschen beginnt mit der Vollendung der Geburt.
+§ 2 Eintritt der Volljährigkeit
+Die Volljährigkeit tritt mit der Vollendung des 18. Lebensjahres ein.
+§§ 3 bis 6 (weggefallen)
+§ 7 Wohnsitz; Begründung und Aufhebung
+(1) Wer sich an einem Orte ständig niederlässt, begründet an diesem Orte seinen Wohnsitz.
+(2) Der Wohnsitz kann gleichzeitig an mehreren Orten bestehen.
+Fußnote
+§ 7 Satz 1 Kursivdruck: Hinweis der Dokumentation.
+(+++ § 7: Zur Anwendung vgl. § 31 Abs. 5 KVBG +++)
+§ 8 Wohnsitz nicht voll Geschäftsfähiger
+Wer geschäftsunfähig ist, kann ohne den Willen seines gesetzlichen Vertreters einen Wohnsitz weder begründen noch aufheben.`;
+    const l = parseLawText(bgb, { origin: "BGB.pdf" });
+    expect([...new Set(l.chunks.map((c) => c.norm))]).toEqual(["§ 1", "§ 2", "§ 3", "§ 4", "§ 5", "§ 6", "§ 7", "§ 8"]);
+    expect(l.chunks.find((c) => c.norm === "§ 1")!.heading).toBe("Beginn der Rechtsfähigkeit – Abschnitt 1 Personen");
+    expect(l.chunks.find((c) => c.norm === "§ 4")!.text).toBe("(weggefallen)");
+    expect(l.chunks.filter((c) => c.norm === "§ 7").map((c) => c.text)).toEqual([
+      "(1) Wer sich an einem Orte ständig niederlässt, begründet an diesem Orte seinen Wohnsitz.",
+      "(2) Der Wohnsitz kann gleichzeitig an mehreren Orten bestehen.",
+    ]);
   });
 });

@@ -285,3 +285,5 @@
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .callout { background: color-mix(in srgb, var(--c) 16%, var(--bg, #1b1f27)); } }
 :root[data-theme="dark"] .callout { background: color-mix(in srgb, var(--c) 16%, var(--bg, #1b1f27)); }
+.norm-pop-text { -webkit-user-select: text; user-select: text; }
+.norm-pop-actions { gap: 6px; margin-top: 4px; }

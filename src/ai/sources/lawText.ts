@@ -95,16 +95,24 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
   const title = opts.title?.trim() || head.title || opts.origin.replace(/\.[^.]+$/, "");
   const abbreviation = (opts.abbreviation?.trim() || head.abbreviation).slice(0, 40);
 
-  // Normüberschriften finden; Inhaltsübersicht = erster Durchlauf, Normtext beginnt beim zweiten Auftreten der ersten Norm
-  const heads: { i: number; label: string }[] = [];
+  // Normüberschriften finden (ohne „§§ …“-Sammelzeilen, die stehen auch in Fußnoten des Kopfs)
+  const heads: { i: number; label: string; n: number }[] = [];
   lines.forEach((l, i) => {
     const m = NORM_LINE.exec(l);
-    if (m) heads.push({ i, label: `${m[1]!.startsWith("§") ? "§" : "Art."} ${m[2]}${m[3]}` });
+    if (m && m[1] !== "§§") heads.push({ i, label: `${m[1]!.startsWith("§") ? "§" : "Art."} ${m[2]}${m[3]}`, n: Number(m[2]) });
   });
   if (!heads.length) throw new Error("In der Datei wurden keine Paragraphen (§ …) oder Artikel gefunden.");
-  const first = heads[0]!.label;
-  const again = heads.findIndex((h, k) => k > 0 && h.label === first);
-  let bodyStart = again > 0 ? heads[again]!.i : heads[0]!.i;
+  // Inhaltsübersicht mit Normen (StGB): erster Durchlauf, dicht an dicht; der Normtext beginnt beim zweiten
+  // Auftreten der ersten Norm. Ohne solche Übersicht (BGB: nur Bücher/Titel) beginnt er bei der kleinsten Nummer.
+  const start = heads.findIndex((h) => h.n === Math.min(...heads.slice(0, 50).map((x) => x.n)));
+  const first = heads[start]!.label;
+  let again = heads.findIndex((h, k) => k > start && h.label === first);
+  if (again > 0) {
+    const tocHeads = heads.slice(start, again);
+    const span = heads[again - 1]!.i - heads[start]!.i;
+    if (tocHeads.length < 3 || span / tocHeads.length > 4) again = -1;
+  }
+  let bodyStart = again > 0 ? heads[again]!.i : heads[start]!.i;
   // Gliederungsüberschriften direkt vor der ersten Norm gehören schon zum Gesetzestext („Buch 1 / Allgemeiner Teil / …“)
   const isStructure = (l: string | undefined) => !!l && (STRUCTURE.test(unspace(l)) || STRUCTURE_NAMED.test(l));
   const isName = (l: string | undefined) => !!l && l.length <= 90 && !/[.;:,]$/.test(l) && !NORM_LINE.test(l);
@@ -116,7 +124,7 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
   // Inhaltsübersicht (falls vorhanden): welche Normen mit welchem Titel es gibt
   const toc = new Map<string, string>();
   if (again > 0)
-    for (const h of heads.slice(0, again)) {
+    for (const h of heads.slice(start, again)) {
       const m = NORM_LINE.exec(lines[h.i]!);
       if (m) toc.set(h.label, m[4]!.trim().toLowerCase());
     }
@@ -131,6 +139,9 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
   let cur: { norm: string; title: string; gliederung: string; lines: string[] } | null = null;
   let last: NormKey | null = null;
   let pendingStructure = false;
+  // amtliche Fußnoten („Fußnote“ bis zur nächsten Norm) und Hinweise „(+++ … +++)“ gehören nicht zum Normtext
+  let inFootnote = false;
+  let inMarker = false;
 
   const flush = () => {
     if (!cur) return;
@@ -155,7 +166,19 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
     const line = unspace(raw);
     // „§§ 116 bis 119 (weggefallen)“: aufgehobene Normen, kein Normtext
     if (/^(§§?|Art\.?|Artikel)\s*\d+[a-z]{0,2}(\s+(bis|und)\s+\d+[a-z]{0,2})?\s*\(weggefallen\)$/.test(line)) {
-      if (!/^§§/.test(line)) {
+      const range = /^(§§|Artt?\.?|Artikel)\s*(\d+)([a-z]{0,2})\s+(bis|und)\s+(\d+)([a-z]{0,2})/.exec(line);
+      if (range) {
+        // Sammelzeile beendet die vorige Norm; ohne Buchstaben jede Nummer als „(weggefallen)“ eintragen
+        const from = keyOf(range[2]!, range[3]!);
+        const to = keyOf(range[5]!, range[6]!);
+        if (after(from, last) && !after(from, to) && to.n - from.n <= 100) {
+          flush();
+          const sign = range[1]!.startsWith("§") ? "§" : "Art.";
+          const nums = range[4] === "bis" && !from.s && !to.s ? Array.from({ length: to.n - from.n + 1 }, (_, k) => String(from.n + k)) : [`${from.n}${from.s}`, `${to.n}${to.s}`];
+          for (const num of nums) chunks.push({ norm: `${sign} ${num}`, absatz: null, heading: gliederung, text: "(weggefallen)" });
+          last = to;
+        }
+      } else {
         const w = NORM_LINE.exec(line);
         if (w && after(keyOf(w[2]!, w[3]!), last)) {
           flush();
@@ -179,6 +202,7 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
         last = k;
         const isPara = m[1]!.startsWith("§");
         cur = { norm: `${isPara ? "§" : "Art."} ${m[2]}${m[3]}`, title: m[4]!.trim(), gliederung, lines: [] };
+        inFootnote = false;
         pendingStructure = false;
         continue;
       }
@@ -201,6 +225,15 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
     }
     pendingStructure = false;
     if (/^- [^-]+ -$/.test(line)) continue; // Zwischenüberschrift wie „- Freiheitsstrafe -“
+    if (line === "Fußnote") {
+      inFootnote = true;
+      continue;
+    }
+    if (inMarker || line.startsWith("(+++")) {
+      inMarker = !line.includes("+++)");
+      continue;
+    }
+    if (inFootnote) continue;
     cur?.lines.push(line);
   }
   flush();

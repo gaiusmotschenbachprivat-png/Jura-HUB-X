@@ -175,8 +175,10 @@ der Antwort.
   `https://www.gesetze-im-internet.de/bdsg_2018/` → `bdsg_2018`. Eine neue Fassung ersetzt die
   alte automatisch.
 - **Gesetz (iPad):** dort „XML“ oder „PDF“ herunterladen → **Datei importieren**, Art „Gesetz“.
-  Beim PDF werden Seitenkopf/-fuß und Inhaltsübersicht übersprungen; Abschnittsüberschriften
-  („Zweiter Abschnitt – Die Tat“) kommen in die Gliederung des jeweiligen Paragraphen.
+  Beim PDF werden Seitenkopf/-fuß, Inhaltsübersicht und amtliche Fußnoten übersprungen;
+  Gliederungsüberschriften („Zweiter Abschnitt – Die Tat“, beim BGB „Titel 1 – …“) kommen in die
+  Gliederung des jeweiligen Paragraphen. „§§ 3 bis 6 (weggefallen)“ ergibt je Paragraph einen
+  Eintrag „(weggefallen)“. Geprüft mit den PDF-Fassungen von StGB und BGB.
 - **Landesrecht** (z. B. BayVwVfG) steht nicht bei gesetze-im-internet.de: als PDF/TXT mit Art
   „Dokument“ importieren. Die Zitatprüfung kann solche Normen dann über den Text belegen, aber
   nicht als Gesetz erkennen.

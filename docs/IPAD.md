@@ -43,10 +43,12 @@ Vektordaten erhalten. Zeichnungen erscheinen auch im Word-Export und in der Druc
 
 ## Folien neben der Mitschrift
 
-Knopf **„Folien“** im Kopf einer Notiz → Foliensatz wählen (zuerst die PDFs der Veranstaltung,
-dann alle PDFs; andere Formate wie PowerPoint stehen ausgegraut darunter – sie vorher in
-PowerPoint/Keynote als PDF exportieren;
-„PDF importieren“ holt neue Folien aus der Dateien-App). Die Folien öffnen sich **rechts neben**
+Knopf **„Folien“** im Kopf einer Notiz → Foliensatz wählen (zuerst die Unterlagen der
+Veranstaltung, dann alle). Folien können **PDFs oder Bilder** sein (Fotos, Screenshots – PNG,
+JPG, GIF, WebP). Bei Bildern blättern ‹ › durch alle Bilder derselben Veranstaltung (nach Namen
+sortiert, „Folie 2“ vor „Folie 10“), „Folie übernehmen“ fügt das Bild in die Mitschrift ein.
+Andere Formate wie PowerPoint stehen ausgegraut darunter – vorher in PowerPoint/Keynote als PDF
+exportieren. „Importieren“ holt neue Folien aus der Dateien-App oder den Fotos. Die Folien öffnen sich **rechts neben**
 der Mitschrift, auf dem iPad **hochkant darüber**; der Trenner lässt sich ziehen, das Symbol
 oben in der Folie schaltet zwischen nebeneinander und untereinander um. Die Notiz merkt sich
 Foliensatz und Seite – „Folien“ macht beim nächsten Mal dort weiter. Während die Folien offen
@@ -202,6 +204,10 @@ Steht **kein Gesetz** dabei („§ 433 I“, „§ 104 Nr. 2“), ergänzt Studi
 zuletzt davor genannte Gesetz, sonst das, worauf der Titel der Notiz oder Veranstaltung deutet
 („BGB AT“, „Schuldrecht“ → BGB; „Strafrecht“ → StGB; „Staatsorganisation“, „Grundrechte“ → GG),
 sonst das einzige importierte Gesetz. Im Wortlaut-Fenster steht dann „angenommen: BGB“.
+
+Im Wortlaut-Fenster: **„Kopieren“** (Wortlaut mit Überschrift und Fassung in die
+Zwischenablage; der Text lässt sich auch markieren) und **„In Mitschrift einfügen“** (als
+violetter Gesetzestext-Kasten direkt unter dem Absatz).
 
 ## Zitierhilfe und Literaturverzeichnis
 

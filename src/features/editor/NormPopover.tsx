@@ -1,4 +1,4 @@
-import { BookOpenText, X } from "lucide-react";
+import { BookOpenText, Copy, PanelTop, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -8,9 +8,33 @@ import { useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import type { NormRef } from "./normLinks";
 
+/** Absatztext ohne doppelte Nummer: „(1) …“ steht bei PDF-Importen schon im Text. */
+const absText = (h: LegalHit) => (h.absatz && !new RegExp(`^\\(${h.absatz}[a-z]?\\)`).test(h.text) ? `(${h.absatz}) ${h.text}` : h.text);
+
+/** Wortlaut als Text zum Kopieren/Einfügen. */
+export function normPlainText(refInfo: NormRef, hits: LegalHit[]): { title: string; paragraphs: string[]; source: string } {
+  const heading = hits.find((h) => h.heading)?.heading?.split(" – ")[0];
+  const title = `${refInfo.norm} ${refInfo.law}${heading ? ` – ${heading}` : ""}`;
+  const h0 = hits[0];
+  const source = h0 ? `${h0.title}${h0.version ? `, Stand: ${h0.version}` : ""}` : "";
+  return { title, paragraphs: hits.map(absText), source };
+}
+
 /** Wortlaut einer angetippten Norm aus den importierten Gesetzen. */
-export function NormPopover({ refInfo, anchor, onClose }: { refInfo: NormRef; anchor: DOMRect; onClose: () => void }) {
+export function NormPopover({
+  refInfo,
+  anchor,
+  onClose,
+  onInsert,
+}: {
+  refInfo: NormRef;
+  anchor: DOMRect;
+  onClose: () => void;
+  /** Wortlaut als Gesetzestext-Kasten in die Mitschrift einfügen */
+  onInsert?: (text: ReturnType<typeof normPlainText>) => void;
+}) {
   const open = useApp((s) => s.open);
+  const toast = useApp((s) => s.toast);
   const box = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<{ hits: LegalHit[]; imported: boolean } | null>(null);
   const [pos, setPos] = useState({ x: anchor.left, y: anchor.bottom + 6 });
@@ -75,9 +99,42 @@ export function NormPopover({ refInfo, anchor, onClose }: { refInfo: NormRef; an
           <div className="norm-pop-text">
             {state.hits.map((h) => (
               <p key={h.chunk_id} className={refInfo.absatz && h.absatz === refInfo.absatz ? "is-cited" : ""}>
-                {h.absatz ? <span className="norm-abs">({h.absatz})</span> : null} {h.text}
+                {absText(h)}
               </p>
             ))}
+          </div>
+          <div className="row wrap norm-pop-actions">
+            <Button
+              size="sm"
+              icon={<Copy size={13} />}
+              onClick={async () => {
+                const t = normPlainText(refInfo, state.hits);
+                const text = [t.title, ...t.paragraphs, t.source ? `(${t.source})` : ""].filter(Boolean).join("\n");
+                try {
+                  await navigator.clipboard.writeText(text);
+                  toast(`${refInfo.norm} ${refInfo.law} kopiert.`, "success");
+                } catch {
+                  // ohne Zugriff auf die Zwischenablage: Text markieren, dann „Kopieren“ im iPad-Menü
+                  const el = box.current?.querySelector(".norm-pop-text");
+                  if (el) window.getSelection()?.selectAllChildren(el);
+                  toast("Text markiert – zum Kopieren „Kopieren“ wählen.", "info");
+                }
+              }}
+            >
+              Kopieren
+            </Button>
+            {onInsert && (
+              <Button
+                size="sm"
+                icon={<PanelTop size={13} />}
+                onClick={() => {
+                  onInsert(normPlainText(refInfo, state.hits));
+                  onClose();
+                }}
+              >
+                In Mitschrift einfügen
+              </Button>
+            )}
           </div>
           <p className="xs muted norm-pop-foot">
             {refInfo.inferred ? `Im Text steht kein Gesetz – angenommen: ${refInfo.law}. ` : ""}

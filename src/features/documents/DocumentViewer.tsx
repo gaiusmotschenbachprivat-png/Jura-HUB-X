@@ -21,7 +21,7 @@ import { openExternally, saveCopyAs, trashDocument } from "./docActions";
 import { DocIcon, TextStatus } from "./DocumentList";
 import { AnnotationPopover, SelectionToolbar } from "./AnnotationPopups";
 import { PdfViewer, type PdfSelection } from "./PdfViewer";
-import { rememberSlides } from "./Slides";
+import { ImageSlideBar, rememberSlides } from "./Slides";
 import { useSplitLayoutToggle } from "../editor/SplitNotes";
 import { CardDialog } from "../learn/CardDialog";
 
@@ -400,9 +400,12 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
             <div className="loading">Lade PDF …</div>
           )
         ) : imageUrl ? (
-          <div className="img-view">
-            <img src={imageUrl} alt={d.title} />
-          </div>
+          <>
+            <ImageSlideBar doc={d} placementNodeId={detail.placements[0]?.node_id ?? null} bytes={bytes} noteId={linkTargetNoteId} />
+            <div className="img-view">
+              <img src={imageUrl} alt={d.title} />
+            </div>
+          </>
         ) : bytes && ["txt", "md", "markdown"].includes(d.ext) ? (
           <pre className="text-view">{new TextDecoder().decode(bytes)}</pre>
         ) : (
