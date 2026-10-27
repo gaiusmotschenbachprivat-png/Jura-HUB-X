@@ -118,6 +118,16 @@ zweiten Notiz: **tauschen**, nebeneinander/untereinander, als Hauptansicht öffn
 Die zweite Notiz zeigt eine kompakte, wischbare Werkzeugleiste. Dieselbe Notiz wird nie in beiden
 Hälften geöffnet – sonst würden sich die Änderungen gegenseitig überschreiben.
 
+## Text in PDFs und Folien markieren
+
+Textmarker-Symbol in der PDF-Leiste (**„Text markieren“**) → Farbe wählen → mit Finger oder
+Pencil **über den Text ziehen**. Die Markierung rastet an ganzen Wörtern ein und wird zeilenweise
+als Rechteck mit klaren Kanten gespeichert (keine Freihand-Striche); während des Ziehens ist eine
+Vorschau zu sehen. Antippen einer Markierung: Farbe, Kommentar, Karteikarte oder löschen. Das
+Hand-Symbol schaltet um, ob der Finger markiert oder blättert (der Pencil markiert immer).
+„Fertig“ beendet den Modus. Außerhalb des Modus funktioniert weiter die normale Textauswahl
+(lange drücken, Anfasser ziehen) – die Farbleiste erscheint danach auch auf dem iPad.
+
 ## Mit dem Pencil in PDFs schreiben
 
 Stift-Symbol in der PDF-Leiste → **Stift**, **Textmarker**, **Radierer** (ganze Striche), vier

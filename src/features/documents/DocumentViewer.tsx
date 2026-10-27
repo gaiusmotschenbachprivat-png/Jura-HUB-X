@@ -385,6 +385,14 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
               toolbarExtra={linkButtons}
               annotations={annos}
               onTextSelected={setSelection}
+              onQuickHighlight={async (h) => {
+                try {
+                  await api.annotationCreate({ document_id: id, page: h.page, kind: "highlight", color: h.color, rects: h.rects, quote: h.quote });
+                  loadAnnos();
+                } catch (e) {
+                  reportError(e);
+                }
+              }}
               onAnnotationClick={(a, x, y) => setActiveAnno({ a, x, y })}
               onToggleBookmark={async (p) => {
                 const existing = annos.find((a) => a.kind === "bookmark" && a.page === p);

@@ -2,7 +2,10 @@
  * PDF-Ansicht mit pdf.js: Seiten werden erst gerendert, wenn sie sichtbar
  * werden (auch bei Skripten mit Hunderten Seiten flüssig). Mit Textebene zum
  * Markieren und Kopieren, Seitenübersicht, Zoom und Textsuche. Im Stiftmodus
- * lässt sich mit dem Apple Pencil direkt auf die Seiten schreiben.
+ * lässt sich mit dem Apple Pencil direkt auf die Seiten schreiben. Im
+ * Markieren-Modus zieht man mit Finger oder Pencil über den Text: die
+ * Markierung rastet an Wortgrenzen ein und wird zeilenweise als Rechteck
+ * gespeichert (klare Kanten statt Freihand-Strich).
  */
 import "../../styles/pdf-textlayer.css";
 
@@ -10,13 +13,54 @@ import { Bookmark, Check, ChevronLeft, ChevronRight, Eraser, Hand, Highlighter, 
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import type { Annotation, Rect } from "../../api/types";
+import type { Annotation, AnnotationColor, Rect } from "../../api/types";
 import type { Stroke } from "../../lib/drawing";
 import { INK_MARKER_COLORS, INK_PEN_COLORS, INK_SIZES } from "../../lib/ink";
 import { closePdf, loadPdf, type PdfDoc } from "../../lib/pdf";
 import { HIGHLIGHT_COLORS, toPageRects } from "../../lib/pdfSelection";
 import { IconButton } from "../../ui/Button";
 import { InkLayer, type InkSettings, type InkTool } from "./InkLayer";
+
+/** Textstelle unter dem Finger/Stift (nur in der Textebene der Seite). */
+interface Caret {
+  node: Text;
+  offset: number;
+}
+function caretAt(x: number, y: number, pageEl: HTMLElement): Caret | null {
+  const doc = document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null };
+  let node: Node | null = null;
+  let offset = 0;
+  if (doc.caretPositionFromPoint) {
+    const p = doc.caretPositionFromPoint(x, y);
+    if (p) ({ offsetNode: node, offset } = p);
+  } else if (document.caretRangeFromPoint) {
+    const r = document.caretRangeFromPoint(x, y);
+    if (r) ((node = r.startContainer), (offset = r.startOffset));
+  }
+  if (!node || node.nodeType !== Node.TEXT_NODE || !pageEl.contains(node) || !node.parentElement?.closest(".textLayer")) return null;
+  return { node: node as Text, offset };
+}
+
+const WORD = /[\p{L}\p{N}§'’-]/u;
+/** Bereich zwischen zwei Textstellen, auf ganze Wörter erweitert (unabhängig von der Zugrichtung). */
+function wordRange(a: Caret, b: Caret): Range | null {
+  const before = a.node === b.node ? a.offset <= b.offset : !!(a.node.compareDocumentPosition(b.node) & Node.DOCUMENT_POSITION_FOLLOWING);
+  const [s, e] = before ? [a, b] : [b, a];
+  let so = s.offset;
+  const st = s.node.data;
+  while (so > 0 && WORD.test(st[so - 1]!)) so--;
+  let eo = e.offset;
+  const et = e.node.data;
+  while (eo < et.length && WORD.test(et[eo]!)) eo++;
+  const r = document.createRange();
+  try {
+    r.setStart(s.node, so);
+    r.setEnd(e.node, eo);
+  } catch {
+    return null;
+  }
+  return r.collapsed ? null : r;
+}
 
 const ZOOMS = [0.5, 0.67, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3];
 
@@ -42,6 +86,7 @@ export function PdfViewer({
   inks,
   onInkChange,
   onDocument,
+  onQuickHighlight,
 }: {
   bytes: Uint8Array;
   page: number;
@@ -58,6 +103,8 @@ export function PdfViewer({
   onInkChange?: (page: number, strokes: Stroke[], ratio: number) => void;
   /** Geladenes PDF (z. B. um eine Seite als Bild zu übernehmen) */
   onDocument?: (pdf: PdfDoc | null) => void;
+  /** Markieren-Modus: gezogene Textmarkierung sofort speichern */
+  onQuickHighlight?: (h: { page: number; rects: Rect[]; quote: string; color: AnnotationColor }) => void;
 }) {
   const [pdf, setPdf] = useState<PdfDoc | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +121,11 @@ export function PdfViewer({
   const jumpRef = useRef<number | null>(page);
   const currentRef = useRef(page);
   const [inkOn, setInkOn] = useState(false);
+  const [markOn, setMarkOn] = useState(false);
+  const [markColor, setMarkColor] = useState<AnnotationColor>("gelb");
+  const [markFinger, setMarkFinger] = useState(true);
+  const [preview, setPreview] = useState<{ page: number; rects: Rect[] } | null>(null);
+  const drag = useRef<{ pageEl: HTMLElement; page: number; start: Caret | null; x: number; y: number; moved: boolean; quote: string; rects: Rect[] } | null>(null);
   const [tool, setTool] = useState<InkTool>("pen");
   const [penColor, setPenColor] = useState(INK_PEN_COLORS[0]!);
   const [markerColor, setMarkerColor] = useState(INK_MARKER_COLORS[0]!);
@@ -198,6 +250,32 @@ export function PdfViewer({
     onPageChange(target);
   };
 
+  // iPad: Textauswahl mit den Anfassern löst kein „mouseup“ aus – Auswahl daher auch nach „selectionchange“ auswerten
+  useEffect(() => {
+    if (!onTextSelected || inkOn || markOn || !window.matchMedia?.("(pointer: coarse)").matches) return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const onSel = () => {
+      clearTimeout(t);
+      t = setTimeout(() => {
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+        const range = sel.getRangeAt(0);
+        const startEl = (range.startContainer.nodeType === 1 ? (range.startContainer as Element) : range.startContainer.parentElement)?.closest<HTMLElement>("[data-page]");
+        if (!startEl || !scroller.current?.contains(startEl)) return;
+        const rects = toPageRects([...range.getClientRects()], startEl.getBoundingClientRect());
+        const quote = sel.toString().replace(/\s+/g, " ").trim();
+        if (!rects.length || !quote) return;
+        const last = range.getBoundingClientRect();
+        onTextSelected({ page: Number(startEl.dataset.page), rects, quote, x: last.left + last.width / 2, y: last.bottom + 28 });
+      }, 450);
+    };
+    document.addEventListener("selectionchange", onSel);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("selectionchange", onSel);
+    };
+  }, [onTextSelected, inkOn, markOn]);
+
   const onMouseUp = (ev: React.MouseEvent) => {
     if (!onTextSelected || inkOn) return;
     const cx = ev.clientX;
@@ -230,6 +308,49 @@ export function PdfViewer({
       const last = range.getBoundingClientRect();
       onTextSelected({ page: Number(startEl.dataset.page), rects, quote, x: last.left + last.width / 2, y: last.bottom });
     }, 0);
+  };
+
+  // ---- Markieren-Modus: über den Text ziehen ----
+  const usable = (e: React.PointerEvent) => e.button === 0 && (e.pointerType !== "touch" || markFinger);
+  const onMarkDown = (e: React.PointerEvent) => {
+    if (!usable(e)) return;
+    const pageEl = (e.target as Element).closest<HTMLElement>("[data-page]");
+    if (!pageEl || !scroller.current?.contains(pageEl)) return;
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    drag.current = { pageEl, page: Number(pageEl.dataset.page), start: caretAt(e.clientX, e.clientY, pageEl), x: e.clientX, y: e.clientY, moved: false, quote: "", rects: [] };
+  };
+  const onMarkMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    if (!d.moved && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6) return;
+    d.moved = true;
+    const cur = caretAt(e.clientX, e.clientY, d.pageEl);
+    if (!cur) return;
+    if (!d.start) d.start = cur;
+    const range = wordRange(d.start, cur);
+    if (!range) return;
+    d.rects = toPageRects([...range.getClientRects()], d.pageEl.getBoundingClientRect());
+    d.quote = range.toString().replace(/\s+/g, " ").trim();
+    setPreview({ page: d.page, rects: d.rects });
+  };
+  const onMarkUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    setPreview(null);
+    if (!d) return;
+    if (d.moved && d.rects.length && d.quote) {
+      onQuickHighlight?.({ page: d.page, rects: d.rects, quote: d.quote, color: markColor });
+      return;
+    }
+    if (!d.moved) {
+      // Antippen einer Markierung: bearbeiten/löschen
+      const b = d.pageEl.getBoundingClientRect();
+      const px = (e.clientX - b.left) / b.width;
+      const py = (e.clientY - b.top) / b.height;
+      const hit = byPage.get(d.page)?.find((a) => a.rects.some((r) => px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h));
+      if (hit) onAnnotationClick?.(hit, e.clientX, e.clientY);
+    }
   };
 
   const byPage = useMemo(() => {
@@ -305,14 +426,51 @@ export function PdfViewer({
             <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
           </IconButton>
         )}
+        {onQuickHighlight && (
+          <IconButton
+            label={markOn ? "Markieren beenden" : "Text markieren"}
+            active={markOn}
+            onClick={() => {
+              setMarkOn(!markOn);
+              setInkOn(false);
+              onTextSelected?.(null);
+            }}
+          >
+            <Highlighter size={16} />
+          </IconButton>
+        )}
         {onInkChange && (
-          <IconButton label={inkOn ? "Stiftmodus beenden" : "Mit dem Stift schreiben"} active={inkOn} onClick={() => setInkOn(!inkOn)}>
+          <IconButton label={inkOn ? "Stiftmodus beenden" : "Mit dem Stift schreiben"} active={inkOn} onClick={() => (setInkOn(!inkOn), setMarkOn(false))}>
             <PenLine size={16} />
           </IconButton>
         )}
         <span className="grow" />
         {toolbarExtra}
       </div>
+      {markOn && (
+        <div className="ink-bar mark-bar" role="toolbar" aria-label="Markieren">
+          <div className="ink-group">
+            {(Object.keys(HIGHLIGHT_COLORS) as AnnotationColor[]).map((c) => (
+              <button
+                key={c}
+                className={`color-dot ${markColor === c ? "is-active" : ""}`}
+                style={{ background: HIGHLIGHT_COLORS[c] }}
+                aria-label={`Farbe ${c}`}
+                aria-pressed={markColor === c}
+                onClick={() => setMarkColor(c)}
+              />
+            ))}
+          </div>
+          <span className="small muted ink-hint">Über den Text ziehen – die Markierung rastet an den Wörtern ein. Antippen einer Markierung: bearbeiten oder löschen.</span>
+          <span className="grow" />
+          <IconButton label={markFinger ? "Finger markiert (antippen: Finger scrollt)" : "Finger scrollt (antippen: Finger markiert)"} active={markFinger} onClick={() => setMarkFinger(!markFinger)}>
+            <Hand size={16} />
+          </IconButton>
+          <button className="btn btn-sm btn-primary" onClick={() => setMarkOn(false)}>
+            <Check size={14} /> Fertig
+          </button>
+        </div>
+      )}
       {inkOn && (
         <div className="ink-bar" role="toolbar" aria-label="Stiftwerkzeuge">
           <div className="ink-group">
@@ -414,7 +572,16 @@ export function PdfViewer({
             )}
           </div>
         )}
-        <div className={`pdf-scroll ${inkOn ? "is-inking" : ""}`} ref={scroller} onScroll={onScroll} onMouseUp={onMouseUp}>
+        <div
+          className={`pdf-scroll ${inkOn ? "is-inking" : ""} ${markOn ? `is-marking ${markFinger ? "mark-finger" : ""}` : ""}`}
+          ref={scroller}
+          onScroll={onScroll}
+          onMouseUp={markOn ? undefined : onMouseUp}
+          onPointerDown={markOn ? onMarkDown : undefined}
+          onPointerMove={markOn ? onMarkMove : undefined}
+          onPointerUp={markOn ? onMarkUp : undefined}
+          onPointerCancel={markOn ? () => ((drag.current = null), setPreview(null)) : undefined}
+        >
           {!pdf || !baseSize ? (
             <div className="loading">Lade PDF …</div>
           ) : (
@@ -427,6 +594,7 @@ export function PdfViewer({
                 base={baseSize}
                 root={scroller.current}
                 highlights={byPage.get(i + 1)}
+                preview={preview?.page === i + 1 ? { rects: preview.rects, color: HIGHLIGHT_COLORS[markColor]! } : undefined}
                 onAnnotationClick={onAnnotationClick}
                 ink={inks?.get(i + 1)}
                 inkActive={inkOn}
@@ -460,6 +628,7 @@ function PdfPage({
   base,
   root,
   highlights,
+  preview,
   onAnnotationClick,
   ink,
   inkActive = false,
@@ -472,6 +641,8 @@ function PdfPage({
   base: { w: number; h: number };
   root: HTMLElement | null;
   highlights?: Annotation[];
+  /** Vorschau beim Markieren (noch nicht gespeichert) */
+  preview?: { rects: Rect[]; color: string };
   onAnnotationClick?: (a: Annotation, x: number, y: number) => void;
   ink?: Stroke[];
   inkActive?: boolean;
@@ -532,6 +703,9 @@ function PdfPage({
           />
         )),
       )}
+      {preview?.rects.map((r, i) => (
+        <div key={`p-${i}`} className="pdf-hl is-preview" style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, background: preview.color }} />
+      ))}
       <div className="textLayer" ref={textRef} />
       {highlights?.map((a) => {
         const r = a.rects[0];

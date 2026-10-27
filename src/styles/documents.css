@@ -85,3 +85,11 @@
 .slide-pick:hover, .slide-pick:focus-visible { background: var(--bg-hover); }
 .slide-pick.is-disabled { cursor: default; opacity: .55; }
 .slide-pick.is-disabled:hover { background: none; }
+
+/* Markieren-Modus: über den Text ziehen, Markierung rastet an Wörtern ein */
+.pdf-scroll.is-marking .pdf-page { cursor: text; -webkit-touch-callout: none; }
+.pdf-scroll.is-marking .textLayer { -webkit-user-select: none; user-select: none; }
+.pdf-scroll.is-marking.mark-finger .pdf-page { touch-action: none; }
+.pdf-scroll.is-marking .pdf-hl-marker { pointer-events: none; }
+.pdf-hl.is-preview { opacity: 0.55; outline: 1px solid rgb(0 0 0 / 0.18); }
+.mark-bar .color-dot.is-active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }

@@ -142,4 +142,27 @@ const net = await fetch("https://example.org").then(
   () => "blockiert",
 );
 check("Netzwerkzugriff auf fremde Server blockiert (CSP)", net === "blockiert", net);
+
+// Markieren auf Folien: Textstelle unter dem Finger (wie im Markieren-Modus: Textebene nicht auswählbar)
+{
+  const host = document.createElement("div");
+  host.className = "pdf-scroll is-marking mark-finger";
+  host.style.cssText = "position:fixed;left:0;top:0;width:600px;height:200px;z-index:99999;background:#fff";
+  host.innerHTML = '<div class="pdf-page" data-page="1" style="position:relative;width:600px;height:200px"><div class="textLayer" style="position:absolute;inset:0"><span style="position:absolute;left:20px;top:40px;font:20px sans-serif;color:transparent">Die Anfechtung ist ein Gestaltungsrecht</span></div></div>';
+  document.body.append(host);
+  const span = host.querySelector("span");
+  const r = span.getBoundingClientRect();
+  const doc = document;
+  const at = (x, y) => {
+    if (doc.caretPositionFromPoint) {
+      const p = doc.caretPositionFromPoint(x, y);
+      return p && { node: p.offsetNode, offset: p.offset };
+    }
+    const c = doc.caretRangeFromPoint?.(x, y);
+    return c && { node: c.startContainer, offset: c.startOffset };
+  };
+  const c = at(r.left + r.width * 0.3, r.top + r.height / 2);
+  check("Markieren: Textstelle unter dem Finger wird erkannt (WebKit)", c && c.node.nodeType === 3 && c.offset > 0 && c.offset < span.textContent.length, c ? `${c.node.nodeName} ${c.offset}` : "keine");
+  host.remove();
+}
 return out;
