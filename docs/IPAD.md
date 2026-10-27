@@ -77,6 +77,11 @@ sind, schwebt der Kontextbereich nur bei Bedarf über dem Inhalt.
 Schreibposition ein, darunter „Folie 12 · Titel“ als Verweis auf genau diese Seite; die Seite
 wird außerdem mit der Notiz verknüpft. Danach lässt sich direkt weiterschreiben.
 
+**Folien wechseln oder schließen:** Der Knopf „Folien“ bietet „Weiter: …“ (zuletzt benutzte
+Folien an der gemerkten Seite) und „Andere Folien wählen …“; sind Folien offen, „Andere Folien
+wählen …“ und „Folien schließen“. In der geöffneten Folie stehen oben „Wechseln“ (andere Datei
+als Folie wählen) und „Schließen“.
+
 ## Farbige Kästen: Beispiel, Gesetzestext, Definition, Fall …
 
 Absatz (oder mehrere) markieren bzw. Cursor hineinsetzen → Symbol **„Kasten“** in der

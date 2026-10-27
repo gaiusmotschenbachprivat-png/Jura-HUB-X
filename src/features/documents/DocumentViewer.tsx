@@ -21,7 +21,7 @@ import { openExternally, saveCopyAs, trashDocument } from "./docActions";
 import { DocIcon, TextStatus } from "./DocumentList";
 import { AnnotationPopover, SelectionToolbar } from "./AnnotationPopups";
 import { PdfViewer, type PdfSelection } from "./PdfViewer";
-import { ImageSlideBar, rememberSlides } from "./Slides";
+import { ImageSlideBar, rememberSlides, SwitchSlidesButton } from "./Slides";
 import { useSplitLayoutToggle } from "../editor/SplitNotes";
 import { CardDialog } from "../learn/CardDialog";
 
@@ -327,10 +327,11 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
         >
           <MoreHorizontal size={16} />
         </IconButton>
+        {compact && linkTargetNoteId && <SwitchSlidesButton noteId={linkTargetNoteId} />}
         {compact && (
-          <IconButton label="Geteilte Ansicht schließen" onClick={() => useApp.getState().openSecondary(null)}>
-            <X size={16} />
-          </IconButton>
+          <Button size="sm" variant="ghost" icon={<X size={15} />} aria-label="Geteilte Ansicht schließen" title="Folie schließen" onClick={() => useApp.getState().openSecondary(null)}>
+            Schließen
+          </Button>
         )}
       </div>
 

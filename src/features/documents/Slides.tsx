@@ -3,7 +3,7 @@
  * iPad hochkant über) der Notiz. Die Notiz merkt sich Foliensatz und Seite,
  * sodass „Folien“ beim nächsten Mal an derselben Stelle weitermacht.
  */
-import { ChevronLeft, ChevronRight, FileUp, ImagePlus, Presentation, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileUp, ImagePlus, Presentation, Replace, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
@@ -13,6 +13,7 @@ import { reportError, useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import { INSERT_SLIDE_EVENT, storeImageFile, type InsertSlideDetail } from "../editor/AssetImage";
 import { Dialog } from "../../ui/Dialog";
+import { useMenu } from "../../ui/Menu";
 import { DocIcon } from "./DocumentList";
 import { startImport } from "./ImportDialog";
 
@@ -58,18 +59,27 @@ export function rememberSlides(noteId: string, documentId: string, page: number,
 export function SlidesButton({ node }: { node: StudyNode }) {
   const secondary = useApp((s) => s.secondary);
   const [picking, setPicking] = useState(false);
+  const menu = useMenu();
   const saved = slidesOf(node);
   const isOpen = secondary?.type === "document";
 
-  const onClick = async () => {
+  const onClick = async (anchor: HTMLElement) => {
     const st = useApp.getState();
-    if (isOpen) return st.openSecondary(null);
+    if (isOpen)
+      return menu.openBelow(anchor, [
+        { label: "Andere Folien wählen …", icon: <Replace size={14} />, onSelect: () => setPicking(true) },
+        { label: "Folien schließen", icon: <X size={14} />, onSelect: () => st.openSecondary(null) },
+      ]);
     if (saved) {
-      const ok = await api.documentGet(saved.document_id).then(
-        (d) => !d.document.deleted_at && d.document.file_present,
-        () => false,
+      const d = await api.documentGet(saved.document_id).then(
+        (r) => (!r.document.deleted_at && r.document.file_present ? r.document : null),
+        () => null,
       );
-      if (ok) return st.openSecondary({ type: "document", id: saved.document_id, page: saved.page });
+      if (d)
+        return menu.openBelow(anchor, [
+          { label: `Weiter: ${d.title}${d.ext === "pdf" ? ` (S. ${saved.page})` : ""}`, icon: <Presentation size={14} />, onSelect: () => st.openSecondary({ type: "document", id: d.id, page: saved.page }) },
+          { label: "Andere Folien wählen …", icon: <Replace size={14} />, onSelect: () => setPicking(true) },
+        ]);
     }
     setPicking(true);
   };
@@ -80,28 +90,37 @@ export function SlidesButton({ node }: { node: StudyNode }) {
         size="sm"
         variant={isOpen ? "primary" : "secondary"}
         icon={<Presentation size={14} />}
-        onClick={() => void onClick()}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          setPicking(true);
-        }}
-        title={isOpen ? "Folien schließen" : saved ? `Folien öffnen (S. ${saved.page})` : "Folien neben der Mitschrift öffnen"}
+        onClick={(e) => void onClick(e.currentTarget)}
+        title={isOpen ? "Folien wechseln oder schließen" : saved ? "Folien öffnen oder andere wählen" : "Folien neben der Mitschrift öffnen"}
         aria-pressed={isOpen}
       >
         Folien
       </Button>
-      {picking && (
-        <SlidePicker
-          node={node}
-          onClose={() => setPicking(false)}
-          onPick={(d) => {
-            setPicking(false);
-            const page = saved?.document_id === d.id ? saved.page : 1;
-            useApp.getState().openSecondary({ type: "document", id: d.id, page });
-            rememberSlides(node.id, d.id, page, 0);
-          }}
-        />
-      )}
+      {menu.el}
+      {picking && <SlidePicker node={node} onClose={() => setPicking(false)} onPick={(d) => (setPicking(false), showSlides(node, d))} />}
+    </>
+  );
+}
+
+/** Foliensatz neben der Notiz öffnen und merken (gleicher Satz: an der gemerkten Seite weiter). */
+function showSlides(node: StudyNode, d: DocumentInfo) {
+  const saved = slidesOf(node);
+  const page = saved?.document_id === d.id ? saved.page : 1;
+  useApp.getState().openSecondary({ type: "document", id: d.id, page });
+  rememberSlides(node.id, d.id, page, 0);
+}
+
+/** Knopf in der geöffneten Folie: andere Datei als Folie wählen. */
+export function SwitchSlidesButton({ noteId }: { noteId: string }) {
+  const node = useApp((s) => s.nodes.find((n) => n.id === noteId));
+  const [picking, setPicking] = useState(false);
+  if (!node) return null;
+  return (
+    <>
+      <Button size="sm" variant="ghost" icon={<Replace size={14} />} onClick={() => setPicking(true)} title="Andere Datei als Folie wählen">
+        Wechseln
+      </Button>
+      {picking && <SlidePicker node={node} onClose={() => setPicking(false)} onPick={(d) => (setPicking(false), showSlides(node, d))} />}
     </>
   );
 }

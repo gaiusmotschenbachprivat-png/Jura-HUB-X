@@ -121,6 +121,17 @@ try {
   await page.locator(".ProseMirror img").first().waitFor({ timeout: 10000 });
   const pm = await page.locator(".ProseMirror").innerText();
   check("Bild in die Mitschrift übernommen (mit Bildunterschrift)", (await page.locator(".ProseMirror img").count()) === 1 && pm.includes("Folie 2"), pm.slice(-80));
+  // 3b. Andere Datei als Folie: „Wechseln“ in der Folie und „Andere Folien wählen“ am Knopf
+  await side.getByRole("button", { name: "Wechseln" }).click();
+  const picker2 = page.getByRole("dialog", { name: "Folien auswählen" });
+  await picker2.locator("button.slide-pick", { hasText: "Folie 10" }).click();
+  await side.locator(".doc-title", { hasText: "Folie 10" }).waitFor({ timeout: 10000 });
+  check("„Wechseln“: andere Datei direkt als Folie", (await side.locator(".doc-title").innerText()).startsWith("Folie 10"));
+  await page.getByRole("button", { name: "Folien", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Andere Folien wählen …" }).click();
+  await picker2.locator("button.slide-pick", { hasText: "Folie 1" }).first().click();
+  await side.locator(".doc-title", { hasText: /^Folie 1$/ }).waitFor({ timeout: 10000 });
+  check("„Folien“ → „Andere Folien wählen“ bei geöffneter Folie", (await side.locator(".doc-title").innerText()) === "Folie 1");
   await side.getByRole("button", { name: "Geteilte Ansicht schließen" }).click();
 
   // 4. Norm ohne Gesetz → BGB (Titel „BGB AT“), Wortlaut kopieren und einfügen

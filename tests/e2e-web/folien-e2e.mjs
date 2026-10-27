@@ -176,10 +176,16 @@ try {
   const meta = (await call("nodeGet", ids.note)).node.meta;
   check("Notiz merkt Foliensatz und Seite", meta?.slides?.document_id === doc.id && meta.slides.page === 2, JSON.stringify(meta?.slides));
   await page.getByRole("button", { name: "Folien", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Folien schließen" }).click();
   await side.waitFor({ state: "detached" });
   await page.getByRole("button", { name: "Folien", exact: true }).click();
+  const cont = page.getByRole("menuitem", { name: /^Weiter: .*\(S\. 2\)/ });
+  await cont.waitFor({ timeout: 5000 });
+  check("„Folien“ bietet „Weiter“ (mit Seite) und „Andere Folien wählen“", (await cont.count()) === 1 && (await page.getByRole("menuitem", { name: "Andere Folien wählen …" }).count()) === 1);
+  await cont.click();
   await side.locator(".pdf-page canvas").first().waitFor({ timeout: 15000 });
-  check("„Folien“ öffnet wieder auf Seite 2", (await side.locator(".pdf-page-input").inputValue()) === "2");
+  check("„Weiter“ öffnet wieder auf Seite 2", (await side.locator(".pdf-page-input").inputValue()) === "2");
+  check("Geöffnete Folie hat „Wechseln“ und „Schließen“", (await side.getByRole("button", { name: "Wechseln" }).count()) === 1 && (await side.getByRole("button", { name: "Geteilte Ansicht schließen" }).count()) === 1);
 
   // 5. iPad hochkant: Folie oben, Mitschrift darunter
   await page.setViewportSize({ width: 820, height: 1180 });
