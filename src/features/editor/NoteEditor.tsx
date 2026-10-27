@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { ArrowLeftRight, BookOpen, Columns2, ExternalLink, GraduationCap, History, ListTree, Maximize2, MoreHorizontal, PencilLine, Printer, Rows2, Unlink, X } from "lucide-react";
+import { ArrowLeftRight, BookOpen, Columns2, ExternalLink, GraduationCap, History, ListTree, Maximize2, MoreHorizontal, PencilLine, Printer, Rows2, Search, Unlink, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -22,7 +22,7 @@ import { BibliographyDialog, FootnoteDialog, FootnoteList } from "./Footnotes";
 import { FOOTNOTE_EDIT_EVENT, footnotesOf, type FootnoteEditDetail } from "./formatting";
 import { LinkPicker } from "./LinkPicker";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
-import { FindBar } from "./FindBar";
+import { bestQuery, FindBar, useFindRequest } from "./FindBar";
 import { SchemaPickerDialog } from "./Gutachten";
 import { NoteMetaBar } from "./NoteMetaBar";
 import { SlidesButton } from "../documents/Slides";
@@ -115,6 +115,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [math, setMath] = useState<(MathEditDetail & { isNew?: boolean }) | null>(null);
   const [footnote, setFootnote] = useState<(FootnoteEditDetail & { isNew?: boolean }) | null>(null);
   const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState<{ q: string; n: number } | null>(null);
   const [drawing, setDrawing] = useState<{ pos: number | null; data: string | null } | null>(null);
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
@@ -222,6 +223,15 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       void freezeAndFlush(note.node_id);
     };
   }, [note.node_id, note.title, rememberTitle]);
+
+  // Aus der globalen Suche: Stichwort in dieser Notiz anspringen
+  const findReq = useFindRequest((s) => s.req);
+  useEffect(() => {
+    if (!editor || compact || !findReq || findReq.noteId !== note.node_id) return;
+    useFindRequest.getState().clear();
+    setFindQuery({ q: bestQuery(editor.state.doc, findReq.query), n: Date.now() });
+    setFindOpen(true);
+  }, [editor, compact, findReq, note.node_id]);
 
   // Zitate ohne Gesetz („§ 433 I“): Gesetz aus Notiz-/Veranstaltungstitel bzw. den importierten Gesetzen ergänzen
   const dataVersion = useApp((s) => s.dataVersion);
@@ -499,6 +509,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             }}
           />
           <div className="note-actions">
+            <IconButton label="In dieser Mitschrift suchen" active={findOpen} onClick={() => (findOpen ? setFindOpen(false) : (setFindQuery(null), setFindOpen(true)))}>
+              <Search size={16} />
+            </IconButton>
             {!compact && treeNode && !reading && <SlidesButton node={treeNode} />}
             {!compact && (
               <IconButton label={reading ? "Bearbeiten" : "Lesemodus"} active={reading} onClick={() => setReading(!reading)}>
@@ -541,7 +554,18 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         onFind={() => setFindOpen(true)}
         onDraw={() => setDrawing({ pos: null, data: null })}
       />
-      {findOpen && <FindBar editor={editor} onClose={() => setFindOpen(false)} />}
+      {findOpen && (
+        <FindBar
+          key={findQuery?.n ?? 0}
+          editor={editor}
+          initialQuery={findQuery?.q}
+          readOnly={reading}
+          onClose={() => {
+            setFindOpen(false);
+            setFindQuery(null);
+          }}
+        />
+      )}
       <input
         ref={fileInput}
         type="file"

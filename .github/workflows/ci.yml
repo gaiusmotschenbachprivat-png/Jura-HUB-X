@@ -83,6 +83,8 @@ jobs:
         run: node tests/e2e-web/gesetze-e2e.mjs
       - name: Schema-Bibliothek, farbige Schemata, Bausteine
         run: node tests/e2e-web/schemata-e2e.mjs
+      - name: Stichwortsuche in der Mitschrift
+        run: node tests/e2e-web/stichwort-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

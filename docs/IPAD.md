@@ -36,8 +36,14 @@ dann im Vollbild und funktioniert offline.
   Schuld violett; Zulässigkeit grau, Begründetheit grün). Die Vorlagen sind Standardaufbauten zur
   Orientierung – Aufbau und Schwerpunkte können je nach Lehrbuch und Lehrstuhl abweichen; jede
   darin zitierte BGB-/StGB-Norm wird automatisch gegen den mitgelieferten Gesetzestext geprüft.
-- **Suchen und Ersetzen** (Lupe oder ⌘F): Treffer werden markiert, Enter springt weiter,
-  „Alle ersetzen“ ersetzt im ganzen Text.
+- **Stichwort in der Mitschrift suchen** (Lupe oben im Notizkopf, Lupe in der Werkzeugleiste
+  oder ⌘F): Alle Fundstellen erscheinen als **Trefferliste** mit Ausschnitt und dem Abschnitt
+  (Überschrift), in dem sie stehen – antippen springt hin und markiert die Stelle; ↑/↓ bzw. Enter
+  blättern. Das Listen-Symbol blendet die Liste ein und aus. Auch im Lesemodus (dort ohne
+  Ersetzen). „Ersetzen“ und „Alle ersetzen“ ersetzen im Text.
+- **Aus der Suche oben links** (über alle Notizen): Ein Notiz-Treffer öffnet die Mitschrift
+  direkt an der Fundstelle, mit Trefferliste. Bei mehreren Stichwörtern springt sie zum
+  längsten, das in der Notiz vorkommt.
 - **Inhaltsverzeichnis** (Symbol neben dem Titel): alle Überschriften – Antippen springt hin.
 - **Drucken / als PDF** (Drucker-Symbol neben dem Titel): Druckansicht mit echten A4-Seiten,
   Seitenzahlen und **Fußnoten unten auf der jeweiligen Seite**; wahlweise Inhaltsverzeichnis mit

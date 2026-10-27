@@ -71,6 +71,8 @@ declare module "@tiptap/core" {
       setSearch: (query: string, caseSensitive?: boolean) => ReturnType;
       clearSearch: () => ReturnType;
       gotoMatch: (dir: 1 | -1) => ReturnType;
+      /** zu Treffer Nr. `index` springen (Trefferliste) */
+      gotoMatchIndex: (index: number) => ReturnType;
       replaceMatch: (replacement: string) => ReturnType;
       replaceAll: (replacement: string) => ReturnType;
     };
@@ -106,6 +108,15 @@ export const SearchReplace = Extension.create({
           if (!s || !s.matches.length) return false;
           const index = (s.index + dir + s.matches.length) % s.matches.length;
           if (dispatch) dispatch(select(tr.setMeta(searchKey, { query: s.query, caseSensitive: s.caseSensitive, index }), s.matches[index]));
+          return true;
+        },
+      gotoMatchIndex:
+        (index) =>
+        ({ state, tr, dispatch }) => {
+          const s = searchKey.getState(state);
+          const m = s?.matches[index];
+          if (!s || !m) return false;
+          if (dispatch) dispatch(select(tr.setMeta(searchKey, { query: s.query, caseSensitive: s.caseSensitive, index }), m));
           return true;
         },
       replaceMatch:
@@ -164,3 +175,43 @@ export const SearchReplace = Extension.create({
     ];
   },
 });
+
+export interface MatchContext {
+  index: number;
+  /** Text vor dem Treffer, Treffer, Text danach (gekürzt) */
+  before: string;
+  hit: string;
+  after: string;
+  /** nächste Überschrift oberhalb (Abschnitt der Mitschrift) */
+  heading: string;
+}
+
+/** Trefferliste: jeder Treffer mit Ausschnitt und dem Abschnitt, in dem er steht. */
+export function matchContexts(doc: PMNode, matches: { from: number; to: number }[], around = 48): MatchContext[] {
+  // Überschriften mit Position, in Dokumentreihenfolge
+  const heads: { pos: number; text: string }[] = [];
+  doc.descendants((node, pos) => {
+    if (node.type.name === "heading") heads.push({ pos, text: node.textContent.trim() });
+    return !node.isTextblock;
+  });
+  return matches.map((m, index) => {
+    const $from = doc.resolve(m.from);
+    const block = $from.parent;
+    const start = $from.start();
+    const text = block.textBetween(0, block.content.size, " ", " ");
+    const a = Math.max(0, m.from - start);
+    const b = Math.min(text.length, a + (m.to - m.from));
+    let heading = "";
+    for (const h of heads) if (h.pos < m.from) heading = h.text;
+    else break;
+    const before = text.slice(Math.max(0, a - around), a);
+    const after = text.slice(b, b + around);
+    return {
+      index,
+      before: (a - around > 0 ? "…" : "") + before,
+      hit: text.slice(a, b),
+      after: after + (b + around < text.length ? "…" : ""),
+      heading: block.type.name === "heading" ? "" : heading,
+    };
+  });
+}

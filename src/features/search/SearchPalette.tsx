@@ -5,6 +5,7 @@ import { api } from "../../api";
 import type { LegalHit, SearchHit } from "../../api/types";
 import { findNormCitations, normKey } from "../../ai/norms";
 import { NormPopover } from "../editor/NormPopover";
+import { useFindRequest } from "../editor/FindBar";
 import type { NormRef } from "../editor/normLinks";
 import { highlightHtml, stripHighlight } from "../../lib/format";
 import { areaById, useApp, type View } from "../../state/store";
@@ -125,6 +126,8 @@ function Palette({ onClose }: { onClose: () => void }) {
 
   const choose = (h: SearchHit) => {
     onClose();
+    // Notiz: direkt zur Fundstelle des Stichworts springen
+    if (h.entity_type === "note") useFindRequest.getState().request(h.entity_id, q);
     openView(hitToView(h), { title: stripHighlight(h.title) });
   };
 
