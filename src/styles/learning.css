@@ -262,3 +262,43 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .ai-history-row .slide-pick { min-width: 0; }
 .ai-history-row.is-current { background: var(--bg-hover); }
 .ai-history-row .nowrap { white-space: nowrap; }
+
+/* ---------- Prüfungsschema als farbige Grafik ---------- */
+.sd { --area: #5b6676; border: 1px solid color-mix(in srgb, var(--area) 35%, var(--line)); border-radius: 14px; overflow: hidden; background: var(--bg); font-size: 0.95rem; }
+.sd-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; padding: 12px 16px; background: color-mix(in srgb, var(--area) 14%, var(--bg)); border-bottom: 3px solid var(--area); }
+.sd-area { font-size: 0.72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; background: var(--area); border-radius: 999px; padding: 2px 9px; }
+.sd-title { font-size: 1.05rem; }
+.sd-head-norm { color: var(--area); font-weight: 600; font-size: 0.9rem; }
+.sd-stages { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+.sd-stage { --c: var(--area); border-left: 5px solid var(--c); border-radius: 10px; background: color-mix(in srgb, var(--c) 7%, var(--bg)); padding: 8px 12px 10px; }
+.sd-stage-head { display: flex; gap: 8px; align-items: baseline; font-weight: 700; color: color-mix(in srgb, var(--c) 80%, var(--text)); }
+.sd-stage-num { flex: none; min-width: 1.8em; height: 1.8em; display: inline-grid; place-items: center; border-radius: 6px; background: var(--c); color: #fff; font-size: 0.8rem; }
+.sd-points { list-style: none; margin: 6px 0 0; padding: 0 0 0 14px; border-left: 2px solid color-mix(in srgb, var(--c) 30%, transparent); }
+.sd-point { margin: 3px 0; }
+.sd-line { display: flex; gap: 8px; align-items: baseline; line-height: 1.45; }
+.sd-num { flex: none; min-width: 2.2em; color: color-mix(in srgb, var(--c) 75%, var(--text-3)); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sd-norm { font-weight: 600; color: color-mix(in srgb, var(--c, var(--area)) 85%, var(--text)); white-space: nowrap; }
+.sd-head .sd-norm { color: inherit; }
+.sd-p { display: inline-grid; place-items: center; width: 1.45em; height: 1.45em; border-radius: 50%; background: #b4471f; color: #fff; font-size: 0.72rem; font-weight: 800; }
+.sd-point.is-problem > .sd-line .sd-text { color: color-mix(in srgb, #b4471f 85%, var(--text)); font-style: italic; }
+.sd-stage.is-problem { border-left-style: dashed; }
+.sd-note { margin: 2px 0 0 2.6em; font-size: 0.82rem; color: var(--text-3); font-style: italic; }
+.sd-foot { margin: 0; padding: 10px 16px 12px; font-size: 0.85rem; color: var(--text-3); border-top: 1px dashed var(--line); }
+.sd.is-compact { font-size: 0.86rem; }
+.sd.is-compact .sd-stages { padding: 8px; gap: 6px; }
+
+/* Bibliothek */
+.schema-lib { display: flex; flex-direction: column; gap: 12px; }
+.schema-lib-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.schema-lib-tab { --g: var(--accent); display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-weight: 600; }
+.schema-lib-tab::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--g); }
+.schema-lib-tab.is-active { background: var(--g); border-color: var(--g); color: #fff; }
+.schema-lib-tab.is-active::before { background: #fff; }
+.schema-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.schema-card { --g: var(--accent); text-align: left; border: 1px solid var(--line); border-left: 5px solid var(--g); border-radius: 10px; background: color-mix(in srgb, var(--g) 5%, var(--bg)); padding: 9px 12px; cursor: pointer; color: var(--text); display: flex; flex-direction: column; gap: 2px; }
+.schema-card:hover, .schema-card:focus-visible, .schema-card.is-active { background: color-mix(in srgb, var(--g) 13%, var(--bg)); border-color: var(--g); }
+.schema-card-norm { font-size: 0.78rem; color: color-mix(in srgb, var(--g) 80%, var(--text-3)); font-weight: 600; }
+.schema-card-meta { font-size: 0.75rem; color: var(--text-3); }
+.schema-lib-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+@media (min-width: 1000px) { .schema-lib-split.has-preview { grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr); align-items: start; } .schema-lib-split.has-preview .schema-lib-grid { grid-template-columns: 1fr; } }
+.schema-lib-preview { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 8px; }

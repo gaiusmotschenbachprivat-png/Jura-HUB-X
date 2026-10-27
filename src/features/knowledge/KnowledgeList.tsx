@@ -9,6 +9,8 @@ import { Button } from "../../ui/Button";
 import { AreaDot, EmptyState } from "../../ui/misc";
 import { KindIcon } from "../navigation/icons";
 import { CASE_STATUS, DIFFICULTY, TYPE_HINT, TYPE_LABEL, TYPE_LABEL_PLURAL, UNVERIFIED } from "./meta";
+import { SchemaLibrary } from "./SchemaLibrary";
+import { gebietOf } from "../../lib/schemaLibrary";
 
 export async function createKnowledge(type: KnowledgeType, opts: { title?: string; nodeId?: string | null; data?: Record<string, unknown> } = {}) {
   const st = useApp.getState();
@@ -45,6 +47,7 @@ export function KnowledgeList({ type }: { type: KnowledgeType }) {
   const [field, setField] = useState("");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<"title" | "updated" | "difficulty">("title");
+  const areaName = useApp((s) => s.areas.find((a) => a.id === s.areaId)?.name ?? "");
 
   useEffect(() => {
     api
@@ -82,6 +85,13 @@ export function KnowledgeList({ type }: { type: KnowledgeType }) {
           </Button>
         </div>
       </header>
+      {type === "schema" && (
+        <section className="card schema-lib-card">
+          <h2 className="section-title">Vorlagen nach Rechtsgebiet</h2>
+          <SchemaLibrary initial={gebietOf(areaName) ?? "zivil"} />
+        </section>
+      )}
+      {type === "schema" && items.length > 0 && <h2 className="section-title">Meine Prüfungsschemata</h2>}
       <div className="filters row wrap">
         <input className="filter-input" placeholder="Filtern …" value={q} onChange={(e) => setQ(e.target.value)} />
         <select value={field} onChange={(e) => setField(e.target.value)} aria-label="Rechtsgebiet">

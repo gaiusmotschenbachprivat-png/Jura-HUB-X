@@ -81,6 +81,8 @@ jobs:
         run: node tests/e2e-web/bildfolien-e2e.mjs
       - name: Mitgelieferte Gesetze (StGB, BGB)
         run: node tests/e2e-web/gesetze-e2e.mjs
+      - name: Schema-Bibliothek, farbige Schemata, Bausteine
+        run: node tests/e2e-web/schemata-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -47,7 +47,7 @@ import { fontSizePt } from "../../lib/textFormat";
 import { IconButton } from "../../ui/Button";
 import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
-import { BAUSTEINE } from "../../lib/gutachten";
+import { BAUSTEIN_GRUPPEN, BAUSTEINE } from "../../lib/gutachten";
 import { CALLOUTS } from "../../lib/callouts";
 import { FONT_SIZES, FONTS, HIGHLIGHT_COLORS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
 import { insertWithPlaceholder } from "./Gutachten";
@@ -353,12 +353,11 @@ export function Toolbar({
           label="Gutachtenstil: Bausteine und Prüfungsschemata"
           onClick={(e) =>
             menu.openBelow(e.currentTarget, [
-              ...(["Obersatz", "Prüfung", "Abschluss"] as const).flatMap((g, gi) => [
-                ...(gi ? [{ separator: true, label: "" }] : []),
-                ...BAUSTEINE.filter((x) => x.group === g).map((x) => ({ label: x.label, onSelect: () => insertWithPlaceholder(editor, x.build()) })),
-              ]),
-              { separator: true, label: "" },
               { label: "Prüfungsschema einfügen …", icon: <Scale size={14} />, onSelect: onSchema },
+              ...BAUSTEIN_GRUPPEN.flatMap((g) => [
+                { header: true, label: g.label, color: g.color },
+                ...BAUSTEINE.filter((x) => x.group === g.id).map((x) => ({ label: x.label, onSelect: () => insertWithPlaceholder(editor, x.build()) })),
+              ]),
             ])
           }
         >

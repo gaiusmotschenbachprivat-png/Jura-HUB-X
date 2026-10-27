@@ -16,6 +16,8 @@ import { createNode } from "../navigation/actions";
 import { KindIcon } from "../navigation/icons";
 import { CASE_STATUS, DIFFICULTY, FIELD_SUGGESTIONS, SOURCE_LABEL, TYPE_LABEL, UNVERIFIED } from "./meta";
 import { SchemaEditor } from "./SchemaEditor";
+import { SchemaDiagram } from "./SchemaDiagram";
+import { gebietOf, RECHTSGEBIETE } from "../../lib/schemaLibrary";
 import { QuelleForm } from "./QuelleForm";
 import { quelleTitle } from "../../lib/zitieren";
 
@@ -54,6 +56,7 @@ function Loaded({ initial }: { initial: Knowledge }) {
   const [fields, setFields] = useState<string[]>([]);
   const [cardOpen, setCardOpen] = useState(false);
   const [cardCount, setCardCount] = useState(0);
+  const [schemaView, setSchemaView] = useState<"grafik" | "bearbeiten">("grafik");
   const areas = useApp((s) => s.areas);
   const rememberTitle = useApp((s) => s.rememberTitle);
   const open = useApp((s) => s.open);
@@ -250,7 +253,30 @@ function Loaded({ initial }: { initial: Knowledge }) {
               </Button>
               <span className="xs muted">Reihenfolge legen oder Punkt für Punkt abfragen</span>
             </div>
-            <SchemaEditor items={(k.data as unknown as SchemaData).items ?? []} onChange={(items) => setData<SchemaData>({ items })} />
+            <div className="row wrap">
+              <div className="seg" role="tablist" aria-label="Ansicht">
+                <button role="tab" aria-selected={schemaView === "grafik"} className={schemaView === "grafik" ? "is-active" : ""} onClick={() => setSchemaView("grafik")}>
+                  Grafik
+                </button>
+                <button role="tab" aria-selected={schemaView === "bearbeiten"} className={schemaView === "bearbeiten" ? "is-active" : ""} onClick={() => setSchemaView("bearbeiten")}>
+                  Bearbeiten
+                </button>
+              </div>
+              <span className="xs muted grow">
+                Farbe nach Rechtsgebiet ({RECHTSGEBIETE.map((g) => g.label).join(", ")}) – über das Fachgebiet. „(P)“ am Anfang eines Punkts markiert ein Klausurproblem.
+              </span>
+            </div>
+            {schemaView === "grafik" ? (
+              <SchemaDiagram
+                title={k.title}
+                norm={(k.data as unknown as SchemaData).norm}
+                notes={(k.data as unknown as SchemaData).notes}
+                items={(k.data as unknown as SchemaData).items ?? []}
+                gebiet={gebietOf(`${k.field} ${k.title}`)}
+              />
+            ) : (
+              <SchemaEditor items={(k.data as unknown as SchemaData).items ?? []} onChange={(items) => setData<SchemaData>({ items })} />
+            )}
             <Field label="Anmerkungen">
               <textarea rows={3} value={(k.data as unknown as SchemaData).notes ?? ""} onChange={(e) => setData<SchemaData>({ notes: e.target.value })} />
             </Field>

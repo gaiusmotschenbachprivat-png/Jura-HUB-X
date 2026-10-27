@@ -9,6 +9,9 @@ export interface MenuItem {
   disabled?: boolean;
   shortcut?: string;
   separator?: boolean;
+  /** Gruppenüberschrift (nicht wählbar), optional mit Farbpunkt */
+  header?: boolean;
+  color?: string;
 }
 
 /** Kontextmenü an einer Bildschirmposition. */
@@ -19,7 +22,7 @@ export function Menu({ x, y, items, onClose }: { x: number; y: number; items: Me
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setPos({ x: Math.min(x, window.innerWidth - r.width - 8), y: Math.min(y, window.innerHeight - r.height - 8) });
+    setPos({ x: Math.max(8, Math.min(x, window.innerWidth - r.width - 8)), y: Math.max(8, Math.min(y, window.innerHeight - r.height - 8)) });
     el.querySelector<HTMLElement>("button:not(:disabled)")?.focus();
   }, [x, y]);
   useEffect(() => {
@@ -50,6 +53,10 @@ export function Menu({ x, y, items, onClose }: { x: number; y: number; items: Me
       {items.map((it, i) =>
         it.separator ? (
           <div key={i} className="menu-sep" />
+        ) : it.header ? (
+          <div key={i} className="menu-header" role="presentation" style={it.color ? { ["--g" as string]: it.color } : undefined}>
+            {it.label}
+          </div>
         ) : (
           <button
             key={i}

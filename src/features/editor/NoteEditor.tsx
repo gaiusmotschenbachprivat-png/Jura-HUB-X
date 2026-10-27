@@ -35,6 +35,7 @@ import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, setDefaultLaws, type NormRef } from "./normLinks";
 import { defaultLaws } from "../../lib/lawContext";
+import { gebietOf } from "../../lib/schemaLibrary";
 import { ancestors } from "../../lib/tree";
 import { StudyDialog, type StudyMode } from "../assistant/StudyTools";
 import { Toolbar } from "./Toolbar";
@@ -733,7 +734,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         />
       )}
       {bibOpen && <BibliographyDialog editor={editor} onClose={() => setBibOpen(false)} />}
-      {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} />}
+      {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} gebiet={gebietOf(contextTitles.join(" "))} />}
       {printDoc && <PrintView doc={printDoc} title={title} onClose={() => setPrintDoc(null)} />}
       {footnote && (
         <FootnoteDialog

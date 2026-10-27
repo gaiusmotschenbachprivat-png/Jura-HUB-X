@@ -17,12 +17,25 @@ dann im Vollbild und funktioniert offline.
 
 ## Gutachtenstil, Suchen, Inhaltsverzeichnis, Drucken
 
-- **Gutachtenstil** (Waage-Symbol in der Werkzeugleiste): Bausteine für Obersatz (Zivilrecht,
-  Strafrecht, Öffentliches Recht), Voraussetzung, Definition, Subsumtion, Streitstand mit
-  Stellungnahme, Zwischenergebnis und Ergebnis. Platzhalter „…“ – der erste ist nach dem
-  Einfügen markiert und wird beim Tippen überschrieben.
-- **Prüfungsschema einfügen** (im selben Menü): Schemata aus „Wissen → Prüfungsschemata“
-  werden als Gliederung A. / I. / 1. / a) eingefügt, auf Wunsch mit Leerzeilen zum Ausformulieren.
+- **Gutachtenstil** (Waage-Symbol in der Werkzeugleiste): Bausteine nach Rechtsgebiet –
+  **Zivilrecht** (Obersatz, Anspruchsaufbau entstanden – untergegangen – durchsetzbar,
+  Willenserklärung, Ergebnis), **Strafrecht** (Obersatz, Deliktsaufbau Tatbestand –
+  Rechtswidrigkeit – Schuld, Konkurrenzen), **Öffentliches Recht** (Obersatz Klage bzw.
+  Verfassungsbeschwerde, Zulässigkeit – Begründetheit, Grundrechtsprüfung, Verhältnismäßigkeit)
+  und für jedes Gutachten (Voraussetzung, Definition, Subsumtion, Streitstand, Zwischenergebnis).
+  Platzhalter „…“ – der erste ist nach dem Einfügen markiert und wird beim Tippen überschrieben.
+- **Prüfungsschema einfügen** (im selben Menü): **Vorlagen** für Zivil-, Straf- und Öffentliches
+  Recht (44 Standardaufbauten, z. B. Vertragsschluss, § 823 I BGB, Versuch, Notwehr,
+  Diebstahl, Betrug, Verfassungsbeschwerde, Anfechtungsklage) oder **Meine Schemata**. Vorschau
+  als farbige Grafik, eingefügt als Gliederung A. / I. / 1. / a) mit farbigen Prüfungsstufen;
+  „(P)“ markiert klassische Klausurprobleme. Die Vorlagen öffnen beim Rechtsgebiet der Notiz.
+- **Wissen → Prüfungsschemata**: Vorlagen ansehen und mit „In meine Schemata übernehmen“
+  anpassen und üben; eigene Schemata erscheinen als Grafik (Farbe nach Fachgebiet), „Bearbeiten“
+  schaltet zum Gliederungseditor. Farben: Rechtsgebiet (Zivilrecht blau, Strafrecht rot,
+  Öffentliches Recht grün) und Prüfungsstufen (z. B. Tatbestand blau, Rechtswidrigkeit ocker,
+  Schuld violett; Zulässigkeit grau, Begründetheit grün). Die Vorlagen sind Standardaufbauten zur
+  Orientierung – Aufbau und Schwerpunkte können je nach Lehrbuch und Lehrstuhl abweichen; jede
+  darin zitierte BGB-/StGB-Norm wird automatisch gegen den mitgelieferten Gesetzestext geprüft.
 - **Suchen und Ersetzen** (Lupe oder ⌘F): Treffer werden markiert, Enter springt weiter,
   „Alle ersetzen“ ersetzt im ganzen Text.
 - **Inhaltsverzeichnis** (Symbol neben dem Titel): alle Überschriften – Antippen springt hin.
