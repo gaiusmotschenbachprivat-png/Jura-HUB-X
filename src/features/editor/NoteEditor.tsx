@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from "@tiptap/react";
 import { ArrowLeftRight, BookOpen, Columns2, ExternalLink, GraduationCap, History, ListTree, Maximize2, MoreHorizontal, PencilLine, Printer, Rows2, Unlink, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
 import type { Note } from "../../api/types";
@@ -33,7 +33,9 @@ import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
 import { CALLOUTS, calloutInfo } from "../../lib/callouts";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
-import { normRefOf, type NormRef } from "./normLinks";
+import { normRefOf, setDefaultLaws, type NormRef } from "./normLinks";
+import { defaultLaws } from "../../lib/lawContext";
+import { ancestors } from "../../lib/tree";
 import { StudyDialog, type StudyMode } from "../assistant/StudyTools";
 import { Toolbar } from "./Toolbar";
 import { VersionHistory } from "./VersionHistory";
@@ -219,6 +221,26 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       void freezeAndFlush(note.node_id);
     };
   }, [note.node_id, note.title, rememberTitle]);
+
+  // Zitate ohne Gesetz („§ 433 I“): Gesetz aus Notiz-/Veranstaltungstitel bzw. den importierten Gesetzen ergänzen
+  const dataVersion = useApp((s) => s.dataVersion);
+  const contextTitles = useMemo(() => {
+    const chain = [note.node_id, ...ancestors(nodes, note.node_id)];
+    return [title, ...chain.slice(1).map((id) => nodes.find((n) => n.id === id)?.title ?? ""), area?.name ?? ""].filter(Boolean);
+  }, [nodes, note.node_id, title, area?.name]);
+  useEffect(() => {
+    if (!editor) return;
+    let alive = true;
+    void api
+      .legalSourcesList()
+      .then((list) => {
+        if (alive) setDefaultLaws(editor, defaultLaws(contextTitles, list.filter((s) => s.kind === "gesetz").map((s) => s.abbreviation)));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [editor, contextTitles, dataVersion]);
 
   // Titel aus dem Baum übernehmen (Umbenennen in der Seitenleiste)
   useEffect(() => {

@@ -106,6 +106,7 @@ export function SlidePicker({ node, onPick, onClose }: { node: StudyNode; onPick
   const dataVersion = useApp((s) => s.dataVersion);
   const [own, setOwn] = useState<DocumentInfo[] | null>(null);
   const [all, setAll] = useState<DocumentInfo[]>([]);
+  const [other, setOther] = useState<DocumentInfo[]>([]);
   const [q, setQ] = useState("");
   const scope = useMemo(() => {
     const chain = [node.id, ...ancestors(nodes, node.id)];
@@ -118,7 +119,11 @@ export function SlidePicker({ node, onPick, onClose }: { node: StudyNode; onPick
       .catch(() => setOwn([]));
     api
       .documentsList({ kind: "all" })
-      .then((l) => setAll(pdf(l)))
+      .then((l) => {
+        setAll(pdf(l));
+        // andere Formate zeigen, damit klar ist, warum sie nicht wählbar sind
+        setOther(l.filter((d) => d.ext !== "pdf" && !d.deleted_at));
+      })
       .catch(reportError);
   }, [scope, dataVersion]);
   const t = q.trim().toLowerCase();
@@ -126,6 +131,8 @@ export function SlidePicker({ node, onPick, onClose }: { node: StudyNode; onPick
   const ownIds = new Set((own ?? []).map((d) => d.id));
   const first = (own ?? []).filter(match);
   const rest = all.filter((d) => !ownIds.has(d.id) && match(d));
+  const others = other.filter(match);
+  const isSlides = (d: DocumentInfo) => ["pptx", "ppt", "key", "odp"].includes(d.ext);
   const row = (d: DocumentInfo) => (
     <button key={d.id} className="slide-pick" onClick={() => onPick(d)}>
       <DocIcon ext={d.ext} size={16} />
@@ -159,6 +166,24 @@ export function SlidePicker({ node, onPick, onClose }: { node: StudyNode; onPick
             {rest.map(row)}
             {!first.length && !rest.length && (
               <p className="small muted">{all.length ? "Kein Treffer." : "Noch keine PDFs vorhanden. Mit „PDF importieren“ holst du die Folien aus der Dateien-App."}</p>
+            )}
+            {others.length > 0 && (
+              <>
+                <div className="label">Andere Formate · nur PDFs lassen sich neben der Mitschrift zeigen</div>
+                {others.map((d) => (
+                  <div key={d.id} className="slide-pick is-disabled" aria-disabled="true">
+                    <DocIcon ext={d.ext} size={16} />
+                    <span className="grow ellipsis">{d.title}</span>
+                    <span className="xs muted">{d.ext.toUpperCase()}</span>
+                  </div>
+                ))}
+                {others.some(isSlides) && (
+                  <p className="xs muted">
+                    PowerPoint/Keynote-Folien: In PowerPoint oder Keynote „Exportieren → PDF“ wählen (auf dem iPad: Teilen → Exportieren → PDF) und das PDF hier
+                    mit „PDF importieren“ hinzufügen.
+                  </p>
+                )}
+              </>
             )}
           </div>
         )}

@@ -80,6 +80,7 @@ export function NormPopover({ refInfo, anchor, onClose }: { refInfo: NormRef; an
             ))}
           </div>
           <p className="xs muted norm-pop-foot">
+            {refInfo.inferred ? `Im Text steht kein Gesetz – angenommen: ${refInfo.law}. ` : ""}
             {version ? `Fassung laut Quelle: ${version}. ` : ""}Ob dieser Stand aktuell ist, prüft Studium OS nicht.
           </p>
         </>
@@ -89,7 +90,7 @@ export function NormPopover({ refInfo, anchor, onClose }: { refInfo: NormRef; an
         </p>
       ) : (
         <div className="stack">
-          <p className="small">Das {refInfo.law} ist noch nicht importiert. Gesetze lassen sich unter „KI-Assistent → Rechtsquellen“ hinzufügen (XML von gesetze-im-internet.de).</p>
+          <p className="small">Das {refInfo.law} ist noch nicht importiert. Gesetze lassen sich unter „KI-Assistent → Rechtsquellen“ hinzufügen (XML oder PDF von gesetze-im-internet.de).</p>
           <Button
             size="sm"
             onClick={() => {

@@ -16,7 +16,9 @@ import type { NewLegalChunk, NewLegalSource } from "../../api/types";
 const PAGE_FURNITURE = [/^-?\s*Seite \d+ von \d+\s*-?$/i, /^Ein Service des Bundesministerium/i, /^sowie des Bundesamts für Justiz/i, /^www\.gesetze-im-internet\.de$/i];
 const NORM_LINE = /^(§{1,2}|Art\.?|Artikel)\s*(\d+)\s*([a-z]{0,2})\b\s*(.*)$/;
 const ORDINAL = "(?:Erst|Zweit|Dritt|Viert|Fünft|Sechst|Siebt|Acht|Neunt|Zehnt|Elft|Zwölft|[A-ZÄÖÜ][a-zäöüß]+zehnt|[A-ZÄÖÜ][a-zäöüß]+(?:zigst|ßigst)|Dreißigst|Hundertst)(?:er|es|e)";
-const STRUCTURE = new RegExp(`^(?:${ORDINAL}\\s+(?:Buch|Teil|Abschnitt|Unterabschnitt|Titel|Untertitel|Kapitel)|(?:Allgemeiner|Besonderer)\\s+Teil|Buch\\s+\\d+|Teil\\s+\\d+|Abschnitt\\s+\\d+|Kapitel\\s+\\d+)\\s*$`, "i");
+const STRUCTURE = new RegExp(`^(?:${ORDINAL}\\s+(?:Buch|Teil|Abschnitt|Unterabschnitt|Titel|Untertitel|Kapitel)|(?:Allgemeiner|Besonderer)\\s+Teil|(?:Buch|Teil|Abschnitt|Unterabschnitt|Titel|Untertitel|Kapitel|Unterkapitel)\\s+\\d+[a-z]?)\\s*$`, "i");
+/** BGB-Form in einer Zeile: „Titel 1 - Natürliche Personen, Verbraucher, Unternehmer“ */
+const STRUCTURE_NAMED = /^(?:Buch|Teil|Abschnitt|Unterabschnitt|Titel|Untertitel|Kapitel|Unterkapitel)\s+\d+[a-z]?\s+[-–]\s+\S.{0,140}$/;
 
 /** „Z w e i t e r  A b s c h n i t t“ → „Zweiter Abschnitt“ */
 function unspace(line: string): string {
@@ -102,7 +104,15 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
   if (!heads.length) throw new Error("In der Datei wurden keine Paragraphen (§ …) oder Artikel gefunden.");
   const first = heads[0]!.label;
   const again = heads.findIndex((h, k) => k > 0 && h.label === first);
-  const bodyStart = again > 0 ? heads[again]!.i : heads[0]!.i;
+  let bodyStart = again > 0 ? heads[again]!.i : heads[0]!.i;
+  // Gliederungsüberschriften direkt vor der ersten Norm gehören schon zum Gesetzestext („Buch 1 / Allgemeiner Teil / …“)
+  const isStructure = (l: string | undefined) => !!l && (STRUCTURE.test(unspace(l)) || STRUCTURE_NAMED.test(l));
+  const isName = (l: string | undefined) => !!l && l.length <= 90 && !/[.;:,]$/.test(l) && !NORM_LINE.test(l);
+  for (let k = 0; k < 12 && bodyStart > 0; k++) {
+    if (isStructure(lines[bodyStart - 1])) bodyStart--;
+    else if (isName(lines[bodyStart - 1]) && isStructure(lines[bodyStart - 2])) bodyStart -= 2;
+    else break;
+  }
   // Inhaltsübersicht (falls vorhanden): welche Normen mit welchem Titel es gibt
   const toc = new Map<string, string>();
   if (again > 0)
@@ -172,6 +182,11 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
         pendingStructure = false;
         continue;
       }
+    }
+    if (STRUCTURE_NAMED.test(line) && !/[.;:,]$/.test(line)) {
+      gliederung = line.replace(/\s+[-–]\s+/, " ");
+      pendingStructure = false;
+      continue;
     }
     if (STRUCTURE.test(line) || line !== raw) {
       // Gliederungsüberschrift; die folgende kurze Zeile ist ihr Name

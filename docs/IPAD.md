@@ -44,6 +44,8 @@ Vektordaten erhalten. Zeichnungen erscheinen auch im Word-Export und in der Druc
 ## Folien neben der Mitschrift
 
 Knopf **„Folien“** im Kopf einer Notiz → Foliensatz wählen (zuerst die PDFs der Veranstaltung,
+dann alle PDFs; andere Formate wie PowerPoint stehen ausgegraut darunter – sie vorher in
+PowerPoint/Keynote als PDF exportieren;
 „PDF importieren“ holt neue Folien aus der Dateien-App). Die Folien öffnen sich **rechts neben**
 der Mitschrift, auf dem iPad **hochkant darüber**; der Trenner lässt sich ziehen, das Symbol
 oben in der Folie schaltet zwischen nebeneinander und untereinander um. Die Notiz merkt sich
@@ -195,6 +197,11 @@ gepunktet unterstrichen (nur Anzeige – der Text bleibt unverändert). **Antipp
 Wortlaut aus den importierten Gesetzen, der zitierte Absatz ist hervorgehoben, darunter die
 Fassung laut Quelle. Ist das Gesetz noch nicht importiert, führt ein Knopf zu
 „KI-Assistent → Rechtsquellen“. Studium OS prüft nicht, ob ein Gesetzesstand aktuell ist.
+
+Steht **kein Gesetz** dabei („§ 433 I“, „§ 104 Nr. 2“), ergänzt Studium OS es: zuerst das
+zuletzt davor genannte Gesetz, sonst das, worauf der Titel der Notiz oder Veranstaltung deutet
+(„BGB AT“, „Schuldrecht“ → BGB; „Strafrecht“ → StGB; „Staatsorganisation“, „Grundrechte“ → GG),
+sonst das einzige importierte Gesetz. Im Wortlaut-Fenster steht dann „angenommen: BGB“.
 
 ## Zitierhilfe und Literaturverzeichnis
 

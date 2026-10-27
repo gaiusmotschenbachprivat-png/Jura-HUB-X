@@ -123,4 +123,78 @@ describe("Gesetz als PDF/Text", () => {
     expect(await upgradeTextLaws(backend)).toEqual([]);
     expect(settings["ai.lawUpgrade"]).toEqual([urteil.id]);
   });
+
+  it("BGB-Form: Buch/Abschnitt/Titel mit Nummern", () => {
+    const bgb = `Ein Service des Bundesministerium der Justiz und für Verbraucherschutz
+sowie des Bundesamts für Justiz ‒ www.gesetze-im-internet.de
+Bürgerliches Gesetzbuch (BGB)
+BGB
+Ausfertigungsdatum: 18.08.1896
+Vollzitat:
+"Bürgerliches Gesetzbuch in der Fassung der Bekanntmachung vom 2. Januar 2002 (BGBl. I S. 42, 2909; 2003 I S. 738), das
+zuletzt durch Artikel 1 des Gesetzes vom 1. Oktober 2026 geändert worden ist"
+Stand: Neugefasst durch Bek. v. 2.1.2002 I 42, 2909; 2003, 738;
+zuletzt geändert durch Art. 1 G v. 1.10.2026 I Nr. 300
+Inhaltsübersicht
+Buch 1
+Allgemeiner Teil
+Abschnitt 1
+Personen
+Titel 1
+Natürliche Personen, Verbraucher, Unternehmer
+§ 1 Beginn der Rechtsfähigkeit
+§ 2 Eintritt der Volljährigkeit
+Abschnitt 3
+Rechtsgeschäfte
+Titel 1
+Geschäftsfähigkeit
+§ 104 Geschäftsunfähigkeit
+§ 105 Nichtigkeit der Willenserklärung
+Buch 2
+Recht der Schuldverhältnisse
+Untertitel 1
+Allgemeine Vorschriften
+§ 433 Vertragstypische Pflichten beim Kaufvertrag
+- Seite 1 von 400 -
+Buch 1 - Allgemeiner Teil
+Abschnitt 1 - Personen
+Titel 1 - Natürliche Personen, Verbraucher, Unternehmer
+§ 1 Beginn der Rechtsfähigkeit
+Die Rechtsfähigkeit des Menschen beginnt mit der Vollendung der Geburt.
+§ 2 Eintritt der Volljährigkeit
+Die Volljährigkeit tritt mit der Vollendung des 18. Lebensjahres ein.
+Abschnitt 3
+Rechtsgeschäfte
+Titel 1
+Geschäftsfähigkeit
+§ 104 Geschäftsunfähigkeit
+Geschäftsunfähig ist:
+1. wer nicht das siebente Lebensjahr vollendet hat,
+2. wer sich in einem die freie Willensbestimmung ausschließenden Zustand krankhafter Störung der
+Geistestätigkeit befindet, sofern nicht der Zustand seiner Natur nach ein vorübergehender ist.
+§ 105 Nichtigkeit der Willenserklärung
+(1) Die Willenserklärung eines Geschäftsunfähigen ist nichtig.
+(2) Nichtig ist auch eine Willenserklärung, die im Zustand der Bewusstlosigkeit oder vorübergehender Störung der
+Geistestätigkeit abgegeben wird.
+Buch 2
+Recht der Schuldverhältnisse
+Untertitel 1
+Allgemeine Vorschriften
+§ 433 Vertragstypische Pflichten beim Kaufvertrag
+(1) Durch den Kaufvertrag wird der Verkäufer einer Sache verpflichtet, dem Käufer die Sache zu übergeben und das
+Eigentum an der Sache zu verschaffen.
+(2) Der Käufer ist verpflichtet, dem Verkäufer den vereinbarten Kaufpreis zu zahlen und die gekaufte Sache abzunehmen.`;
+    const l = parseLawText(bgb, { origin: "BGB.pdf" });
+    expect(l.source).toMatchObject({ title: "Bürgerliches Gesetzbuch", abbreviation: "BGB" });
+    expect(l.source.version).toContain("zuletzt geändert durch Art. 1 G v. 1.10.2026");
+    const h = (n: string) => l.chunks.filter((c) => c.norm === n);
+    expect([...new Set(l.chunks.map((c) => c.norm))]).toEqual(["§ 1", "§ 2", "§ 104", "§ 105", "§ 433"]);
+    expect(h("§ 1")[0]!.heading).toBe("Beginn der Rechtsfähigkeit – Titel 1 Natürliche Personen, Verbraucher, Unternehmer");
+    expect(h("§ 2")[0]!.text).toBe("Die Volljährigkeit tritt mit der Vollendung des 18. Lebensjahres ein.");
+    expect(h("§ 104")[0]!.heading).toBe("Geschäftsunfähigkeit – Titel 1 Geschäftsfähigkeit");
+    expect(h("§ 104")[0]!.text).toMatch(/^Geschäftsunfähig ist: 1\. wer .* vorübergehender ist\.$/);
+    expect(h("§ 105").map((c) => c.absatz)).toEqual([1, 2]);
+    expect(h("§ 433")[1]!.text).toMatch(/^\(2\) Der Käufer ist verpflichtet/);
+    expect(h("§ 433")[0]!.heading).toBe("Vertragstypische Pflichten beim Kaufvertrag – Untertitel 1 Allgemeine Vorschriften");
+  });
 });

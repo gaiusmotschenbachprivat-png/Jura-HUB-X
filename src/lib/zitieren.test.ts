@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 
 import type { QuelleData } from "../api/types";
 import { editorExtensions } from "../features/editor/extensions";
-import { findNormRefs } from "../features/editor/normLinks";
+import { findNormRefs, setDefaultLaws } from "../features/editor/normLinks";
+import { defaultLaws, type DefaultLaws } from "./lawContext";
 import { buildPrintHtml } from "../features/editor/print";
 import { exportDocx } from "./docxExport";
 import { bibEntry, bibliography, citedSources, defaultKurz, emptyQuelle, footnoteText, quelleTitle } from "./zitieren";
@@ -61,13 +62,40 @@ describe("Normen antippen", () => {
     });
     const refs = findNormRefs(e.state.doc);
     expect(refs.map((r) => r.ref)).toEqual([
-      { law: "BGB", norm: "§ 119", absatz: 1, label: "§ 119 Abs. 1 BGB" },
-      { law: "GG", norm: "Art. 12", absatz: 1, label: "Art. 12 Abs. 1 GG" },
+      { law: "BGB", norm: "§ 119", absatz: 1, label: "§ 119 Abs. 1 BGB", inferred: false },
+      { law: "GG", norm: "Art. 12", absatz: 1, label: "Art. 12 Abs. 1 GG", inferred: false },
+      // ohne Gesetz: das zuletzt genannte §-Gesetz
+      { law: "BGB", norm: "§ 5", absatz: null, label: "§ 5 BGB", inferred: true },
     ]);
     expect(e.state.doc.textBetween(refs[0]!.from, refs[0]!.to)).toBe("§ 119 Abs. 1 BGB");
-    expect(e.view.dom.querySelectorAll(".norm-ref").length).toBe(2);
+    expect(e.view.dom.querySelectorAll(".norm-ref").length).toBe(3);
     // gespeicherter Inhalt bleibt unverändert (nur Anzeige)
     expect(JSON.stringify(e.getJSON())).not.toContain("norm-ref");
     e.destroy();
+  });
+
+  it("Mitschrift ohne Gesetzesangabe: Gesetz aus Titel bzw. Import ergänzt", () => {
+    const e = new Editor({ extensions: editorExtensions(), content: doc(p("Geschäftsunfähig ist, wer § 104 Nr. 1 erfüllt; vgl. § 105 I."), p("Art. 1 I schützt die Menschenwürde.")) });
+    expect(e.view.dom.querySelectorAll(".norm-ref").length).toBe(0);
+    setDefaultLaws(e, defaultLaws(["1. Vorlesung", "BGB AT I.", "Rechtswissenschaften"], ["BGB", "StGB", "GG"]));
+    const refs = findNormRefs(e.state.doc, (e.storage as unknown as { normLinks: { fallback: DefaultLaws } }).normLinks.fallback);
+    // §: aus dem Titel „BGB AT I.“; Art.: einziges importiertes Gesetz mit Artikeln
+    expect(refs.map((r) => r.ref.label)).toEqual(["§ 104 Nr. 1 BGB", "§ 105 Abs. 1 BGB", "Art. 1 Abs. 1 GG"]);
+    // Anzeige wurde neu berechnet
+    expect(e.view.dom.querySelectorAll(".norm-ref.is-inferred").length).toBe(3);
+    e.destroy();
+  });
+
+  it("Gesetz aus dem Zusammenhang", () => {
+    const imp = ["BGB", "StGB", "GG"];
+    expect(defaultLaws(["Strafrecht AT Teil 1"], imp)).toEqual({ "§": "StGB", "Art.": "GG" });
+    expect(defaultLaws(["Staatsorganisation I."], imp)).toEqual({ "§": "", "Art.": "GG" });
+    expect(defaultLaws(["Nacharbeitung", "BGB AT I."], imp)["§"]).toBe("BGB");
+    // nur das BGB importiert, Titel deutet auf Strafrecht: nichts raten
+    expect(defaultLaws(["Strafrecht AT"], ["BGB"])["§"]).toBe("");
+    // kein Hinweis im Titel, nur ein §-Gesetz importiert
+    expect(defaultLaws(["Mitschrift"], ["BGB", "GG"])).toEqual({ "§": "BGB", "Art.": "GG" });
+    expect(defaultLaws(["Mitschrift"], ["BGB", "StGB"])["§"]).toBe("");
+    expect(defaultLaws(["Übung zum HGB"], ["BGB", "HGB"])["§"]).toBe("HGB");
   });
 });

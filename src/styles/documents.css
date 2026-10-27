@@ -83,3 +83,5 @@
 .slide-list .label { margin: 8px 0 2px; }
 .slide-pick { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 8px; background: none; text-align: left; color: var(--text); cursor: pointer; }
 .slide-pick:hover, .slide-pick:focus-visible { background: var(--bg-hover); }
+.slide-pick.is-disabled { cursor: default; opacity: .55; }
+.slide-pick.is-disabled:hover { background: none; }
