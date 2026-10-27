@@ -143,6 +143,15 @@ try {
   const boxText = await box.innerText();
   check("Wortlaut als Gesetzestext-Kasten eingefügt", boxText.toLowerCase().includes("§ 104 bgb – geschäftsunfähigkeit") && boxText.includes("siebente Lebensjahr"), boxText);
   await shot("bildfolien-2-norm");
+  // 5. Suche nach „§104“ findet den Wortlaut im importierten BGB
+  await page.locator(".side-search").click();
+  await page.locator(".palette-input input").fill("§104");
+  const lawItem = page.locator(".palette-item", { hasText: "§ 104 BGB" });
+  await lawItem.waitFor({ timeout: 5000 });
+  check("Suche „§104“ zeigt den Paragraphen (Gruppe Gesetze)", /gesetze/i.test(await page.locator(".palette").innerText()) && (await lawItem.innerText()).includes("Geschäftsunfähigkeit"));
+  await lawItem.click();
+  await page.locator(".norm-pop .norm-pop-text").waitFor({ timeout: 5000 });
+  check("Antippen zeigt den Wortlaut mit „Kopieren“", (await page.locator(".norm-pop").getByRole("button", { name: "Kopieren" }).count()) === 1);
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Testlauf ohne Abbruch", false, e.message);

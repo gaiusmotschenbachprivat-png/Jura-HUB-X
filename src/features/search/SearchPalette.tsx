@@ -1,8 +1,11 @@
-import { FileText, Search } from "lucide-react";
+import { BookOpenText, FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "../../api";
-import type { SearchHit } from "../../api/types";
+import type { LegalHit, SearchHit } from "../../api/types";
+import { findNormCitations, normKey } from "../../ai/norms";
+import { NormPopover } from "../editor/NormPopover";
+import type { NormRef } from "../editor/normLinks";
 import { highlightHtml, stripHighlight } from "../../lib/format";
 import { areaById, useApp, type View } from "../../state/store";
 import { AreaDot } from "../../ui/misc";
@@ -42,6 +45,22 @@ export function hitToView(h: SearchHit): View {
   }
 }
 
+/**
+ * „§ 34“, „§34 BGB“, „Art. 1 GG“: Wortlaut aus den importierten Gesetzen.
+ * Ohne Gesetzesangabe werden alle importierten Gesetze durchsucht.
+ */
+export async function lawHitsFor(q: string): Promise<{ ref: NormRef; hits: LegalHit[] }[]> {
+  const c = findNormCitations(q.trim())[0];
+  if (!c) return [];
+  const laws = c.law ? [c.law] : (await api.legalSourcesList()).filter((s) => s.kind === "gesetz").map((s) => s.abbreviation);
+  const out: { ref: NormRef; hits: LegalHit[] }[] = [];
+  for (const law of laws.slice(0, 20)) {
+    const hits = await api.legalNorm(law, normKey(c), null).catch(() => [] as LegalHit[]);
+    if (hits.length) out.push({ ref: { law: hits[0]!.abbreviation || law, norm: normKey(c), absatz: c.absatz, label: `${normKey(c)} ${hits[0]!.abbreviation || law}` }, hits });
+  }
+  return out;
+}
+
 /** Ergebnisse gruppieren, Reihenfolge der Gruppen fest. */
 function orderHits(hits: SearchHit[]): SearchHit[] {
   const groups = ["note", "knowledge", "node", "page", "annotation", "document", "card", "task", "exam"] as const;
@@ -65,6 +84,8 @@ function Palette({ onClose }: { onClose: () => void }) {
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [sel, setSel] = useState(0);
   const [busy, setBusy] = useState(false);
+  const [laws, setLaws] = useState<{ ref: NormRef; hits: LegalHit[] }[]>([]);
+  const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   /** Enter wurde gedrückt, bevor Ergebnisse da waren: ersten Treffer dann öffnen. */
   const pendingEnter = useRef<string | null>(null);
@@ -75,8 +96,10 @@ function Palette({ onClose }: { onClose: () => void }) {
     let alive = true;
     if (!q.trim()) {
       setHits([]);
+      setLaws([]);
       return;
     }
+    void lawHitsFor(q).then((l) => alive && setLaws(l));
     setBusy(true);
     const t = setTimeout(async () => {
       const res = await api.search(q, scopeAll || areaId === "all" ? null : areaId).catch(() => []);
@@ -117,7 +140,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           <Search size={18} className="muted" />
           <input
             autoFocus
-            placeholder="Notizen, Veranstaltungen, Dokumente und PDF-Text durchsuchen …"
+            placeholder="Notizen, Dokumente, PDF-Text und Gesetze (z. B. § 34 BGB) durchsuchen …"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
@@ -164,7 +187,26 @@ function Palette({ onClose }: { onClose: () => void }) {
             ) : (
               <div className="palette-empty muted small">Tippe, um zu suchen. Gesucht wird lokal in Titeln, Notiztexten, Dozenten/Orten und dem Text importierter Dokumente.</div>
             ))}
-          {q && !busy && ordered.length === 0 && <div className="palette-empty muted small">Keine Treffer für „{q}“.</div>}
+          {laws.length > 0 && <div className="palette-group label">Gesetze</div>}
+          {laws.map((l) => {
+            const heading = l.hits.find((h) => h.heading)?.heading?.split(" – ")[0];
+            return (
+              <button key={l.ref.label} className="palette-item" onClick={(e) => setNormPop({ ref: l.ref, rect: e.currentTarget.getBoundingClientRect() })}>
+                <span className="palette-icon">
+                  <BookOpenText size={15} />
+                </span>
+                <span className="grow" style={{ minWidth: 0 }}>
+                  <span className="palette-title ellipsis">
+                    {l.ref.label}
+                    {heading ? ` – ${heading}` : ""}
+                  </span>
+                  <span className="palette-snippet">{l.hits[0]!.text.slice(0, 160)}</span>
+                  <span className="palette-path xs muted ellipsis">{l.hits[0]!.title}</span>
+                </span>
+              </button>
+            );
+          })}
+          {q && !busy && ordered.length === 0 && laws.length === 0 && <div className="palette-empty muted small">Keine Treffer für „{q}“.</div>}
           {ordered.map((h, i) => {
             const header = h.entity_type !== lastGroup ? GROUP_LABEL[h.entity_type] : null;
             lastGroup = h.entity_type;
@@ -189,6 +231,7 @@ function Palette({ onClose }: { onClose: () => void }) {
             );
           })}
         </div>
+        {normPop && <NormPopover refInfo={normPop.ref} anchor={normPop.rect} onClose={() => setNormPop(null)} />}
         <div className="palette-foot xs muted">
           <span>↑↓ auswählen</span>
           <span>↵ öffnen</span>

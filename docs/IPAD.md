@@ -192,7 +192,7 @@ Das Glossar sind dieselben Einträge wie bisher die „Definitionen“: Auch „
 anlegen“ in einer Notiz und Verknüpfungen aus Notizen landen hier. Ein gemeinsames Glossar mit
 anderen gibt es bewusst nicht – Studium OS arbeitet ohne Cloud.
 
-## Normen antippen
+## Normen antippen und suchen
 
 Normzitate im Text wie „§ 119 Abs. 1 BGB“ oder „Art. 12 I GG“ werden automatisch erkannt und
 gepunktet unterstrichen (nur Anzeige – der Text bleibt unverändert). **Antippen** zeigt den
@@ -204,6 +204,9 @@ Steht **kein Gesetz** dabei („§ 433 I“, „§ 104 Nr. 2“), ergänzt Studi
 zuletzt davor genannte Gesetz, sonst das, worauf der Titel der Notiz oder Veranstaltung deutet
 („BGB AT“, „Schuldrecht“ → BGB; „Strafrecht“ → StGB; „Staatsorganisation“, „Grundrechte“ → GG),
 sonst das einzige importierte Gesetz. Im Wortlaut-Fenster steht dann „angenommen: BGB“.
+
+In der **Suche** (oben links) findet „§ 34“ oder „§ 34 BGB“ den Paragraphen direkt in den
+importierten Gesetzen (Gruppe „Gesetze“); antippen zeigt den Wortlaut.
 
 Im Wortlaut-Fenster: **„Kopieren“** (Wortlaut mit Überschrift und Fassung in die
 Zwischenablage; der Text lässt sich auch markieren) und **„In Mitschrift einfügen“** (als
