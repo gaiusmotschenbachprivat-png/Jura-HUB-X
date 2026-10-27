@@ -7,6 +7,9 @@ import { reportError, useApp, type View } from "../../state/store";
 import { Button } from "../../ui/Button";
 import { BackupSettings } from "./BackupSettings";
 import { WebBackupSettings } from "./WebBackupSettings";
+import pkg from "../../../package.json";
+
+const APP_VERSION: string = pkg.version;
 
 type Tab = NonNullable<Extract<View, { type: "settings" }>["tab"]>;
 const TABS: { id: Tab; label: string }[] = [
@@ -21,7 +24,9 @@ export function SettingsView({ tab = "allgemein" }: { tab?: Tab }) {
   return (
     <div className="page">
       <header className="page-head">
-        <h1 className="page-title-static">Einstellungen</h1>
+        <h1 className="page-title-static">
+          Einstellungen <span className="small muted">· Version {APP_VERSION}</span>
+        </h1>
         <div className="tabs" role="tablist">
           {TABS.map((t) => (
             <button key={t.id} role="tab" aria-selected={tab === t.id} className={`tab ${tab === t.id ? "is-active" : ""}`} onClick={() => open({ type: "settings", tab: t.id })}>

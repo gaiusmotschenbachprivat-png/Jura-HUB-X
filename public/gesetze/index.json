@@ -1,0 +1,18 @@
+[
+ {
+  "abbreviation": "StGB",
+  "title": "Strafgesetzbuch",
+  "version": "Neugefasst durch Bek. v. 13.11.1998 I 3322; zuletzt geändert durch Art. 1 G v. 20.3.2026 I Nr. 95",
+  "norms": 579,
+  "chunks": 1481,
+  "file": "stgb.json"
+ },
+ {
+  "abbreviation": "BGB",
+  "title": "Bürgerliches Gesetzbuch",
+  "version": "Neugefasst durch Bek. v. 2.1.2002 I 42, 2909; 2003, 738; zuletzt geändert durch Art. 6 G v. 23.7.2026 I Nr. 226",
+  "norms": 2782,
+  "chunks": 5257,
+  "file": "bgb.json"
+ }
+]

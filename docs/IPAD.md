@@ -194,6 +194,10 @@ anderen gibt es bewusst nicht – Studium OS arbeitet ohne Cloud.
 
 ## Normen antippen und suchen
 
+**StGB und BGB sind mitgeliefert** und werden beim ersten Start eingerichtet (unvollständige
+ältere Importe werden ersetzt). Stand und Vollständigkeit: KI-Assistent → Rechtsquellen. Die
+App-Version steht oben in den Einstellungen.
+
 Normzitate im Text wie „§ 119 Abs. 1 BGB“ oder „Art. 12 I GG“ werden automatisch erkannt und
 gepunktet unterstrichen (nur Anzeige – der Text bleibt unverändert). **Antippen** zeigt den
 Wortlaut aus den importierten Gesetzen, der zitierte Absatz ist hervorgehoben, darunter die

@@ -6,6 +6,7 @@ import type { AiStatus, LegalKind, LegalSource } from "../../api/types";
 import { DEFAULT_SYSTEM_PROMPT, type Task } from "../../ai/assistant";
 import { configFromSettings, DEFAULT_CONFIG, type AnonymizeConfig, type Category } from "../../ai/privacy/anonymize";
 import { COMMON_LAWS, importFile, importLaw, readText } from "../../ai/sources/importer";
+import { bundledLaws, installBundled, isIncomplete, type BundledLaw } from "../../ai/sources/bundled";
 import { formatDate, formatDateTime } from "../../lib/format";
 import { AI_PROFILES } from "../../ai/config";
 import { formatCost, requestCostUsd, requestsFor, SPENT_SETTING } from "../../ai/cost";
@@ -369,10 +370,13 @@ function Sources({ status }: { status: AiStatus }) {
             <p className="xs muted">Die Abkürzung steht in der Adresse bei gesetze-im-internet.de, z. B. …/bgb/ oder …/kschg/.</p>
           </>
         ) : (
-          <p className="small">
-            In der Browser-Version kann Studium OS Gesetze nicht selbst laden (gesetze-im-internet.de erlaubt das technisch nicht). Lade auf gesetze-im-internet.de beim
-            jeweiligen Gesetz die „XML“-Datei herunter und importiere sie unten.
-          </p>
+          <>
+            <BundledLaws list={list} onChange={() => void load()} />
+            <p className="small">
+              Weitere Gesetze: Studium OS kann im Browser nicht selbst von gesetze-im-internet.de laden (die Seite erlaubt das technisch nicht). Lade dort beim jeweiligen
+              Gesetz die „XML“- oder „PDF“-Datei herunter und importiere sie unten mit der Art „Gesetz“.
+            </p>
+          </>
         )}
       </section>
 
@@ -719,5 +723,51 @@ function ModelAndCost() {
       )}
       <p className="xs muted">Tipp: In der Anthropic-Konsole das automatische Aufladen ausgeschaltet lassen – dann kann nie mehr als das aufgeladene Guthaben verbraucht werden.</p>
     </section>
+  );
+}
+
+/** Mitgelieferte Gesetze (StGB, BGB): Stand, Vollständigkeit, laden bzw. erneuern. */
+function BundledLaws({ list, onChange }: { list: LegalSource[]; onChange: () => void }) {
+  const [laws, setLaws] = useState<BundledLaw[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const toast = useApp((s) => s.toast);
+  useEffect(() => {
+    void bundledLaws().then(setLaws);
+  }, []);
+  if (!laws.length) return null;
+  const install = async (l: BundledLaw) => {
+    setBusy(l.abbreviation);
+    try {
+      const s = await installBundled(api, l);
+      toast(`${s.abbreviation}: ${s.chunk_count.toLocaleString("de-DE")} Abschnitte geladen.`, "success");
+      onChange();
+    } catch (e) {
+      toast(errorMessage(e), "error");
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div className="stack bundled-laws">
+      <p className="small muted">Mitgeliefert – vollständig in Paragraphen und Absätze aufbereitet, ohne Download von fremden Servern:</p>
+      {laws.map((l) => {
+        const have = list.find((s) => s.kind === "gesetz" && s.abbreviation.toLowerCase() === l.abbreviation.toLowerCase());
+        const status = !have ? "nicht geladen" : isIncomplete(have, l) ? `unvollständig (${have.chunk_count.toLocaleString("de-DE")} von ${l.chunks.toLocaleString("de-DE")} Abschnitten)` : "vollständig";
+        return (
+          <div key={l.abbreviation} className="row wrap bundled-law">
+            <strong>{l.abbreviation}</strong>
+            <span className="small grow">
+              {l.title} · {l.norms.toLocaleString("de-DE")} Paragraphen · <span className={have && !isIncomplete(have, l) ? "" : "warn-text"}>{status}</span>
+              <span className="xs muted" style={{ display: "block" }}>
+                Stand laut Quelle: {l.version}
+              </span>
+            </span>
+            <Button size="sm" variant={have && !isIncomplete(have, l) ? "secondary" : "primary"} icon={<Download size={12} />} disabled={!!busy} onClick={() => void install(l)}>
+              {busy === l.abbreviation ? "Lade …" : have ? "Neu laden" : "Laden"}
+            </Button>
+          </div>
+        );
+      })}
+    </div>
   );
 }

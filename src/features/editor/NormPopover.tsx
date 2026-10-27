@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 
 import { api } from "../../api";
 import type { LegalHit } from "../../api/types";
+import { bundledFor, installBundled, type BundledLaw } from "../../ai/sources/bundled";
 import { useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import type { NormRef } from "./normLinks";
@@ -37,6 +38,9 @@ export function NormPopover({
   const toast = useApp((s) => s.toast);
   const box = useRef<HTMLDivElement>(null);
   const [state, setState] = useState<{ hits: LegalHit[]; imported: boolean } | null>(null);
+  const [bundled, setBundled] = useState<BundledLaw | null>(null);
+  const [installing, setInstalling] = useState(false);
+  const [reload, setReload] = useState(0);
   const [pos, setPos] = useState({ x: anchor.left, y: anchor.bottom + 6 });
 
   useEffect(() => {
@@ -46,11 +50,36 @@ export function NormPopover({
       const hits = await api.legalNorm(refInfo.law, refInfo.norm, null).catch(() => [] as LegalHit[]);
       const imported = hits.length > 0 || (await api.legalSourcesList().catch(() => [])).some((s) => s.kind === "gesetz" && s.abbreviation.toLowerCase() === refInfo.law.toLowerCase());
       if (alive) setState({ hits, imported });
+      // nicht gefunden: mitgelieferte vollständige Fassung anbieten
+      if (!hits.length) {
+        const b = await bundledFor(refInfo.law);
+        if (alive) setBundled(b ?? null);
+      }
     })();
     return () => {
       alive = false;
     };
-  }, [refInfo]);
+  }, [refInfo, reload]);
+
+  const install = async () => {
+    if (!bundled) return;
+    setInstalling(true);
+    try {
+      const s = await installBundled(api, bundled);
+      toast(`${s.abbreviation}: vollständige Fassung geladen (${s.chunk_count.toLocaleString("de-DE")} Abschnitte).`, "success");
+      setBundled(null);
+      setReload((n) => n + 1);
+    } catch (e) {
+      toast(e instanceof Error ? e.message : String(e), "error");
+    } finally {
+      setInstalling(false);
+    }
+  };
+  const bundledButton = bundled && (
+    <Button size="sm" variant="primary" disabled={installing} onClick={() => void install()}>
+      {installing ? "Lade …" : `Vollständiges ${bundled.abbreviation} laden (mitgeliefert)`}
+    </Button>
+  );
 
   useLayoutEffect(() => {
     const el = box.current;
@@ -142,12 +171,17 @@ export function NormPopover({
           </p>
         </>
       ) : state.imported ? (
-        <p className="small muted">
-          {refInfo.norm} wurde im importierten {refInfo.law} nicht gefunden (evtl. aufgehoben oder anders nummeriert).
-        </p>
+        <div className="stack">
+          <p className="small muted">
+            {refInfo.norm} wurde im importierten {refInfo.law} nicht gefunden
+            {bundled ? " – die gespeicherte Fassung ist vermutlich unvollständig." : " (evtl. aufgehoben oder anders nummeriert)."}
+          </p>
+          {bundledButton}
+        </div>
       ) : (
         <div className="stack">
           <p className="small">Das {refInfo.law} ist noch nicht importiert. Gesetze lassen sich unter „KI-Assistent → Rechtsquellen“ hinzufügen (XML oder PDF von gesetze-im-internet.de).</p>
+          {bundledButton}
           <Button
             size="sm"
             onClick={() => {

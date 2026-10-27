@@ -196,7 +196,7 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
       // umbrochene Verweise („§ 309 Abs. 2 und …“, „§ 323a, soweit …“) zählen nicht
       const label = `${m[1]!.startsWith("§") ? "§" : "Art."} ${m[2]}${m[3]}`;
       const inToc = toc.size > 0 && toc.has(label) && sameTitle(rest, toc.get(label)!);
-      const plausible = toc.size > 0 ? inToc : (!last || k.n - last.n <= 25) && !/^(Abs\.|Absatz|Satz|Nr\.|Nummer|bis|und|oder|in|im|der|des|gilt|ist|sind|bleibt|findet|[,;)])/.test(rest) && (rest === "" || /^[A-ZÄÖÜ(]/.test(rest));
+      const plausible = toc.size > 0 ? inToc : (!last || k.n - last.n <= 25) && !/^(?:(?:Abs\.|Nr\.|[,;)])|(?:Absatz|Satz|Nummer|bis|und|oder|in|im|der|des|gilt|ist|sind|bleibt|findet)(?![\wäöüß]))/.test(rest) && (rest === "" || /^[A-ZÄÖÜ(]/.test(rest));
       if (plausible && after(k, last)) {
         flush();
         last = k;
@@ -237,6 +237,9 @@ export function parseLawText(text: string, opts: { title?: string; abbreviation?
     cur?.lines.push(line);
   }
   flush();
+  // nur in der Inhaltsübersicht als „(weggefallen)“ geführt (z. B. § 43a StGB)
+  const have = new Set(chunks.map((c) => c.norm));
+  for (const [label, t] of toc) if (/^\(weggefallen\)$/.test(t) && !have.has(label)) chunks.push({ norm: label, absatz: null, heading: "", text: "(weggefallen)" });
   if (chunks.length < 3) throw new Error("Die Datei sieht nicht wie ein Gesetzestext aus (zu wenige Paragraphen erkannt).");
   return { source: { kind: "gesetz", title, abbreviation, version: head.version, origin: opts.origin }, chunks };
 }

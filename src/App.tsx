@@ -2,6 +2,7 @@ import { AlertCircle, ArrowLeft, ArrowRight, Check, Loader2, PanelLeft, PanelRig
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { api } from "./api";
+import { ensureBundledLaws } from "./ai/sources/bundled";
 import { ContextPanel } from "./features/context/ContextPanel";
 import { KnowledgeEditor } from "./features/knowledge/KnowledgeEditor";
 import { KnowledgeList } from "./features/knowledge/KnowledgeList";
@@ -44,7 +45,26 @@ export function App() {
   const fontScale = useApp((s) => s.fontScale);
 
   useEffect(() => {
-    void init().then(() => void resumePendingExtractions());
+    void init().then(() => {
+      void resumePendingExtractions();
+      // StGB/BGB: fehlende einrichten, unvollständige (ältere PDF-Importe) ersetzen
+      const qs = new URLSearchParams(location.search);
+      // Oberflächentests arbeiten mit erfundenen Testgesetzen – dort nur auf Wunsch (?gesetze)
+      if (api.kind === "web" && (!qs.has("e2e") || qs.has("gesetze")))
+        void ensureBundledLaws(api)
+          .then((done) => {
+            for (const d of done)
+              useApp
+                .getState()
+                .toast(
+                  d.reason === "neu"
+                    ? `${d.law.abbreviation} ist eingerichtet (${d.law.chunk_count.toLocaleString("de-DE")} Abschnitte) – Paragraphen lassen sich jetzt antippen.`
+                    : `${d.law.abbreviation} war unvollständig und wurde durch die vollständige Fassung ersetzt.`,
+                  "success",
+                );
+          })
+          .catch(() => {});
+    });
   }, [init]);
 
   useEffect(() => {

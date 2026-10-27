@@ -54,4 +54,12 @@ describe("Entscheidungen erkennen", () => {
     expect(r).toContain("1 BvR 357/05");
     expect(r).toContain("NJW 2021, 1234");
   });
+
+  it("Gesetz wird nur innerhalb einer Zitatkette nach vorne übertragen, nicht über Satzgrenzen", () => {
+    const l = (t: string) => findNormCitations(t).map((c) => `${c.sign} ${c.number}:${c.law}`);
+    expect(l("Der Versuch ist in § 23 geregelt. Zivilrechtlich gilt § 34 BGB.")).toEqual(["§ 23:", "§ 34:BGB"]);
+    expect(l("Art. 2 Abs. 1 i. V. m. Art. 1 Abs. 1 GG")).toEqual(["Art. 2:GG", "Art. 1:GG"]);
+    expect(l("§ 280 I iVm § 241 II BGB")).toEqual(["§ 280:BGB", "§ 241:BGB"]);
+    expect(l("§§ 145, 147 und § 151 BGB")).toEqual(["§ 145:BGB", "§ 147:BGB", "§ 151:BGB"]);
+  });
 });

@@ -138,9 +138,16 @@ export function findNormCitations(text: string): NormCitation[] {
   for (let k = out.length - 2; k >= 0; k--) {
     const a = out[k]!;
     const b = out[k + 1]!;
-    if (!a.law && b.law && b.index - a.index < 80 && a.sign === b.sign) a.law = b.law;
+    if (!a.law && b.law && b.index - a.index < 80 && a.sign === b.sign && isChain(text.slice(a.index, b.index))) a.law = b.law;
   }
   return out;
+}
+
+/** Steht zwischen zwei Zitaten nur Zitat-Bestandteile und Verbindungswörter („i. V. m.“, „und“, „,“)? Kein Satzende, kein Fließtext. */
+function isChain(gap: string): boolean {
+  const rest = gap
+    .replace(/§§?|Artt?\.|Artikel|\b(?:Abs|Absatz|S|Satz|Nr|Nummer|Alt|Var|Hs|lit|UAbs|Halbsatz|ff|f|i|V|m|iVm|iSd|iSv|und|oder|sowie|bzw)\b\.?|\b[IVX]+\b|\d+[a-z]?|[,;()\s]/g, "");
+  return rest === "";
 }
 
 const COURT_FILE = /\b((?:[IVX]+|\d{1,2})\s?(?:ZR|ZB|StR|AZR|ABR|BvR|BvL|BvE|BvF|C|K|B|U|O|S|Ss|ZA|AR)\s?\d{1,5}\/\d{2})\b/g;

@@ -59,7 +59,14 @@ Ohne Quellen kann der Assistent nichts belegen. Unter **KI-Assistent → Rechtsq
 
 - **Desktop:** Gesetze auf Knopfdruck von gesetze-im-internet.de laden (BGB, StGB, GG, KSchG …
   oder jede andere Abkürzung aus der Adresse, z. B. `bauno_by`).
-- **iPad/Browser:** gesetze-im-internet.de erlaubt Browsern keinen direkten Abruf. Lade beim
+- **Mitgeliefert (iPad/Browser): StGB und BGB** – fertig in Paragraphen und Absätze zerlegt
+  (erzeugt mit `tools/gesetze.ts` aus den PDF-Fassungen von gesetze-im-internet.de, geprüft:
+  jeder Paragraph von § 1 bis zum letzten vorhanden). Beim Start richtet die App sie einmalig ein
+  und ersetzt unvollständige Fassungen (ältere PDF-Importe); ein bewusst gelöschtes Gesetz kommt
+  nicht von selbst zurück. Unter „Rechtsquellen“ stehen Stand und Vollständigkeit, „Neu laden“
+  holt die mitgelieferte Fassung erneut. Geladen wird nur von derselben Adresse wie die App.
+  Ob der Stand aktuell ist, prüft Studium OS nicht.
+- **iPad/Browser, weitere Gesetze:** gesetze-im-internet.de erlaubt Browsern keinen direkten Abruf. Lade beim
   Gesetz die „XML“- oder die „PDF“-Datei herunter und importiere sie als Datei (Art „Gesetz“).
   Auch aus PDF, DOCX und TXT werden die einzelnen Paragraphen und Absätze erkannt; Titel,
   Abkürzung (z. B. StGB) und Stand liest Studium OS aus dem Kopf der Datei, sonst trägst du die
