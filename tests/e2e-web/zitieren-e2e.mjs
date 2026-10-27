@@ -137,7 +137,13 @@ try {
   const overlay = page.locator(".print-overlay");
   await overlay.locator(".pagedjs_page").first().waitFor({ timeout: 20000 });
   check("Druck: Literaturverzeichnis vor dem Text", (await overlay.locator(".bib").innerText()).includes("Grüneberg, Bürgerliches Gesetzbuch"));
-  const areas = await overlay.locator(".pagedjs_footnote_area").allInnerTexts();
+  // paged.js setzt die Fußnoten nach den ersten Seiten – darauf warten (CI ist langsamer)
+  let areas = [];
+  for (let i = 0; i < 50; i++) {
+    areas = await overlay.locator(".pagedjs_footnote_area").allInnerTexts();
+    if (areas.some((t) => t.includes("Vgl. Grüneberg/Ellenberger"))) break;
+    await sleep(200);
+  }
   check("Druck: Fußnoten unten auf der Seite", areas.some((t) => t.includes("Vgl. Grüneberg/Ellenberger")), areas.join(" | "));
   await shot("zitieren-druck");
   await overlay.getByRole("button", { name: "Druckansicht schließen" }).click();
