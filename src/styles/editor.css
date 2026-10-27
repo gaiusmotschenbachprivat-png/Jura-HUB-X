@@ -34,7 +34,7 @@
 .swatch.is-active { outline: 2px solid var(--accent); outline-offset: 1px; }
 .color-pop .menu-item { width: 100%; }
 .tb-select { min-height: 28px !important; height: 28px; padding: 0 6px !important; font-size: var(--fs-sm); border-color: transparent !important; background: transparent !important; }
-.tb-select:hover { background: var(--bg-hover) !important; }
+@media (hover: hover) { .tb-select:hover { background: var(--bg-hover) !important; } }
 .link-bar { display: flex; align-items: center; gap: 6px; padding: 4px 40px; background: var(--bg-side); border-bottom: 1px solid var(--line); }
 .note-scroll { flex: 1; overflow: auto; }
 .note-body { max-width: 820px; margin: 0 auto; padding: 24px 40px 30vh; }
@@ -89,7 +89,7 @@
 .versions { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 16px; height: 60vh; }
 .versions-list { overflow: auto; display: flex; flex-direction: column; gap: 2px; border-right: 1px solid var(--line); padding-right: 8px; }
 .version-item { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; border: 0; background: transparent; padding: 7px 9px; border-radius: var(--r-md); text-align: left; color: var(--text); }
-.version-item:hover { background: var(--bg-hover); }
+@media (hover: hover) { .version-item:hover { background: var(--bg-hover); } }
 .version-item.is-sel { background: var(--bg-active); }
 .versions-preview { overflow: auto; padding: 4px 8px; font-family: var(--font-serif); }
 
@@ -99,7 +99,7 @@
 .prose .asset-image.is-missing { padding: 12px; border: 1px dashed var(--line-strong); border-radius: var(--r-md); color: var(--text-3); font-size: var(--fs-sm); font-family: var(--font-ui); }
 .prose .ProseMirror-selectednode img, .prose .asset-image.ProseMirror-selectednode img { box-shadow: 0 0 0 2px var(--accent); }
 .prose .tiptap-mathematics-render { cursor: pointer; border-radius: 4px; padding: 0 2px; }
-.prose .tiptap-mathematics-render:hover { background: var(--accent-soft); }
+@media (hover: hover) { .prose .tiptap-mathematics-render:hover { background: var(--accent-soft); } }
 .prose [data-type="block-math"] { display: block; text-align: center; margin: 0.8em 0; padding: 6px; }
 .prose .inline-math-error, .prose .block-math-error { color: var(--danger); }
 .math-preview { min-height: 56px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--bg-side); padding: 10px; overflow-x: auto; }
@@ -121,7 +121,7 @@
 .footnotes { margin-top: 2.2em; padding-top: 0.6em; border-top: 1px solid var(--line-strong); }
 .footnotes ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .footnote-item { display: flex; gap: 6px; text-align: left; border: 0; background: transparent; padding: 3px 4px; border-radius: var(--r-sm); font-size: 0.85rem; color: var(--text-2); cursor: pointer; width: 100%; }
-.footnote-item:hover { background: var(--bg-hover); }
+@media (hover: hover) { .footnote-item:hover { background: var(--bg-hover); } }
 .footnote-num { font-size: 0.75em; vertical-align: super; color: var(--accent); font-weight: 600; min-width: 1em; }
 @media (pointer: coarse) {
   .toolbar .icon-btn { width: 36px; height: 36px; }
@@ -154,7 +154,8 @@
 .note-meta-field { display: inline-flex; align-items: center; gap: 4px; }
 .note-meta-field > span { color: var(--text-3); font-size: var(--fs-xs); }
 .note-meta-field input { min-height: 28px !important; height: 28px; padding: 0 6px !important; font-size: var(--fs-sm); border-color: transparent !important; background: transparent !important; }
-.note-meta-field input:hover, .note-meta-field input:focus { border-color: var(--line) !important; background: var(--bg) !important; }
+.note-meta-field input:focus { border-color: var(--line) !important; background: var(--bg) !important; }
+@media (hover: hover) { .note-meta-field input:hover { border-color: var(--line) !important; background: var(--bg) !important; } }
 .note-meta-field.grow-field input { width: 180px; }
 
 /* Suchen und Ersetzen */
@@ -165,7 +166,8 @@
 .find-count { min-width: 64px; text-align: center; }
 .find-list { display: flex; flex-direction: column; gap: 2px; max-height: min(32vh, 260px); overflow: auto; margin-top: 2px; border-top: 1px solid var(--line); padding-top: 4px; }
 .find-hit { display: flex; gap: 8px; align-items: flex-start; text-align: left; border: 0; background: none; color: var(--text); border-radius: 6px; padding: 5px 6px; cursor: pointer; font-size: var(--fs-sm); line-height: 1.4; }
-.find-hit:hover, .find-hit:focus-visible { background: var(--bg-hover); }
+.find-hit:focus-visible { background: var(--bg-hover); }
+@media (hover: hover) { .find-hit:hover { background: var(--bg-hover); } }
 .find-hit.is-current { background: color-mix(in srgb, #ff9f1a 18%, var(--bg)); }
 .find-hit-num { flex: none; min-width: 1.6em; color: var(--text-3); font-weight: 600; }
 .find-hit-head { display: block; font-size: var(--fs-xs); font-weight: 600; color: var(--accent); }
@@ -251,7 +253,7 @@
 }
 .prose .outline-jump.has-target { background: color-mix(in srgb, var(--accent) 10%, var(--bg)); border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
 .prose .outline-jump.is-new { color: var(--text-3); border-style: dashed; }
-.prose .outline-jump:hover { border-color: var(--accent); }
+@media (hover: hover) { .prose .outline-jump:hover { border-color: var(--accent); } }
 @media (pointer: coarse) { .prose .outline-jump { width: 30px; height: 30px; } }
 .prose .outline-flash { animation: outline-flash 1.6s ease-out; border-radius: 4px; }
 @keyframes outline-flash { 0%, 30% { background: color-mix(in srgb, var(--accent) 22%, transparent); } 100% { background: transparent; } }
@@ -284,7 +286,8 @@
   font: 650 0.72em/1.4 var(--font-sans, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--c); cursor: pointer;
   -webkit-user-select: none; user-select: none;
 }
-.callout-label:hover, .callout-label:focus-visible { background: color-mix(in srgb, var(--c) 14%, transparent); outline: none; }
+.callout-label:focus-visible { background: color-mix(in srgb, var(--c) 14%, transparent); outline: none; }
+@media (hover: hover) { .callout-label:hover { background: color-mix(in srgb, var(--c) 14%, transparent); outline: none; } }
 .callout-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
 /* Ohne Editor (Vorschau, Druck): Beschriftung aus dem Attribut */
 .callout[data-label]:not(:has(> .callout-label))::before {

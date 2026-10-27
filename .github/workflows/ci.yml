@@ -87,6 +87,8 @@ jobs:
         run: node tests/e2e-web/stichwort-e2e.mjs
       - name: Text auf Folien markieren
         run: node tests/e2e-web/markieren-e2e.mjs
+      - name: iPad-Bedienung ohne Hover
+        run: node tests/e2e-web/touch-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

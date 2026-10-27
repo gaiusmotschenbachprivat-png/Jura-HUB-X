@@ -24,7 +24,8 @@
 .schema-num { min-width: 36px; text-align: right; font-family: var(--font-serif); font-weight: 600; color: var(--accent); }
 .schema-input { flex: 1; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 4px 2px !important; font-family: var(--font-serif); font-size: 1.02rem; min-height: 30px !important; }
 .schema-tools { display: flex; opacity: 0; transition: opacity 0.1s; }
-.schema-row.is-focus .schema-tools, .schema-line:hover .schema-tools { opacity: 1; }
+.schema-row.is-focus .schema-tools { opacity: 1; }
+@media (hover: hover) { .schema-line:hover .schema-tools { opacity: 1; } }
 .schema-tools .icon-btn { width: 24px; height: 24px; }
 .schema-note { margin: 0 0 4px 48px; font-size: var(--fs-sm); }
 .schema-add { display: inline-flex; align-items: center; gap: 6px; width: auto !important; margin: 6px 0 2px 44px !important; }
@@ -44,7 +45,7 @@
 .fc-reveal { align-self: center; margin-top: auto; }
 .fc-ratings { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .fc-rate { display: flex; flex-direction: column; align-items: center; gap: 3px; border: 1px solid var(--line-strong); background: var(--bg); border-radius: var(--r-lg); padding: 10px 6px; color: var(--text); }
-.fc-rate:hover:not(:disabled) { background: var(--bg-hover); }
+@media (hover: hover) { .fc-rate:hover:not(:disabled) { background: var(--bg-hover); } }
 .fc-rate.r1 strong { color: var(--danger); }
 .fc-rate.r2 strong { color: var(--warning); }
 .fc-rate.r3 strong { color: var(--success); }
@@ -56,18 +57,18 @@
 .task-node { max-width: 240px; }
 .task-row.is-done .ellipsis { text-decoration: line-through; color: var(--text-3); }
 .exam-card { display: flex; gap: 12px; align-items: center; text-align: left; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); padding: 10px 12px; color: var(--text); }
-.exam-card:hover { border-color: var(--line-strong); }
+@media (hover: hover) { .exam-card:hover { border-color: var(--line-strong); } }
 .exam-days { font-size: 1.4rem; font-weight: 700; color: var(--accent); min-width: 44px; text-align: center; }
 .task-mini { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: var(--r-sm); }
-.task-mini:hover { background: var(--bg-hover); }
-.task-mini:hover .ctx-remove { opacity: 1; }
+@media (hover: hover) { .task-mini:hover { background: var(--bg-hover); } }
+@media (hover: hover) { .task-mini:hover .ctx-remove { opacity: 1; } }
 
 /* ---------- Lernübersicht ---------- */
 .learn-card { grid-column: 1 / -1; }
 .lo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px 22px; margin-top: 6px; }
 .lo-head { font-size: var(--fs-sm); font-weight: 600; margin-bottom: 4px; }
 .lo-row { width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; padding: 4px 6px; border-radius: var(--r-sm); text-align: left; color: var(--text); font-size: var(--fs-sm); }
-.lo-row:hover { background: var(--bg-hover); }
+@media (hover: hover) { .lo-row:hover { background: var(--bg-hover); } }
 .lo-row svg { color: var(--text-3); flex: none; align-self: flex-start; margin-top: 2px; }
 .lo-title { overflow-wrap: anywhere; }
 
@@ -124,7 +125,7 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
   box-shadow: 0 6px 20px rgba(20, 30, 60, 0.28);
   -webkit-tap-highlight-color: transparent;
 }
-.ai-fab:hover { background: var(--accent-hover); }
+@media (hover: hover) { .ai-fab:hover { background: var(--accent-hover); } }
 .ai-fab:active { transform: scale(0.96); }
 .ai-fab.is-busy::after {
   content: ""; position: absolute; inset: -4px; border-radius: 50%;
@@ -145,7 +146,7 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
   border: none; background: transparent; color: inherit; width: 36px; height: 36px; border-radius: 8px;
   display: grid; place-items: center; cursor: pointer;
 }
-.ai-panel-head .icon-btn:hover { background: var(--bg-hover); }
+@media (hover: hover) { .ai-panel-head .icon-btn:hover { background: var(--bg-hover); } }
 .ai-panel-head .icon-btn:disabled { opacity: 0.35; cursor: default; }
 .ai-panel-body { flex: 1; overflow: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
 .ai-panel-body .card { padding: 12px; }
@@ -233,7 +234,7 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .quiz-line .miss-icon { color: var(--danger, #b42318); }
 .quiz-pool { display: flex; flex-wrap: wrap; gap: 8px; }
 .quiz-chip { min-height: 44px; padding: 8px 14px; border-radius: 22px; border: 1px solid var(--line-strong); background: var(--bg); color: var(--text); font-size: var(--fs-md, 15px); cursor: pointer; text-align: left; }
-.quiz-chip:hover { border-color: var(--accent); }
+@media (hover: hover) { .quiz-chip:hover { border-color: var(--accent); } }
 .quiz-chip.is-wrong { border-color: var(--danger, #b42318); background: color-mix(in srgb, var(--danger, #b42318) 10%, var(--bg)); animation: quiz-shake 0.35s; }
 @keyframes quiz-shake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 @media (prefers-reduced-motion: reduce) { .quiz-chip.is-wrong { animation: none; } }
@@ -296,7 +297,8 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .schema-lib-tab.is-active::before { background: #fff; }
 .schema-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
 .schema-card { --g: var(--accent); text-align: left; border: 1px solid var(--line); border-left: 5px solid var(--g); border-radius: 10px; background: color-mix(in srgb, var(--g) 5%, var(--bg)); padding: 9px 12px; cursor: pointer; color: var(--text); display: flex; flex-direction: column; gap: 2px; }
-.schema-card:hover, .schema-card:focus-visible, .schema-card.is-active { background: color-mix(in srgb, var(--g) 13%, var(--bg)); border-color: var(--g); }
+.schema-card:focus-visible, .schema-card.is-active { background: color-mix(in srgb, var(--g) 13%, var(--bg)); border-color: var(--g); }
+@media (hover: hover) { .schema-card:hover { background: color-mix(in srgb, var(--g) 13%, var(--bg)); border-color: var(--g); } }
 .schema-card-norm { font-size: 0.78rem; color: color-mix(in srgb, var(--g) 80%, var(--text-3)); font-weight: 600; }
 .schema-card-meta { font-size: 0.75rem; color: var(--text-3); }
 .schema-lib-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }

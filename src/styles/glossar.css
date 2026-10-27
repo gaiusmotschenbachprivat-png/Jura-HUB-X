@@ -18,10 +18,10 @@
 .g-search input { width: 100%; height: 44px; padding: 0 14px 0 40px !important; border-radius: 10px; border: 1px solid var(--line); background: var(--g-surface); font-size: 0.95rem; }
 .g-btn { height: 44px; padding: 0 18px; border-radius: 10px; border: 1px solid transparent; font: 500 0.95rem var(--font-ui); cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
 .g-btn-primary { background: var(--accent); color: var(--bg); }
-.g-btn-primary:hover { filter: brightness(1.08); }
+@media (hover: hover) { .g-btn-primary:hover { filter: brightness(1.08); } }
 .g-btn-primary:disabled { opacity: 0.6; }
 .g-btn-ghost { background: transparent; color: var(--text); border-color: var(--line); }
-.g-btn-ghost:hover { background: var(--g-surface); }
+@media (hover: hover) { .g-btn-ghost:hover { background: var(--g-surface); } }
 .g-btn-danger { background: transparent; color: var(--danger, #b3261e); border-color: var(--line); }
 .g-filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .g-chip { border: 1px solid var(--line); background: transparent; color: var(--text-2); padding: 4px 11px; border-radius: 999px; font: 500 0.8rem var(--font-ui); cursor: pointer; }
@@ -31,7 +31,7 @@
 .g-register { position: sticky; top: 170px; align-self: start; display: flex; flex-direction: column; gap: 1px; }
 .g-register button, .g-register span { display: block; text-align: center; font: 500 0.78rem var(--g-mono); padding: 2px 0; border-radius: 4px; border: 0; background: none; }
 .g-register button { color: var(--accent); cursor: pointer; }
-.g-register button:hover { background: var(--accent-soft); }
+@media (hover: hover) { .g-register button:hover { background: var(--accent-soft); } }
 .g-register span { color: var(--line-strong); }
 .g-main { min-width: 0; }
 .g-group { display: flex; flex-direction: column; }
@@ -43,10 +43,11 @@
 .g-area { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); }
 .g-def { grid-column: 1 / -1; margin: 0; font-family: var(--g-serif); font-size: 1rem; line-height: 1.65; max-width: 68ch; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
 .g-actions { display: flex; gap: 4px; opacity: 0.55; transition: opacity 0.15s; }
-.g-entry:hover .g-actions, .g-entry:focus-within .g-actions { opacity: 1; }
+.g-entry:focus-within .g-actions { opacity: 1; }
+@media (hover: hover) { .g-entry:hover .g-actions { opacity: 1; } }
 @media (pointer: coarse) { .g-actions { opacity: 1; } }
 .g-icon { width: 32px; height: 32px; border-radius: 8px; border: 0; background: transparent; color: var(--text-3); cursor: pointer; display: grid; place-items: center; }
-.g-icon:hover { background: var(--g-surface); color: var(--text); }
+@media (hover: hover) { .g-icon:hover { background: var(--g-surface); color: var(--text); } }
 .glossar mark { background: var(--accent-soft); color: inherit; border-radius: 3px; padding: 0 1px; }
 .g-meta { grid-column: 1 / -1; font-size: 0.78rem; color: var(--text-3); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .g-badge { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 1px 7px; border-radius: 999px; }

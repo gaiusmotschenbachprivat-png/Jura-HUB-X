@@ -18,13 +18,13 @@
 .pdf-toolbar .btn { margin-left: 4px; }
 .pdf-page-input { width: 44px; text-align: center; min-height: 26px !important; height: 26px; padding: 0 4px !important; }
 .pdf-zoom { border: 0; background: transparent; min-width: 54px; font-size: var(--fs-sm); color: var(--text-2); border-radius: var(--r-sm); height: 26px; }
-.pdf-zoom:hover { background: var(--bg-hover); }
+@media (hover: hover) { .pdf-zoom:hover { background: var(--bg-hover); } }
 .pdf-zoom.is-active { color: var(--accent); }
 .pdf-search { padding: 6px 10px; border-bottom: 1px solid var(--line); }
 .pdf-search input { width: 100%; }
 .pdf-search-results { max-height: 180px; overflow: auto; margin-top: 4px; display: flex; flex-direction: column; }
 .pdf-hit { display: flex; gap: 10px; border: 0; background: transparent; text-align: left; padding: 4px 6px; border-radius: var(--r-sm); font-size: var(--fs-sm); color: var(--text); min-width: 0; }
-.pdf-hit:hover { background: var(--bg-hover); }
+@media (hover: hover) { .pdf-hit:hover { background: var(--bg-hover); } }
 .pdf-hit > span:first-child { flex: none; width: 46px; }
 .pdf-body { flex: 1; min-height: 0; display: flex; }
 .pdf-scroll { flex: 1; overflow-y: auto; overflow-x: auto; scrollbar-gutter: stable; background: var(--bg-sunken); padding: 12px 0 40px; display: flex; flex-direction: column; align-items: center; gap: 12px; position: relative; }
@@ -42,13 +42,15 @@
 .pdf-hl { position: absolute; mix-blend-mode: multiply; opacity: 0.45; border-radius: 2px; pointer-events: none; }
 .pdf-hl.has-comment { box-shadow: inset 0 -2px 0 rgb(0 0 0 / 0.25); }
 .pdf-hl-marker { position: absolute; z-index: 3; width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.25); padding: 0; cursor: pointer; opacity: 0; }
-.pdf-page:hover .pdf-hl-marker, .pdf-hl-marker.has-comment { opacity: 1; }
+.pdf-hl-marker.has-comment { opacity: 1; }
+@media (hover: hover) { .pdf-page:hover .pdf-hl-marker { opacity: 1; } }
 .pdf-hl-marker.has-comment { width: 12px; height: 12px; }
 .float-bar { position: fixed; z-index: 140; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
 .anno-pop { width: 320px; }
 .anno-quote { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-style: italic; }
 .color-dot { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--bg); box-shadow: 0 0 0 1px var(--line-strong); padding: 0; cursor: pointer; }
-.color-dot:hover, .color-dot.is-active { box-shadow: 0 0 0 2px var(--text); }
+.color-dot.is-active { box-shadow: 0 0 0 2px var(--text); }
+@media (hover: hover) { .color-dot:hover { box-shadow: 0 0 0 2px var(--text); } }
 .anno-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
 .pdf-side { width: 220px; flex: none; display: flex; flex-direction: column; border-right: 1px solid var(--line); background: var(--bg-side); min-height: 0; }
 .pdf-side .pdf-thumbs { width: auto; border-right: 0; flex: 1; }
@@ -57,7 +59,7 @@
 .pdf-side-tabs button.is-active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
 .pdf-anno-list { flex: 1; overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
 .pdf-anno-item { display: flex; flex-direction: column; gap: 2px; text-align: left; border: 0; background: var(--bg); border-radius: var(--r-md); padding: 6px 8px; color: var(--text); box-shadow: 0 0 0 1px var(--line); }
-.pdf-anno-item:hover { box-shadow: 0 0 0 1px var(--line-strong); }
+@media (hover: hover) { .pdf-anno-item:hover { box-shadow: 0 0 0 1px var(--line-strong); } }
 
 /* Handschrift (Apple Pencil) auf PDF-Seiten */
 .ink-bar { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-bottom: 1px solid var(--line); background: var(--bg-side); flex-wrap: wrap; }
@@ -82,9 +84,10 @@
 .slide-list { display: flex; flex-direction: column; gap: 2px; max-height: min(52vh, 460px); overflow: auto; }
 .slide-list .label { margin: 8px 0 2px; }
 .slide-pick { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 6px 8px; border: 0; border-radius: 8px; background: none; text-align: left; color: var(--text); cursor: pointer; }
-.slide-pick:hover, .slide-pick:focus-visible { background: var(--bg-hover); }
+.slide-pick:focus-visible { background: var(--bg-hover); }
+@media (hover: hover) { .slide-pick:hover { background: var(--bg-hover); } }
 .slide-pick.is-disabled { cursor: default; opacity: .55; }
-.slide-pick.is-disabled:hover { background: none; }
+@media (hover: hover) { .slide-pick.is-disabled:hover { background: none; } }
 
 /* Markieren-Modus: über den Text ziehen, Markierung rastet an Wörtern ein */
 .pdf-scroll.is-marking .pdf-page { cursor: text; -webkit-touch-callout: none; }
