@@ -294,12 +294,21 @@ export function Chat({ available, compact, context }: { available: boolean; comp
 
 function Sources({ status }: { status: AiStatus }) {
   const [list, setList] = useState<LegalSource[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [abbr, setAbbr] = useState("");
   const [meta, setMeta] = useState({ kind: "urteil" as LegalKind, title: "", court: "", file_number: "", decision_date: "", version: "", abbreviation: "" });
   const toast = useApp((s) => s.toast);
-  const load = () => api.legalSourcesList().then(setList).catch(reportError);
+  const load = () =>
+    api
+      .legalSourcesList()
+      .then((l) => {
+        setList(l);
+        setLoaded(true);
+      })
+      .catch(reportError);
   useEffect(() => {
+    void load();
     void upgradeOldLaws().then(load);
   }, []);
 
@@ -371,7 +380,7 @@ function Sources({ status }: { status: AiStatus }) {
           </>
         ) : (
           <>
-            <BundledLaws list={list} onChange={() => void load()} />
+            {loaded && <BundledLaws list={list} onChange={() => void load()} />}
             <p className="small">
               Weitere Gesetze: Studium OS kann im Browser nicht selbst von gesetze-im-internet.de laden (die Seite erlaubt das technisch nicht). Lade dort beim jeweiligen
               Gesetz die „XML“- oder „PDF“-Datei herunter und importiere sie unten mit der Art „Gesetz“.

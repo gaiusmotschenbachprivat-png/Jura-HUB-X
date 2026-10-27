@@ -106,7 +106,10 @@ try {
   await page.getByRole("tab", { name: /Rechtsquellen/ }).click();
   const box = page.locator(".bundled-laws");
   await box.waitFor({ timeout: 8000 });
-  const bt = await box.innerText();
+  const bt = (await waitFor(async () => {
+    const t = await box.innerText();
+    return (t.match(/Paragraphen · vollständig/g) ?? []).length === 2 ? t : null;
+  }, 10000)) ?? (await box.innerText());
   check("Rechtsquellen: StGB und BGB vollständig, mit Stand", (bt.match(/Paragraphen · vollständig/g) ?? []).length === 2 && !bt.includes("unvollständig") && bt.includes("Stand laut Quelle"), bt);
   await shot("gesetze-rechtsquellen");
 
