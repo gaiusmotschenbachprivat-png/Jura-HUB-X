@@ -65,9 +65,10 @@ try {
   await page.getByRole("button", { name: "Loslegen" }).click({ timeout: 20000 });
   await page.locator(".area-tab").first().waitFor({ timeout: 20000 });
 
-  // Statusleiste: Ansicht reicht bis an den Rand, Abstände über safe-area
+  // Statusleiste: App unter der Statusleiste, Abstände über --safe-top
   const vp = await page.locator('meta[name="viewport"]').getAttribute("content");
-  check("iPad-Statusleiste: viewport-fit=cover gesetzt", vp.includes("viewport-fit=cover"), vp);
+  check("iPad-Statusleiste: App beginnt unter der Statusleiste (kein viewport-fit=cover)", !vp.includes("viewport-fit=cover"), vp);
+  check("iPad-Statusleiste: deckende Farbe (theme-color)", (await page.locator('meta[name="theme-color"]').count()) === 2);
   const pad = await page.evaluate(() => {
     const css = [...document.styleSheets].flatMap((s) => [...s.cssRules].map((r) => r.cssText)).join("\n");
     return /\.shell-side[^{]*\{[^}]*padding-top: var\(--safe-top\)/.test(css) && /--safe-top:\s*var\(--safe-top-manual,\s*env\(safe-area-inset-top/.test(css);

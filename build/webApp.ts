@@ -54,6 +54,9 @@ export function webApp(): Plugin {
         { tag: "meta", attrs: { name: "mobile-web-app-capable", content: "yes" }, injectTo: "head" },
         { tag: "meta", attrs: { name: "apple-mobile-web-app-title", content: "Studium OS" }, injectTo: "head" },
         { tag: "meta", attrs: { name: "apple-mobile-web-app-status-bar-style", content: "default" }, injectTo: "head" },
+        // Statusleiste deckend in der Farbe der App (ohne viewport-fit=cover liegt nichts darunter, also kein Weichzeichner)
+        { tag: "meta", attrs: { name: "theme-color", content: "#ffffff", media: "(prefers-color-scheme: light)" }, injectTo: "head" },
+        { tag: "meta", attrs: { name: "theme-color", content: "#17191e", media: "(prefers-color-scheme: dark)" }, injectTo: "head" },
       ];
     },
     generateBundle(_opts, bundle) {

@@ -71,7 +71,7 @@ function Appearance() {
       <section className="card">
         <h3>Abstand oben (iPad)</h3>
         <p className="small muted">
-          Liegt die Statusleiste mit Uhrzeit und WLAN über Knöpfen der App, hier den Abstand vergrößern. „Automatisch“ übernimmt den Wert von iPadOS (als App vom Home-Bildschirm mindestens 24 px).
+          Liegt die Statusleiste mit Uhrzeit und WLAN über Knöpfen der App, hier den Abstand vergrößern. „Automatisch“ (Standard): Die App beginnt direkt unter der Statusleiste.
         </p>
         <label className="row small">
           Abstand
@@ -80,7 +80,7 @@ function Appearance() {
             min={0}
             max={TOP_INSET_MAX}
             step={2}
-            value={topInset < 0 ? 24 : topInset}
+            value={topInset < 0 ? 0 : topInset}
             onChange={(e) => setPref("topInset", Number(e.target.value))}
             aria-label="Abstand oben in Pixeln"
           />

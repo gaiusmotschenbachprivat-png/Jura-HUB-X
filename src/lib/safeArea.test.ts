@@ -18,7 +18,10 @@ describe("Abstand oben", () => {
     for (const f of fs.readdirSync(dir).filter((f) => f.endsWith(".css") && f !== "base.css")) expect(css(f), f).not.toMatch(/safe-area-inset-top/);
     const base = css("base.css");
     expect(base).toMatch(/--safe-top: var\(--safe-top-manual, env\(safe-area-inset-top/);
-    expect(base).toMatch(/@media \(display-mode: standalone\) and \(pointer: coarse\)[\s\S]*max\(env\(safe-area-inset-top, 0px\), 24px\)/);
+    // kein Mindestabstand: sonst entsteht unter der Statusleiste ein leerer Streifen
+    expect(base).not.toMatch(/24px\)/);
+    // App nicht unter die Statusleiste ziehen – sonst legt iOS einen Weichzeichner darüber
+    expect(fs.readFileSync(new URL("../../index.html", import.meta.url), "utf8")).not.toMatch(/viewport-fit=cover/);
   });
 
   it("Hauptbereich, Seitenleiste und Dialoge nutzen den Abstand", () => {

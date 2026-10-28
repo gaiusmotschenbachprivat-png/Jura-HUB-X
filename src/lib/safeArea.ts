@@ -1,8 +1,8 @@
 /**
  * Abstand oben für die iOS-Statusleiste (Uhrzeit, WLAN, Akku). Die CSS-Variable
- * --safe-top (base.css) kombiniert env(safe-area-inset-top) mit einer Mindesthöhe
- * für die iPad-App vom Home-Bildschirm; in den Einstellungen lässt sie sich von
- * Hand festlegen. Für per JS positionierte Menüs/Popups wird sie hier gemessen.
+ * --safe-top (base.css) folgt env(safe-area-inset-top) (ohne viewport-fit=cover
+ * normalerweise 0, da iPadOS die App unter die Statusleiste setzt); in den
+ * Einstellungen lässt sie sich von Hand festlegen. Für per JS positionierte Menüs/Popups wird sie hier gemessen.
  */
 
 /** Gespeicherter Wert: -1 = automatisch, sonst feste Pixel. */
