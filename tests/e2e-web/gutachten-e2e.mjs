@@ -117,16 +117,20 @@ try {
   await page.getByRole("menuitem", { name: "Ganze Notiz automatisch einfärben" }).click();
   check("Ganze Notiz automatisch eingefärbt", (await waitFor(async () => (await editor.locator(".gs").count()) > 10)) === true);
   // Auswahl von Hand markieren
-  await page.evaluate(() => {
-    const p = [...document.querySelectorAll(".ProseMirror p")].find((x) => x.textContent.startsWith("Rechtfertigungsgründe"));
-    const r = document.createRange();
-    r.selectNodeContents(p);
-    getSelection().removeAllRanges();
-    getSelection().addRange(r);
-  });
-  await sleep(200);
+  const rfg = editor.locator("p", { hasText: "Rechtfertigungsgründe" }).first();
+  await rfg.scrollIntoViewIfNeeded();
+  await rfg.click({ clickCount: 3 });
+  await sleep(400);
   await tool.click();
-  await page.getByRole("menuitem", { name: "Definition" }).click();
+  const defItem = page.getByRole("menuitem", { name: "Definition" });
+  if (await defItem.isDisabled()) {
+    // Auswahl noch nicht angekommen: Menü schließen, erneut auswählen
+    await page.keyboard.press("Escape");
+    await rfg.click({ clickCount: 3 });
+    await sleep(800);
+    await tool.click();
+  }
+  await defItem.click({ timeout: 8000 });
   const manual = await editor.locator("p", { hasText: "Rechtfertigungsgründe" }).locator(".gs").first().getAttribute("data-gs");
   check("Auswahl von Hand als Definition markiert", manual === "definition", manual);
   await sleep(1500);
