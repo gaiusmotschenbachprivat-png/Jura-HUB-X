@@ -62,4 +62,13 @@ describe("Entscheidungen erkennen", () => {
     expect(l("§ 280 I iVm § 241 II BGB")).toEqual(["§ 280:BGB", "§ 241:BGB"]);
     expect(l("§§ 145, 147 und § 151 BGB")).toEqual(["§ 145:BGB", "§ 147:BGB", "§ 151:BGB"]);
   });
+
+  it("römischer Absatz mit Satz: „§ 433 I 1 BGB“ ist Abs. 1 S. 1, kein § 1", () => {
+    const l = (t: string) => findNormCitations(t).map((c) => formatNorm(c));
+    expect(l("§ 433 I 1 BGB")).toEqual(["§ 433 Abs. 1 S. 1 BGB"]);
+    expect(l("§ 536 I 3 BGB")).toEqual(["§ 536 Abs. 1 S. 3 BGB"]);
+    expect(l("§ 812 I 1 Alt. 1 BGB")).toEqual(["§ 812 Abs. 1 S. 1 BGB"]);
+    expect(l("§ 823 I BGB")).toEqual(["§ 823 Abs. 1 BGB"]);
+    expect(l("§§ 280 I, III, 281 BGB")).toEqual(["§ 280 Abs. 1 BGB", "§ 280 Abs. 3 BGB", "§ 281 BGB"]);
+  });
 });

@@ -70,7 +70,7 @@ try {
   await lib.getByRole("tab", { name: "Strafrecht" }).click();
   const cards = await lib.locator(".schema-card").allInnerTexts();
   check("Strafrecht: Standardaufbauten (Versuch, Notwehr, Diebstahl, Betrug …)", ["Versuch", "Notwehr", "Diebstahl", "Betrug", "Mittäterschaft"].every((t) => cards.some((c) => c.startsWith(t))), cards.length + "");
-  await lib.locator(".schema-card", { hasText: "Diebstahl" }).click();
+  await lib.locator(".schema-card", { hasText: /^Diebstahl/ }).click();
   const sd = lib.locator(".sd");
   await sd.waitFor();
   const stages = sd.locator(".sd-stage");

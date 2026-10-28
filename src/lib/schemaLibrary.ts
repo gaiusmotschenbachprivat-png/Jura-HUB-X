@@ -9,6 +9,7 @@
  * entstanden – untergegangen – durchsetzbar) bekommen eigene Farben.
  */
 import type { SchemaItem } from "../api/types";
+import { MORE_SCHEMAS } from "./schemaLibraryMore";
 
 export type Rechtsgebiet = "zivil" | "straf" | "oeff";
 
@@ -53,7 +54,7 @@ export const isProblem = (text: string) => PROBLEM.test(text);
 
 // ---------- Bibliothek ----------
 
-type Lib = [text: string, children?: Lib[], note?: string] | string;
+export type Lib = [text: string, children?: Lib[], note?: string] | string;
 
 export interface LibrarySchema {
   id: string;
@@ -418,6 +419,7 @@ export const SCHEMA_LIBRARY: LibrarySchema[] = [
     "Erforderlichkeit (mildestes gleich wirksames Mittel)",
     "Angemessenheit (Verhältnismäßigkeit im engeren Sinne)",
   ]),
+  ...MORE_SCHEMAS.map(([g, id, title, norm, items, notes]) => S(g, id, title, norm, items, notes)),
 ];
 
 /** Kopie mit neuen Kennungen (für „In meine Schemata übernehmen“). */

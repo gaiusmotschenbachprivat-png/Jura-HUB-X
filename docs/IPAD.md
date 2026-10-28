@@ -25,7 +25,7 @@ dann im Vollbild und funktioniert offline.
   und für jedes Gutachten (Voraussetzung, Definition, Subsumtion, Streitstand, Zwischenergebnis).
   Platzhalter „…“ – der erste ist nach dem Einfügen markiert und wird beim Tippen überschrieben.
 - **Prüfungsschema einfügen** (im selben Menü): **Vorlagen** für Zivil-, Straf- und Öffentliches
-  Recht (44 Standardaufbauten, z. B. Vertragsschluss, § 823 I BGB, Versuch, Notwehr,
+  Recht (113 Standardaufbauten, z. B. Vertragsschluss, § 823 I BGB, Versuch, Notwehr,
   Diebstahl, Betrug, Verfassungsbeschwerde, Anfechtungsklage) oder **Meine Schemata**. Vorschau
   als farbige Grafik, eingefügt als Gliederung A. / I. / 1. / a) mit farbigen Prüfungsstufen;
   „(P)“ markiert klassische Klausurprobleme. Die Vorlagen öffnen beim Rechtsgebiet der Notiz.

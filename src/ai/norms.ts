@@ -82,10 +82,20 @@ export function findNormCitations(text: string): NormCitation[] {
     let afterComma = false;
     let law = "";
     let consumed = 0;
+    // „§ 433 I 1“: Zahl direkt nach römischem Absatz ist der Satz
+    let afterRoman = false;
     for (let i = 0; i < tokens.length; i++) {
       const t = tokens[i]!;
       const next = tokens[i + 1];
+      const wasRoman = afterRoman;
+      afterRoman = false;
       if (/^\d/.test(t)) {
+        if (wasRoman && cur && cur.satz === null && /^\d+$/.test(t)) {
+          cur.satz = Number(t);
+          lastField = "satz";
+          consumed = i + 1;
+          continue;
+        }
         if (field && cur) {
           cur[field] = Number(t);
           lastField = field;
@@ -111,6 +121,14 @@ export function findNormCitations(text: string): NormCitation[] {
       else if (ROMAN[w] !== undefined && cur && cur.absatz === null && !field && lastField === null) {
         cur.absatz = ROMAN[w]!;
         lastField = "absatz";
+        afterRoman = true;
+      } else if (ROMAN[w] !== undefined && cur && afterComma && (lastField === "absatz" || lastField === "satz") && !field) {
+        // „§ 280 I, III“: weiterer Absatz derselben Norm
+        cur = { number: cur.number, absatz: ROMAN[w]!, satz: null, nr: null };
+        items.push(cur);
+        lastField = "absatz";
+        afterComma = false;
+        afterRoman = true;
       } else if (w === "ff" || w === "f") {
         /* „§§ 305 ff.“ – Folgeparagrafen nicht einzeln */
       } else if (w === "Alt" || w === "Var" || w === "Hs" || w === "lit" || w === "UAbs" || w === "Halbsatz" || w === "Fall") {
