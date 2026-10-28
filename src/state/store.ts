@@ -95,6 +95,8 @@ interface State {
 
   theme: Theme;
   fontScale: number;
+  /** Abstand oben für die iOS-Statusleiste: -1 = automatisch, sonst Pixel. */
+  topInset: number;
   editorFont: "serif" | "sans";
   focusMode: boolean;
 
@@ -116,7 +118,7 @@ interface State {
   toggleContext(): void;
   setPalette(open: boolean): void;
   setSaveStatus(s: SaveStatus, err?: string | null, savedAt?: string | null, id?: string): void;
-  setPref<K extends "theme" | "fontScale" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "secondaryHeight" | "splitLayout" | "showArchived" | "focusMode" | "treeSort">(
+  setPref<K extends "theme" | "fontScale" | "topInset" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "secondaryHeight" | "splitLayout" | "showArchived" | "focusMode" | "treeSort">(
     key: K,
     value: State[K],
   ): void;
@@ -128,6 +130,7 @@ interface State {
 const PREF_KEYS: Record<string, string> = {
   theme: "ui.theme",
   fontScale: "ui.fontScale",
+  topInset: "ui.topInset",
   editorFont: "ui.editorFont",
   sidebarWidth: "ui.sidebarWidth",
   contextWidth: "ui.contextWidth",
@@ -188,6 +191,7 @@ export const useApp = create<State>((set, get) => ({
   lastSavedId: null,
   theme: "system",
   fontScale: 1,
+  topInset: -1,
   editorFont: "serif",
   focusMode: false,
   dataVersion: 0,
@@ -204,6 +208,7 @@ export const useApp = create<State>((set, get) => ({
         areaId,
         theme: (s["ui.theme"] as Theme) ?? "system",
         fontScale: typeof s["ui.fontScale"] === "number" ? (s["ui.fontScale"] as number) : 1,
+        topInset: typeof s["ui.topInset"] === "number" ? (s["ui.topInset"] as number) : -1,
         editorFont: s["ui.editorFont"] === "sans" ? "sans" : "serif",
         sidebarWidth: typeof s["ui.sidebarWidth"] === "number" ? (s["ui.sidebarWidth"] as number) : 280,
         contextWidth: typeof s["ui.contextWidth"] === "number" ? (s["ui.contextWidth"] as number) : 300,

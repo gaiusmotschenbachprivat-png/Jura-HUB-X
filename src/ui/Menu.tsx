@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
+import { safeTop } from "../lib/safeArea";
+
 export interface MenuItem {
   label: string;
   icon?: ReactNode;
@@ -22,7 +24,7 @@ export function Menu({ x, y, items, onClose }: { x: number; y: number; items: Me
     const el = ref.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setPos({ x: Math.max(8, Math.min(x, window.innerWidth - r.width - 8)), y: Math.max(8, Math.min(y, window.innerHeight - r.height - 8)) });
+    setPos({ x: Math.max(8, Math.min(x, window.innerWidth - r.width - 8)), y: Math.max(8 + safeTop(), Math.min(y, window.innerHeight - r.height - 8)) });
     el.querySelector<HTMLElement>("button:not(:disabled)")?.focus();
   }, [x, y]);
   useEffect(() => {

@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { api } from "../../api";
 import type { LegalHit } from "../../api/types";
 import { bundledFor, installBundled, type BundledLaw } from "../../ai/sources/bundled";
+import { safeTop } from "../../lib/safeArea";
 import { useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import type { NormRef } from "./normLinks";
@@ -88,7 +89,7 @@ export function NormPopover({
     const h = el.offsetHeight;
     const x = Math.max(8, Math.min(anchor.left, window.innerWidth - w - 8));
     const below = anchor.bottom + 6;
-    const y = below + h > window.innerHeight - 8 ? Math.max(8, anchor.top - h - 6) : below;
+    const y = below + h > window.innerHeight - 8 ? Math.max(8 + safeTop(), anchor.top - h - 6) : below;
     setPos({ x, y });
   }, [anchor, state]);
 

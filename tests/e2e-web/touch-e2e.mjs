@@ -85,6 +85,27 @@ try {
   await italic.click();
   check("Kursiv an/aus: nicht hinterlegt", (await italic.evaluate((b) => getComputedStyle(b).backgroundColor)) === idle);
   check("Ohne Maus sichtbar: „+“ in der Seitenleiste", (await page.locator(".side-add").first().evaluate((e) => getComputedStyle(e).opacity)) === "1");
+
+  // Statusleiste: als App vom Home-Bildschirm mindestens 24px Abstand oben, auch wenn iPadOS keinen Wert meldet
+  const padTop = () => page.locator(".shell-main").evaluate((e) => getComputedStyle(e).paddingTop);
+  check("Browser-Tab: kein Abstand oben", (await padTop()) === "0px", await padTop());
+  await cdp.send("Emulation.setEmulatedMedia", {
+    features: [{ name: "hover", value: "none" }, { name: "any-hover", value: "none" }, { name: "pointer", value: "coarse" }, { name: "display-mode", value: "standalone" }],
+  });
+  const standalone = await page.evaluate(() => matchMedia("(display-mode: standalone)").matches);
+  if (standalone) check("Home-Bildschirm-App: Hauptbereich und Seitenleiste 24px unter der Statusleiste", (await padTop()) === "24px" && (await page.locator(".shell-side").evaluate((e) => getComputedStyle(e).paddingTop)) === "24px", await padTop());
+  else console.log("HINWEIS  display-mode lässt sich hier nicht nachstellen – Prüfung übersprungen");
+  await page.getByRole("button", { name: /Einstellungen/ }).first().click();
+  const slider = page.getByRole("slider", { name: "Abstand oben in Pixeln" });
+  await slider.fill("40");
+  check("Einstellung: Abstand oben von Hand 40px", (await waitFor(async () => (await padTop()) === "40px")) === true, await padTop());
+  await sleep(1200); // Einstellungen werden gesammelt gespeichert
+  await page.reload();
+  await page.locator(".area-tab").first().waitFor({ timeout: 20000 });
+  check("Abstand bleibt nach Neuladen erhalten", (await waitFor(async () => (await padTop()) === "40px")) === true, await padTop());
+  await page.getByRole("button", { name: /Einstellungen/ }).first().click();
+  await page.getByRole("button", { name: "Automatisch" }).click();
+  check("Zurück auf automatisch", (await waitFor(async () => (await padTop()) === (standalone ? "24px" : "0px"))) === true, await padTop());
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Testlauf ohne Abbruch", false, e.message);

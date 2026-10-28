@@ -29,6 +29,7 @@ import { SearchPalette } from "./features/search/SearchPalette";
 import { SettingsView } from "./features/settings/SettingsView";
 import { TrashView } from "./features/settings/TrashView";
 import { formatRelative } from "./lib/format";
+import { applyTopInset } from "./lib/safeArea";
 import { ancestors } from "./lib/tree";
 import { contextFloats, NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
 import { IconButton } from "./ui/Button";
@@ -43,6 +44,7 @@ export function App() {
   const init = useApp((s) => s.init);
   const theme = useApp((s) => s.theme);
   const fontScale = useApp((s) => s.fontScale);
+  const topInset = useApp((s) => s.topInset);
 
   useEffect(() => {
     void init().then(() => {
@@ -72,7 +74,8 @@ export function App() {
     if (theme === "system") root.removeAttribute("data-theme");
     else root.setAttribute("data-theme", theme);
     root.style.setProperty("--font-scale", String(fontScale));
-  }, [theme, fontScale]);
+    applyTopInset(topInset, root);
+  }, [theme, fontScale, topInset]);
 
   if (!ready) return <div className="boot">Studium OS wird gestartet …</div>;
   if (bootError)

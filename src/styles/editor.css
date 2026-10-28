@@ -180,7 +180,7 @@
 .menu .toc-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Druckansicht (Paged.js) */
-.print-overlay { position: fixed; inset: 0; z-index: 130; background: #e6e8ec; display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+.print-overlay { position: fixed; inset: 0; z-index: 130; background: #e6e8ec; display: flex; flex-direction: column; padding-top: var(--safe-top); }
 .print-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
 .print-bar select { min-height: 30px !important; height: 30px; font-size: var(--fs-sm); }
 .print-scroll { flex: 1; overflow: auto; padding: 20px 0 40px; -webkit-overflow-scrolling: touch; }
@@ -196,7 +196,7 @@
 }
 
 /* Zeichnen (Apple Pencil) */
-.draw-overlay { position: fixed; inset: 0; z-index: 130; background: var(--bg-side); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+.draw-overlay { position: fixed; inset: 0; z-index: 130; background: var(--bg-side); display: flex; flex-direction: column; padding-top: var(--safe-top); }
 .draw-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 16px; background: var(--bg); border-bottom: 1px solid var(--line); }
 .draw-bar .icon-btn { width: 40px; height: 40px; }
 .draw-bar select { min-height: 34px !important; height: 34px; }

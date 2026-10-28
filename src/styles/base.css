@@ -1,5 +1,11 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+/* Abstand oben für die iOS-Statusleiste (siehe lib/safeArea.ts). Als App vom
+   Home-Bildschirm meldet iPadOS den Bereich nicht immer – dann mindestens 24px. */
+:root { --safe-top: var(--safe-top-manual, env(safe-area-inset-top, 0px)); }
+@media (display-mode: standalone) and (pointer: coarse) {
+  :root { --safe-top: var(--safe-top-manual, max(env(safe-area-inset-top, 0px), 24px)); }
+}
 html { font-size: calc(16px * var(--font-scale, 1)); }
 body {
   font-family: var(--font-ui);

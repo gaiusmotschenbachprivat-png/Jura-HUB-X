@@ -144,12 +144,12 @@ body.is-dragging, body.is-dragging * { cursor: grabbing !important; user-select:
 .shell-context.is-overlay {
   position: fixed; z-index: 55; top: 0; right: 0; bottom: 0; max-width: 92vw;
   box-shadow: -8px 0 28px rgba(20, 30, 60, 0.16);
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-top);
 }
 
 /* iPad als App (Home-Bildschirm): Inhalt nicht unter Statusleiste (Uhrzeit, Akku) und Home-Balken */
 .shell-side, .shell-main, .shell-context:not(.is-overlay) {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-top);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 .shell-side { padding-left: env(safe-area-inset-left, 0px); }

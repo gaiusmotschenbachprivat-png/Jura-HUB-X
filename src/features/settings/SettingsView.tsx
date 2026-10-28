@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import type { AppInfo, Area } from "../../api/types";
 import { AREA_COLORS } from "../../lib/kinds";
+import { TOP_INSET_AUTO, TOP_INSET_MAX } from "../../lib/safeArea";
 import { reportError, useApp, type View } from "../../state/store";
 import { Button } from "../../ui/Button";
 import { BackupSettings } from "./BackupSettings";
@@ -46,6 +47,7 @@ export function SettingsView({ tab = "allgemein" }: { tab?: Tab }) {
 function Appearance() {
   const theme = useApp((s) => s.theme);
   const fontScale = useApp((s) => s.fontScale);
+  const topInset = useApp((s) => s.topInset);
   const editorFont = useApp((s) => s.editorFont);
   const setPref = useApp((s) => s.setPref);
   return (
@@ -65,6 +67,28 @@ function Appearance() {
             </button>
           ))}
         </div>
+      </section>
+      <section className="card">
+        <h3>Abstand oben (iPad)</h3>
+        <p className="small muted">
+          Liegt die Statusleiste mit Uhrzeit und WLAN über Knöpfen der App, hier den Abstand vergrößern. „Automatisch“ übernimmt den Wert von iPadOS (als App vom Home-Bildschirm mindestens 24 px).
+        </p>
+        <label className="row small">
+          Abstand
+          <input
+            type="range"
+            min={0}
+            max={TOP_INSET_MAX}
+            step={2}
+            value={topInset < 0 ? 24 : topInset}
+            onChange={(e) => setPref("topInset", Number(e.target.value))}
+            aria-label="Abstand oben in Pixeln"
+          />
+          <span className="tnum">{topInset < 0 ? "Automatisch" : `${topInset} px`}</span>
+          <Button size="sm" variant="ghost" onClick={() => setPref("topInset", TOP_INSET_AUTO)} disabled={topInset < 0}>
+            Automatisch
+          </Button>
+        </label>
       </section>
       <section className="card">
         <h3>Schrift</h3>
