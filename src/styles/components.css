@@ -275,3 +275,9 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 @media (hover: none) {
   .side-add, .ctx-remove, .schema-tools, .g-actions, .pdf-hl-marker { opacity: 1; }
 }
+
+/* Claude-App-Brücke */
+.bridge-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 14px; }
+.bridge-steps > li { display: flex; flex-direction: column; gap: 6px; }
+.bridge-steps textarea { width: 100%; }
+.bridge a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }

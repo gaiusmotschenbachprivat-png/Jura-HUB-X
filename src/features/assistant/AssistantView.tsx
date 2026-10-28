@@ -1,4 +1,4 @@
-import { BookOpen, Download, FileUp, KeyRound, MessageSquare, RotateCcw, Scale, Send, Settings2, ShieldCheck, Trash2 } from "lucide-react";
+import { BookOpen, Download, ExternalLink, FileUp, KeyRound, MessageSquare, RotateCcw, Scale, Send, Settings2, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -9,7 +9,7 @@ import { COMMON_LAWS, importFile, importLaw, readText } from "../../ai/sources/i
 import { bundledLaws, installBundled, isIncomplete, type BundledLaw } from "../../ai/sources/bundled";
 import { formatDate, formatDateTime } from "../../lib/format";
 import { AI_PROFILES } from "../../ai/config";
-import { formatCost, requestCostUsd, requestsFor, SPENT_SETTING } from "../../ai/cost";
+import { BUDGET_SETTING, budgetFrom, formatCost, requestCostUsd, requestsFor, SPENT_SETTING, USD_TO_EUR } from "../../ai/cost";
 import { markdownToHtml } from "../../lib/docxImport";
 import { reportError, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
@@ -18,6 +18,7 @@ import { htmlToDoc } from "../editor/exportImport";
 import { createNode } from "../navigation/actions";
 import { isVault, MIN_PIN, openKey, sealKey, type KeyVault } from "../../ai/keyVault";
 import { AnswerCard } from "./Answer";
+import { AssistantBridgeDialog } from "./ClaudeBridge";
 import { upgradeOldLaws, useAssistant } from "./state";
 import { ProfileSelect, useAiProfile } from "./AiProfile";
 import { HistoryButton } from "./ChatHistory";
@@ -153,10 +154,9 @@ export function Chat({ available, compact, context }: { available: boolean; comp
   useEffect(() => endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }), [entries.length, busy]);
   const cur = TASKS.find((t) => t.id === task)!;
 
-  const send = async () => {
-    const question = q.trim();
-    if (!question) return;
-    setQ("");
+  const [bridge, setBridge] = useState<{ question: string; document?: string } | null>(null);
+  /** Frage samt Vertragstext und Seiteninhalt (falls gewählt). */
+  const collect = async () => {
     const parts: string[] = [];
     if (task === "vertrag" && doc.trim()) parts.push(doc.trim());
     if (context && useContext) {
@@ -167,7 +167,19 @@ export function Chat({ available, compact, context }: { available: boolean; comp
         reportError(e);
       }
     }
-    void ask(question, parts.length ? parts.join("\n\n") : undefined);
+    return parts.length ? parts.join("\n\n") : undefined;
+  };
+  const send = async () => {
+    const question = q.trim();
+    if (!question) return;
+    setQ("");
+    void ask(question, await collect());
+  };
+  const sendBridge = async () => {
+    const question = q.trim();
+    if (!question) return;
+    setBridge({ question, document: await collect() });
+    setQ("");
   };
 
   const loadContract = async () => {
@@ -283,10 +295,24 @@ export function Chat({ available, compact, context }: { available: boolean; comp
             }
           }}
         />
-        <Button type="submit" variant="primary" icon={<Send size={14} />} disabled={!available || busy || !q.trim()} aria-label="Senden">
-          {compact ? "" : "Senden"}
-        </Button>
+        <div className="ai-send">
+          {available && (
+            <Button type="submit" variant="primary" icon={<Send size={14} />} disabled={busy || !q.trim()} aria-label="Senden" title="Über die Claude API (kostet Guthaben)">
+              {compact ? "" : "Senden"}
+            </Button>
+          )}
+          <Button
+            variant={available ? "secondary" : "primary"}
+            icon={<ExternalLink size={14} />}
+            disabled={busy || !q.trim()}
+            onClick={() => void sendBridge()}
+            title="Anfrage für die Claude-App kopieren – ohne API-Kosten"
+          >
+            {compact ? "Claude-App" : "In Claude-App fragen"}
+          </Button>
+        </div>
       </form>
+      {bridge && <AssistantBridgeDialog question={bridge.question} document={bridge.document} onClose={() => setBridge(null)} />}
       <p className="xs muted">Ausgaben können fehlerhaft sein und ersetzen keine anwaltliche Prüfung. ⌘/Strg + Enter sendet.</p>
     </div>
   );
@@ -639,6 +665,10 @@ function WebKeySetup({ onChange }: { onChange: () => void }) {
       <h3>
         <KeyRound size={16} /> API-Schlüssel eingeben
       </h3>
+      <p className="small muted">
+        Optional – jede Anfrage über die API kostet Guthaben. Ohne Schlüssel nutzt du „In Claude-App fragen“: Studium OS bereitet die Anfrage vor, du stellst sie in deiner
+        Claude-App und fügst die Antwort hier ein – ohne zusätzliche Kosten.
+      </p>
       <form
         className="stack"
         onSubmit={async (e) => {
@@ -688,6 +718,10 @@ function WebKeySetup({ onChange }: { onChange: () => void }) {
 function ModelAndCost() {
   const { profile, change, spent } = useAiProfile();
   const toast = useApp((s) => s.toast);
+  const [budget, setBudget] = useState<string>("");
+  useEffect(() => {
+    void api.settingsAll().then((s) => setBudget(budgetFrom(s[BUDGET_SETTING]) ? String(budgetFrom(s[BUDGET_SETTING])) : ""));
+  }, []);
   // Beispiel: Frage an den Assistenten mit Quellen ≈ 12 000 Tokens hinein, 2 500 heraus (inkl. Denken)
   const example = (model: string, effortFactor: number) => requestCostUsd(model, { input_tokens: 12_000, output_tokens: Math.round(2_500 * effortFactor) });
   return (
@@ -695,6 +729,7 @@ function ModelAndCost() {
       <h3>Modell und Kosten</h3>
       <div className="ai-profiles" role="radiogroup" aria-label="KI-Modell">
         {Object.values(AI_PROFILES).map((p) => {
+          // „Automatisch“: Frage an den Assistenten läuft auf Claude Sonnet 5.5
           const per = example(p.model, p.effort === "high" ? 1 : 0.7);
           return (
             <label key={p.id} className={`ai-profile-card ${profile.id === p.id ? "is-active" : ""}`}>
@@ -730,6 +765,34 @@ function ModelAndCost() {
           </Button>
         </div>
       )}
+      <label className="row wrap small">
+        Monatsbudget
+        <input
+          type="number"
+          inputMode="decimal"
+          min={0}
+          step={1}
+          style={{ width: 90 }}
+          value={budget}
+          placeholder="keins"
+          aria-label="Monatsbudget in Euro"
+          onChange={(e) => setBudget(e.target.value)}
+          onBlur={async () => {
+            const v = budgetFrom(budget.replace(",", "."));
+            await api.settingSet(BUDGET_SETTING, v).catch(reportError);
+            setBudget(v ? String(v) : "");
+            useApp.getState().bump();
+          }}
+        />
+        €
+        {spent && (
+          <span className="muted">
+            · diesen Monat: {formatCost(spent.monthUsd)}
+            {budgetFrom(budget) ? ` von ${budgetFrom(budget).toLocaleString("de-DE")} € (${Math.min(100, Math.round(((spent.monthUsd * USD_TO_EUR) / budgetFrom(budget)) * 100))} %)` : ""}
+          </span>
+        )}
+      </label>
+      <p className="xs muted">Ist das Budget erreicht, sendet Studium OS keine bezahlten Anfragen mehr – „In Claude-App fragen“ funktioniert weiter.</p>
       <p className="xs muted">Tipp: In der Anthropic-Konsole das automatische Aufladen ausgeschaltet lassen – dann kann nie mehr als das aufgeladene Guthaben verbraucht werden.</p>
     </section>
   );

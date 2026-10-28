@@ -110,7 +110,8 @@ im Assistenten und in den KI-Lernhilfen (oder Einstellungen → „Modell und Ko
 
 | Wahl | Modell | Preis je Mio. Tokens (ein/aus) | Frage an den Assistenten (Beispiel) |
 |---|---|---|---|
-| **Genau** (Standard) | Claude Opus 5.5, Denktiefe hoch | 4 $ / 20 $ | ca. 9 Cent |
+| **Automatisch** (Standard) | je Aufgabe: Haiku 5.5 für Karteikarten und Lernskript, Sonnet 5.5 für Fragen, Übungsfälle und Korrektur (Korrektur mit hoher Denktiefe) | – | ca. 4 Cent |
+| **Genau** | Claude Opus 5.5, Denktiefe hoch, für alle Aufgaben | 4 $ / 20 $ | ca. 9 Cent |
 | **Sparsam** | Claude Sonnet 5.5, Denktiefe mittel | 2 $ / 10 $ | ca. 4 Cent |
 | **Sehr günstig** | Claude Haiku 5.5, Denktiefe mittel | 0,10 $ / 0,50 $ | ca. 0,2 Cent |
 
@@ -121,6 +122,37 @@ Gesamtverbrauch dieses Geräts (zurücksetzbar). Genau abgerechnet wird in der K
 ablehnt, und ist bei kniffligen Fällen schwächer – für Karteikarten-Vorschläge reicht es meist.
 Tipp: Automatisches Aufladen in der Konsole ausgeschaltet lassen, dann kann nie mehr als das
 aufgeladene Guthaben verbraucht werden.
+
+**Weniger Kosten ohne Qualitätsverlust:** Der Gesprächsverlauf wird zwischengespeichert
+(Prompt-Caching). Bei Rückfragen und bei jedem Werkzeugschritt (Norm nachschlagen, Zitat
+prüfen) kostet der bereits gesendete Teil dann nur noch 5 % des normalen Eingabepreises.
+
+**Monatsbudget** (Einstellungen → „Modell und Kosten“): Ist der geschätzte Verbrauch des
+laufenden Monats erreicht, sendet Studium OS keine bezahlten Anfragen mehr. Die
+Claude-App-Brücke funktioniert weiter. Der Monatszähler beginnt jeden Monat bei 0.
+
+### Claude-App-Brücke: ohne API-Kosten
+
+Wer die Claude-App mit einem Abo nutzt, braucht für den Assistenten und die Lernhilfen keinen
+API-Schlüssel:
+
+1. **„In Claude-App fragen“** (Assistent) bzw. **„In Claude-App“** (KI-Lernhilfen) – Studium OS
+   stellt die Anfrage zusammen: Anweisungen, passende Gesetzestexte aus deinen Rechtsquellen,
+   deine Frage bzw. Unterlagen. Namen und persönliche Angaben sind wie gewohnt durch
+   Platzhalter ersetzt.
+2. **Kopieren**, **Claude öffnen**, in einem neuen Chat einfügen und senden.
+3. Die Antwort in Claude kopieren und in Studium OS einfügen → **„Antwort übernehmen“**.
+
+Danach geht es weiter wie bei einer Anfrage über die API: Zitate und Normen werden gegen deine
+Gesetze geprüft, Platzhalter wieder durch die Originalangaben ersetzt, die Antwort steht im
+Verlauf (eine spätere Rückfrage über die API kennt sie), Karteikarten lassen sich auswählen,
+Übungsfälle werden als Fall-Notiz angelegt. In einer Fall/Gutachten-Notiz wird eingefügter
+Text automatisch im Gutachtenstil eingefärbt.
+
+Die App kann das Abo nicht selbst im Hintergrund nutzen – das Abo ist kein API-Zugang. Die
+Brücke bleibt deshalb ein bewusster Schritt: kopieren, fragen, einfügen. Die Anfrage geht an
+Anthropic wie jede Eingabe in der Claude-App; es gelten deren Einstellungen (z. B. ob Chats
+zum Training genutzt werden dürfen).
 
 ### KI-Lernhilfen in jeder Notiz
 

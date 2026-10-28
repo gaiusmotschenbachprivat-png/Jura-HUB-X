@@ -7,6 +7,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, Copy, FileDown, Info } from "
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 
 import type { AskResult } from "../../ai/assistant";
+import { BRIDGE_MODEL } from "../../ai/bridge";
 import { formatCost } from "../../ai/cost";
 import { hitLabel } from "../../ai/retrieval";
 import type { RegisteredSource } from "../../ai/sources/registry";
@@ -175,7 +176,7 @@ export function AnswerCard({ result, onSaveNote }: { result: AskResult; onSaveNo
       )}
       <details className="ai-details" open={showSent} onToggle={(e) => setShowSent((e.target as HTMLDetailsElement).open)}>
         <summary className="xs">
-          <Info size={12} /> An Anthropic gesendet (anonymisiert)
+          <Info size={12} /> {result.model === BRIDGE_MODEL ? "Für die Claude-App vorbereitet (anonymisiert)" : "An Anthropic gesendet (anonymisiert)"}
         </summary>
         {showSent && <pre className="xs ai-sent">{result.sentPreview}</pre>}
       </details>
@@ -196,7 +197,7 @@ export function AnswerCard({ result, onSaveNote }: { result: AskResult; onSaveNo
           className="xs muted ai-cost"
           title={`${result.usage.requests} Anfrage(n) · Tokens: ${result.usage.input.toLocaleString("de-DE")} Eingabe / ${result.usage.output.toLocaleString("de-DE")} Ausgabe${result.usage.cacheRead ? ` / ${result.usage.cacheRead.toLocaleString("de-DE")} aus Zwischenspeicher` : ""}. Geschätzt; genau abgerechnet wird in der Anthropic-Konsole.`}
         >
-          {modelLabel(result.model)} · {formatCost(result.usage.costUsd)}
+          {result.model === BRIDGE_MODEL ? "Über die Claude-App · ohne API-Kosten" : `${modelLabel(result.model)} · ${formatCost(result.usage.costUsd)}`}
         </span>
       </div>
       <ChevronDown size={0} />

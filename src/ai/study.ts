@@ -12,7 +12,7 @@ import studySystem from "../../prompts/lernen/system.md?raw";
 import uebungsfall from "../../prompts/lernen/uebungsfall.md?raw";
 import { textOf } from "./assistant";
 import type { LlmClient } from "./client";
-import { AI_PROFILES, type AiProfile, MAX_TOKENS, profileParams } from "./config";
+import { AI_PROFILES, type AiProfile, MAX_TOKENS, profileParams, routeProfile } from "./config";
 import { requestCostUsd } from "./cost";
 import { Anonymizer } from "./privacy/anonymize";
 
@@ -89,7 +89,7 @@ export interface StudyOptions {
 }
 
 async function call(o: StudyOptions, task: StudyTask, user: string, schema?: Record<string, unknown>) {
-  const p = profileParams(o.profile ?? AI_PROFILES.genau);
+  const p = profileParams(routeProfile(o.profile ?? AI_PROFILES.auto, task));
   const params: MessageCreateParamsNonStreaming = {
     model: o.model ?? p.model,
     max_tokens: MAX_TOKENS,
@@ -117,10 +117,43 @@ function parseJson<T>(text: string): T {
   return JSON.parse(s) as T;
 }
 
+// ---------- Eingaben und Auswertung (auch für die Claude-App-Brücke) ----------
+
+export const notesInput = (an: Anonymizer, title: string, text: string) => material("mitschrift", an.anonymize(`Titel: ${title}\n\n${text}`));
+export const cardsInput = (an: Anonymizer, title: string, text: string) => material("unterlagen", an.anonymize(`Titel: ${title}\n\n${text}`));
+export const caseInput = (an: Anonymizer, title: string, text: string, difficulty: Difficulty) =>
+  `Schwierigkeit: ${DIFF[difficulty]}\n\n${material("unterlagen", an.anonymize(`Titel: ${title}\n\n${text}`))}`;
+export const reviewInput = (an: Anonymizer, c: { facts: string; question: string; sketch: string }, solution: string) =>
+  [
+    material("sachverhalt", an.anonymize(c.facts)),
+    material("fallfrage", an.anonymize(c.question)),
+    material("loesungsskizze_nur_fuer_dich", an.anonymize(c.sketch)),
+    material("loesung", an.anonymize(solution)),
+  ].join("\n\n");
+
+export function parseCards(text: string, an: Anonymizer): CardSuggestion[] {
+  const data = parseJson<{ karten?: { art: string; vorderseite: string; rueckseite: string }[] }>(text);
+  return (data.karten ?? [])
+    .filter((k) => k.vorderseite?.trim() && k.rueckseite?.trim())
+    .map((k) => ({
+      kind: (["definition", "frage", "norm"].includes(k.art) ? k.art : "frage") as CardSuggestion["kind"],
+      front: an.deanonymize(k.vorderseite.trim()),
+      back: an.deanonymize(k.rueckseite.trim()),
+    }));
+}
+
+export function parseCase(text: string, an: Anonymizer): TrainingCase {
+  const d = parseJson<Record<string, string>>(text);
+  const v = (k: string) => an.deanonymize(String(d[k] ?? "").trim());
+  const c = { title: v("titel"), facts: v("sachverhalt"), question: v("fallfrage"), hint: v("bearbeitungshinweis"), sketch: v("loesungsskizze") };
+  if (!c.facts || !c.question) throw new Error("Die Antwort enthält keinen vollständigen Übungsfall (Sachverhalt und Fallfrage fehlen).");
+  return c;
+}
+
 /** Mitschrift → Lernskript (Markdown). */
 export async function prepareNotes(o: StudyOptions, title: string, text: string): Promise<StudyResult<string>> {
   const an = o.anonymizer ?? new Anonymizer();
-  const user = `${material("mitschrift", an.anonymize(`Titel: ${title}\n\n${text}`))}`;
+  const user = notesInput(an, title, text);
   const r = await call(o, "aufbereiten", user);
   return { value: an.deanonymize(r.text), sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }
@@ -128,17 +161,9 @@ export async function prepareNotes(o: StudyOptions, title: string, text: string)
 /** Unterlagen → Karteikarten-Vorschläge. */
 export async function suggestCards(o: StudyOptions, title: string, text: string): Promise<StudyResult<CardSuggestion[]>> {
   const an = o.anonymizer ?? new Anonymizer();
-  const user = material("unterlagen", an.anonymize(`Titel: ${title}\n\n${text}`));
+  const user = cardsInput(an, title, text);
   const r = await call(o, "karteikarten", user, CARD_SCHEMA as unknown as Record<string, unknown>);
-  const data = parseJson<{ karten: { art: string; vorderseite: string; rueckseite: string }[] }>(r.text);
-  const cards = (data.karten ?? [])
-    .filter((k) => k.vorderseite?.trim() && k.rueckseite?.trim())
-    .map((k) => ({
-      kind: (["definition", "frage", "norm"].includes(k.art) ? k.art : "frage") as CardSuggestion["kind"],
-      front: an.deanonymize(k.vorderseite.trim()),
-      back: an.deanonymize(k.rueckseite.trim()),
-    }));
-  return { value: cards, sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
+  return { value: parseCards(r.text, an), sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }
 
 export type Difficulty = "anfaenger" | "fortgeschritten" | "examen";
@@ -151,22 +176,15 @@ const DIFF: Record<Difficulty, string> = {
 /** Unterlagen → Übungsfall mit (verdeckter) Lösungsskizze. */
 export async function createCase(o: StudyOptions, title: string, text: string, difficulty: Difficulty): Promise<StudyResult<TrainingCase>> {
   const an = o.anonymizer ?? new Anonymizer();
-  const user = `Schwierigkeit: ${DIFF[difficulty]}\n\n${material("unterlagen", an.anonymize(`Titel: ${title}\n\n${text}`))}`;
+  const user = caseInput(an, title, text, difficulty);
   const r = await call(o, "uebungsfall", user, CASE_SCHEMA as unknown as Record<string, unknown>);
-  const d = parseJson<Record<string, string>>(r.text);
-  const v = (k: string) => an.deanonymize(String(d[k] ?? "").trim());
-  return { value: { title: v("titel"), facts: v("sachverhalt"), question: v("fallfrage"), hint: v("bearbeitungshinweis"), sketch: v("loesungsskizze") }, sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
+  return { value: parseCase(r.text, an), sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }
 
 /** Lösung → Rückmeldung (Markdown). */
 export async function reviewSolution(o: StudyOptions, c: { facts: string; question: string; sketch: string }, solution: string): Promise<StudyResult<string>> {
   const an = o.anonymizer ?? new Anonymizer();
-  const user = [
-    material("sachverhalt", an.anonymize(c.facts)),
-    material("fallfrage", an.anonymize(c.question)),
-    material("loesungsskizze_nur_fuer_dich", an.anonymize(c.sketch)),
-    material("loesung", an.anonymize(solution)),
-  ].join("\n\n");
+  const user = reviewInput(an, c, solution);
   const r = await call(o, "korrektur", user);
   return { value: an.deanonymize(r.text), sent: user, model: r.model, anonymized: an.count, costUsd: r.costUsd };
 }

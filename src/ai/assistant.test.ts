@@ -75,7 +75,9 @@ describe("Juristischer Assistent – Ablauf", () => {
     const sent = JSON.stringify(first.messages);
     expect(sent).not.toContain("Müller");
     expect(sent).toContain("<quellen>");
-    expect(first.model).toBe("claude-opus-5-5");
+    // Standard „Automatisch“: Claude Sonnet 5.5; Verlauf wird zwischengespeichert
+    expect(first.model).toBe("claude-sonnet-5-5");
+    expect((first as unknown as { cache_control: unknown }).cache_control).toEqual({ type: "ephemeral" });
     expect((first as unknown as { fallbacks: string }).fallbacks).toBe("default");
     expect(first.tools?.map((t) => (t as { name: string }).name)).toContain("norm_abrufen");
     // Werkzeugergebnis ging als tool_result zurück

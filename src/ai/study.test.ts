@@ -32,7 +32,9 @@ describe("KI-Lernhilfen", () => {
     expect(userText(calls[0]!)).toContain("[PERSON_1]");
     expect(systemText(calls[0]!)).toContain("Lernskript");
     expect(systemText(calls[0]!)).toContain("Erfinde keine Normen");
-    expect(calls[0]!.output_config).toEqual({ effort: "high" });
+    // Standard „Automatisch“: Lernskript mit Claude Haiku 5.5
+    expect(calls[0]!.model).toBe("claude-haiku-5-5");
+    expect(calls[0]!.output_config).toEqual({ effort: "medium" });
     expect(r.value).toContain("Herr Müller erklärte");
   });
 

@@ -20,8 +20,9 @@ import systemPrompt from "../../prompts/system.md?raw";
 import recherche from "../../prompts/aufgaben/recherche.md?raw";
 import schriftsatz from "../../prompts/aufgaben/schriftsatz.md?raw";
 import vertrag from "../../prompts/aufgaben/vertrag.md?raw";
+import { bridgeAssistantPrompt, BRIDGE_MODEL } from "./bridge";
 import type { LlmClient } from "./client";
-import { AI_PROFILES, type AiProfile, DISCLAIMER, MAX_REVISIONS, MAX_TOKENS, MAX_TOOL_ROUNDS, profileParams, RETRIEVAL_LIMIT } from "./config";
+import { AI_PROFILES, type AiProfile, DISCLAIMER, MAX_REVISIONS, MAX_TOKENS, MAX_TOOL_ROUNDS, profileParams, RETRIEVAL_LIMIT, routeProfile } from "./config";
 import { requestCostUsd } from "./cost";
 import { Anonymizer, type AnonymizerSnapshot } from "./privacy/anonymize";
 import { LegalRetriever, type Retriever } from "./retrieval";
@@ -114,10 +115,13 @@ export class LegalAssistant {
   }
 
   private params(): MessageCreateParamsNonStreaming {
-    const p = profileParams(this.opts.profile ?? AI_PROFILES.genau);
+    const p = profileParams(routeProfile(this.opts.profile ?? AI_PROFILES.auto, "assistent"));
     return {
       model: this.opts.model ?? p.model,
       max_tokens: MAX_TOKENS,
+      // Verlauf zwischenspeichern: Die API setzt die Cache-Marke auf den jeweils letzten Block.
+      // Rückfragen und jede Werkzeugrunde lesen den bisherigen Verlauf dann zum Cache-Preis (5 %).
+      cache_control: { type: "ephemeral" },
       // Stabiler Anfang (Prompt + Aufgabe + Werkzeuge) wird zwischengespeichert
       system: [
         { type: "text", text: this.system },
@@ -144,9 +148,8 @@ export class LegalAssistant {
     }
   }
 
-  private async askInner(question: string, document?: string): Promise<AskResult> {
-    const usage = { input: 0, output: 0, cacheRead: 0, requests: 0, costUsd: 0 };
-    const toolCalls: AskResult["toolCalls"] = [];
+  /** Nutzernachricht: anonymisierte Frage mit vorab abgerufenen Quellen. */
+  private async userMessage(question: string, document?: string): Promise<string> {
     const q = this.anonymizer.anonymize(question.trim());
     const doc = document?.trim() ? this.anonymizer.anonymize(document.trim()) : "";
     const hits = await this.retriever.retrieve(`${q}\n${doc.slice(0, 2000)}`, { limit: RETRIEVAL_LIMIT });
@@ -158,7 +161,46 @@ export class LegalAssistant {
       doc ? `<dokument>\n${doc}\n</dokument>` : "",
       `<frage>\n${q}\n</frage>`,
     ].filter(Boolean);
-    const userText = parts.join("\n\n");
+    return parts.join("\n\n");
+  }
+
+  /**
+   * Claude-App-Brücke, Schritt 1: Anfrage zum Kopieren zusammenstellen
+   * (gleiche Quellen und Anonymisierung wie über die API, ohne Kosten).
+   */
+  async prepareExternal(question: string, document?: string): Promise<{ prompt: string; userText: string }> {
+    const userText = await this.userMessage(question, document);
+    return { prompt: bridgeAssistantPrompt(this.opts.task, userText), userText };
+  }
+
+  /**
+   * Claude-App-Brücke, Schritt 2: eingefügte Antwort prüfen (Zitate),
+   * Platzhalter zurückübersetzen und an den Verlauf anhängen – eine spätere
+   * Rückfrage über die API kennt sie dann.
+   */
+  async acceptExternal(userText: string, answer: string): Promise<AskResult> {
+    let anonymizedText = answer.trim();
+    const report = await verifyAnswer(anonymizedText, this.registry, this.opts.store);
+    if (!anonymizedText.includes(DISCLAIMER)) anonymizedText = `${anonymizedText}\n\n${DISCLAIMER}`;
+    this.messages.push({ role: "user", content: userText }, { role: "assistant", content: [{ type: "text", text: anonymizedText }] });
+    return {
+      text: this.anonymizer.deanonymize(anonymizedText),
+      anonymizedText,
+      report,
+      sources: this.registry.all,
+      revised: false,
+      stopReason: "end_turn",
+      toolCalls: [],
+      sentPreview: userText,
+      usage: { input: 0, output: 0, cacheRead: 0, requests: 0, costUsd: 0 },
+      model: BRIDGE_MODEL,
+    };
+  }
+
+  private async askInner(question: string, document?: string): Promise<AskResult> {
+    const usage = { input: 0, output: 0, cacheRead: 0, requests: 0, costUsd: 0 };
+    const toolCalls: AskResult["toolCalls"] = [];
+    const userText = await this.userMessage(question, document);
     this.messages.push({ role: "user", content: userText });
 
     const ctx: ToolContext = { store: this.opts.store, registry: this.registry, anonymizer: this.anonymizer, ownDocuments: this.opts.ownDocuments };

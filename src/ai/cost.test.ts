@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { LlmClient } from "./client";
-import { AI_PROFILES, profileFromSettings } from "./config";
+import { AI_PROFILES, profileFromSettings, routeProfile } from "./config";
 import { formatCost, requestCostUsd, requestsFor } from "./cost";
 import { prepareNotes } from "./study";
 
@@ -26,10 +26,20 @@ describe("KI-Kosten", () => {
     expect(formatCost(2)).toBe("ca. 1,80 €");
     expect(requestsFor(5, 0.1)).toBe(55);
   });
-  it("Modellwahl: Standard „Genau“, unbekannte Werte fallen darauf zurück", () => {
-    expect(profileFromSettings(undefined).model).toBe("claude-opus-5-5");
-    expect(profileFromSettings("quatsch").id).toBe("genau");
+  it("Modellwahl: Standard „Automatisch“, unbekannte Werte fallen darauf zurück", () => {
+    expect(profileFromSettings(undefined).id).toBe("auto");
+    expect(profileFromSettings("quatsch").id).toBe("auto");
+    expect(profileFromSettings("genau").model).toBe("claude-opus-5-5");
     expect(profileFromSettings("guenstig").model).toBe("claude-haiku-5-5");
+  });
+  it("„Automatisch“ wählt je Aufgabe: Haiku für Lernhilfen, Sonnet für Fragen und Korrektur, nie Opus", () => {
+    const auto = AI_PROFILES.auto;
+    expect(routeProfile(auto, "karteikarten").model).toBe("claude-haiku-5-5");
+    expect(routeProfile(auto, "aufbereiten").model).toBe("claude-haiku-5-5");
+    expect(routeProfile(auto, "assistent")).toMatchObject({ model: "claude-sonnet-5-5", effort: "medium" });
+    expect(routeProfile(auto, "korrektur")).toMatchObject({ model: "claude-sonnet-5-5", effort: "high" });
+    // eine bewusste Wahl gilt für alle Aufgaben
+    expect(routeProfile(AI_PROFILES.genau, "karteikarten").model).toBe("claude-opus-5-5");
   });
   it("Anfrage passt zum Modell: Ausweichmodell nur bei Opus und Sonnet", async () => {
     const calls: Params[] = [];
@@ -40,14 +50,17 @@ describe("KI-Kosten", () => {
       },
     };
     const results = [];
-    for (const p of Object.values(AI_PROFILES)) results.push(await prepareNotes({ llm, profile: p }, "VL", "Stoff ".repeat(30)));
-    const [opus, sonnet, haiku] = calls as unknown as Record<string, unknown>[];
+    for (const p of [AI_PROFILES.genau, AI_PROFILES.sparsam, AI_PROFILES.guenstig, AI_PROFILES.auto]) results.push(await prepareNotes({ llm, profile: p }, "VL", "Stoff ".repeat(30)));
+    const [opus, sonnet, haiku, auto] = calls as unknown as Record<string, unknown>[];
+    expect(auto).toMatchObject({ model: "claude-haiku-5-5" });
     expect(opus).toMatchObject({ model: "claude-opus-5-5", output_config: { effort: "high" }, fallbacks: "default" });
     expect(sonnet).toMatchObject({ model: "claude-sonnet-5-5", output_config: { effort: "medium" }, fallbacks: "default" });
     expect(haiku).toMatchObject({ model: "claude-haiku-5-5", output_config: { effort: "medium" } });
     expect(haiku).not.toHaveProperty("fallbacks");
     expect(haiku).not.toHaveProperty("betas");
     for (const c of calls as unknown as Record<string, unknown>[]) for (const k of ["temperature", "top_p", "top_k", "thinking"]) expect(c).not.toHaveProperty(k);
-    expect(results.map((r) => r.costUsd)).toEqual([requestCostUsd("claude-opus-5-5", { input_tokens: 1000, output_tokens: 500 }), requestCostUsd("claude-sonnet-5-5", { input_tokens: 1000, output_tokens: 500 }), requestCostUsd("claude-haiku-5-5", { input_tokens: 1000, output_tokens: 500 })]);
+    expect(results.map((r) => r.costUsd)).toEqual(
+      ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5", "claude-haiku-5-5"].map((m) => requestCostUsd(m, { input_tokens: 1000, output_tokens: 500 })),
+    );
   });
 });

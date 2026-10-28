@@ -8,12 +8,12 @@ import { create } from "zustand";
 import { api } from "../../api";
 import type { AiChatMeta } from "../../api/types";
 import { LegalAssistant, type AskResult, type AssistantSnapshot, type Task } from "../../ai/assistant";
-import { aiErrorMessage, appClient } from "../../ai/client";
+import { aiErrorMessage, appClient, type LlmClient } from "../../ai/client";
 import { Anonymizer, configFromSettings } from "../../ai/privacy/anonymize";
 import { PROFILE_SETTING, profileFromSettings } from "../../ai/config";
 import { reportError, useApp } from "../../state/store";
 import { upgradeTextLaws } from "../../ai/sources/importer";
-import { addSpend } from "./AiProfile";
+import { addSpend, checkBudget } from "./AiProfile";
 
 export const HISTORY_SETTING = "ai.history";
 
@@ -49,6 +49,10 @@ interface AssistantState {
   setOwnDocs(v: boolean): void;
   reset(): void;
   ask(question: string, document?: string): Promise<void>;
+  /** Claude-App-Brücke: Anfrage zum Kopieren (ohne API-Kosten) */
+  bridgePrepare(question: string, document?: string): Promise<{ prompt: string; userText: string }>;
+  /** Claude-App-Brücke: eingefügte Antwort prüfen und in die Unterhaltung übernehmen */
+  bridgeAccept(question: string, document: string | undefined, userText: string, answer: string): Promise<void>;
   loadChats(): Promise<void>;
   openChat(id: string): Promise<void>;
   deleteChat(id: string): Promise<void>;
@@ -99,22 +103,8 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     if (get().busy || !question.trim()) return;
     set({ busy: true, entries: [...get().entries, { role: "user", text: question, document }] });
     try {
-      let a = get().assistant;
-      await upgradeOldLaws();
-      if (!a) {
-        const settings = await api.settingsAll();
-        const systemPrompt = typeof settings["ai.systemPrompt"] === "string" ? (settings["ai.systemPrompt"] as string) : undefined;
-        a = new LegalAssistant({
-          llm: await appClient(api),
-          store: api,
-          task: get().task,
-          systemPrompt,
-          anonymizer: new Anonymizer(configFromSettings(settings["ai.anonymize"])),
-          ownDocuments: get().ownDocs ? ownDocuments : undefined,
-          restore: get().restore ?? undefined,
-        });
-        set({ assistant: a, restore: null });
-      }
+      await checkBudget();
+      const a = await ensureAssistant();
       // Modellwahl bei jeder Frage neu lesen (kann zwischendurch geändert werden)
       a.setProfile(profileFromSettings((await api.settingsAll())[PROFILE_SETTING]));
       const result = await a.ask(question, document);
@@ -126,6 +116,22 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     // Gespeichert wird, solange `busy` gilt – so ändert sich der Verlauf währenddessen nicht
     await save().catch(reportError);
     set({ busy: false });
+  },
+  async bridgePrepare(question, document) {
+    const a = await ensureAssistant();
+    return a.prepareExternal(question, document);
+  },
+  async bridgeAccept(question, document, userText, answer) {
+    if (get().busy || !answer.trim()) return;
+    set({ busy: true });
+    try {
+      const a = await ensureAssistant();
+      const result = await a.acceptExternal(userText, answer);
+      set({ entries: [...get().entries, { role: "user", text: question, document }, { role: "assistant", result }] });
+      await save().catch(reportError);
+    } finally {
+      set({ busy: false });
+    }
   },
   async loadChats() {
     set({ chats: await api.aiChatsList() });
@@ -147,6 +153,31 @@ export const useAssistant = create<AssistantState>((set, get) => ({
     set({ chatId: null, chats: [] });
   },
 }));
+
+/**
+ * Assistent der laufenden Unterhaltung (bei Bedarf neu). Der API-Zugang wird
+ * erst bei der ersten bezahlten Anfrage geholt – die Claude-App-Brücke
+ * funktioniert so auch ohne API-Schlüssel.
+ */
+async function ensureAssistant(): Promise<LegalAssistant> {
+  const st = useAssistant.getState();
+  if (st.assistant) return st.assistant;
+  await upgradeOldLaws();
+  const settings = await api.settingsAll();
+  const systemPrompt = typeof settings["ai.systemPrompt"] === "string" ? (settings["ai.systemPrompt"] as string) : undefined;
+  let client: Promise<LlmClient> | null = null;
+  const a = new LegalAssistant({
+    llm: { create: async (p) => (await (client ??= appClient(api))).create(p) },
+    store: api,
+    task: st.task,
+    systemPrompt,
+    anonymizer: new Anonymizer(configFromSettings(settings["ai.anonymize"])),
+    ownDocuments: st.ownDocs ? ownDocuments : undefined,
+    restore: st.restore ?? undefined,
+  });
+  useAssistant.setState({ assistant: a, restore: null });
+  return a;
+}
 
 /** Nach jeder Frage: Unterhaltung lokal sichern (sofern der Verlauf eingeschaltet ist). */
 async function save() {

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "../../api";
 import { AI_PROFILES, type AiProfileId, PROFILE_SETTING, profileFromSettings } from "../../ai/config";
-import { formatCost, SPENT_SETTING, spentFrom, type Spent } from "../../ai/cost";
+import { addToSpent, BUDGET_SETTING, budgetExceeded, budgetFrom, formatCost, SPENT_SETTING, spentFrom, type Spent } from "../../ai/cost";
 import { useApp } from "../../state/store";
 
 /** Kosten einer Anfrage zum geschätzten Gesamtverbrauch dieses Geräts addieren. */
@@ -11,11 +11,18 @@ export async function addSpend(usd: number, requests = 1) {
   if (!(usd > 0)) return;
   try {
     const s = spentFrom((await api.settingsAll())[SPENT_SETTING]);
-    await api.settingSet(SPENT_SETTING, { ...s, usd: s.usd + usd, requests: s.requests + requests });
+    await api.settingSet(SPENT_SETTING, addToSpent(s, usd, requests));
     useApp.getState().bump();
   } catch {
     /* nur Anzeige – kein Fehler zeigen */
   }
+}
+
+/** Vor jeder bezahlten Anfrage: Ist das Monatsbudget erreicht, wird nicht gesendet. */
+export async function checkBudget() {
+  const s = await api.settingsAll();
+  const msg = budgetExceeded(spentFrom(s[SPENT_SETTING]), budgetFrom(s[BUDGET_SETTING]));
+  if (msg) throw new Error(msg);
 }
 
 export async function loadProfile() {
@@ -24,7 +31,7 @@ export async function loadProfile() {
 
 export function useAiProfile() {
   const dataVersion = useApp((s) => s.dataVersion);
-  const [id, setId] = useState<AiProfileId>("genau");
+  const [id, setId] = useState<AiProfileId>("auto");
   const [spent, setSpent] = useState<Spent | null>(null);
   useEffect(() => {
     void api.settingsAll().then((s) => {

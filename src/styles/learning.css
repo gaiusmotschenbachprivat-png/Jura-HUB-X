@@ -109,6 +109,7 @@
 .ai-error { border-color: #d14343; color: #b42318; }
 .ai-busy { padding: 8px 0; }
 .ai-input { display: flex; gap: 8px; align-items: flex-end; }
+.ai-send { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
 .ai-input textarea, .ai-doc textarea { flex: 1; width: 100%; resize: vertical; font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--bg); color: inherit; }
 .ai-doc { display: flex; flex-direction: column; gap: 6px; }
 .ai-meta { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 12px; margin-bottom: 10px; }

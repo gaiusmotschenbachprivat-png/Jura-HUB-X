@@ -1,14 +1,29 @@
 import type { Editor } from "@tiptap/react";
 import { generateJSON } from "@tiptap/core";
-import { Sparkles } from "lucide-react";
+import { ExternalLink, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { aiErrorMessage, appClient } from "../../ai/client";
 import { PROFILE_SETTING, profileFromSettings } from "../../ai/config";
 import { formatCost } from "../../ai/cost";
-import { addSpend, ProfileSelect } from "./AiProfile";
+import { addSpend, checkBudget, ProfileSelect } from "./AiProfile";
 import { Anonymizer, configFromSettings } from "../../ai/privacy/anonymize";
-import { createCase, prepareNotes, reviewSolution, suggestCards, type CardSuggestion, type Difficulty, type TrainingCase } from "../../ai/study";
+import { bridgeStudyPrompt, extractJson } from "../../ai/bridge";
+import {
+  caseInput,
+  cardsInput,
+  createCase,
+  notesInput,
+  parseCards,
+  parseCase,
+  prepareNotes,
+  reviewInput,
+  reviewSolution,
+  suggestCards,
+  type CardSuggestion,
+  type Difficulty,
+  type TrainingCase,
+} from "../../ai/study";
 import { api } from "../../api";
 import type { StudyNode } from "../../api/types";
 import { markdownToHtml } from "../../lib/docxImport";
@@ -21,6 +36,7 @@ import { editorExtensions } from "../editor/extensions";
 import { createNode } from "../navigation/actions";
 import { Markdown } from "./Answer";
 import { useAiReady, useAssistantPanel } from "./AssistantPanel";
+import { BridgeSteps } from "./ClaudeBridge";
 
 export type StudyMode = "aufbereiten" | "karteikarten" | "uebungsfall" | "korrektur";
 
@@ -75,12 +91,15 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
 
   useEffect(() => setError(null), [mode]);
   const ready = consent === true && status?.available;
+  // Claude-App-Brücke braucht nur die Zustimmung, keinen API-Schlüssel
+  const [bridge, setBridge] = useState<{ prompt: string; an: Anonymizer } | null>(null);
   const tooShort = mode !== "korrektur" && text.trim().length < 80;
 
   const run = async () => {
     setBusy(true);
     setError(null);
     try {
+      await checkBudget();
       const s = await api.settingsAll();
       const o = { llm: await appClient(api), anonymizer: new Anonymizer(configFromSettings(s["ai.anonymize"])), profile: profileFromSettings(s[PROFILE_SETTING]) };
       const spend = (usd: number) => {
@@ -100,16 +119,7 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
       } else if (mode === "uebungsfall") {
         const r = await createCase(o, node.title, text, difficulty);
         spend(r.costUsd);
-        const n = await createNode({
-          areaId: node.area_id,
-          parentId: node.parent_id,
-          kind: "note",
-          title: r.value.title ? `Übungsfall: ${r.value.title}` : "Übungsfall",
-          meta: { noteType: "fall", training: { facts: r.value.facts, question: r.value.question, sketch: r.value.sketch.slice(0, 40_000) } },
-          contentJson: JSON.stringify(caseDoc(r.value)),
-        });
-        if (n) toast("Übungsfall angelegt. Schreib deine Lösung unter „Lösung“ und lass sie dann besprechen (Hut-Symbol „KI-Lernhilfen“ → Lösung besprechen).", "success");
-        onClose();
+        await saveCase(r.value);
       } else if (training) {
         const r = await reviewSolution(o, training, solutionText(text));
         spend(r.costUsd);
@@ -120,6 +130,53 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
       setError(aiErrorMessage(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const saveCase = async (c: TrainingCase) => {
+    const n = await createNode({
+      areaId: node.area_id,
+      parentId: node.parent_id,
+      kind: "note",
+      title: c.title ? `Übungsfall: ${c.title}` : "Übungsfall",
+      meta: { noteType: "fall", training: { facts: c.facts, question: c.question, sketch: c.sketch.slice(0, 40_000) } },
+      contentJson: JSON.stringify(caseDoc(c)),
+    });
+    if (n) toast("Übungsfall angelegt. Schreib deine Lösung unter „Lösung“ und lass sie dann besprechen (Hut-Symbol „KI-Lernhilfen“ → Lösung besprechen).", "success");
+    onClose();
+  };
+
+  /** Claude-App-Brücke: Anfrage zusammenstellen (anonymisiert wie über die API). */
+  const startBridge = async () => {
+    setError(null);
+    try {
+      const s = await api.settingsAll();
+      const an = new Anonymizer(configFromSettings(s["ai.anonymize"]));
+      const user =
+        mode === "aufbereiten"
+          ? notesInput(an, node.title, text)
+          : mode === "karteikarten"
+            ? cardsInput(an, node.title, text)
+            : mode === "uebungsfall"
+              ? caseInput(an, node.title, text, difficulty)
+              : reviewInput(an, training!, solutionText(text));
+      setSent(user);
+      setBridge({ prompt: bridgeStudyPrompt(mode, user), an });
+    } catch (e) {
+      reportError(e);
+    }
+  };
+
+  const takeBridgeAnswer = async (answer: string) => {
+    if (!bridge) return;
+    setError(null);
+    try {
+      if (mode === "karteikarten") setCards(parseCards(extractJson(answer), bridge.an).map((c) => ({ ...c, on: true })));
+      else if (mode === "uebungsfall") await saveCase(parseCase(extractJson(answer), bridge.an));
+      else setMd(bridge.an.deanonymize(answer.trim()));
+      setBridge(null);
+    } catch (e) {
+      setError(e instanceof SyntaxError ? "Die Antwort ließ sich nicht lesen. Bitte die vollständige Antwort aus Claude kopieren (inklusive des JSON-Blocks)." : aiErrorMessage(e));
     }
   };
 
@@ -141,11 +198,22 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
   const footer = (
     <>
       <span className="grow xs muted">
-        {sent ? `Anonymisiert an Anthropic gesendet${cost != null ? ` · Kosten ${formatCost(cost)}` : ""}. Ergebnis ungeprüft – bitte kontrollieren.` : ""}
+        {sent && bridge ? "Anonymisiert für die Claude-App vorbereitet." : sent ? `Anonymisiert an Anthropic gesendet${cost != null ? ` · Kosten ${formatCost(cost)}` : " · über die Claude-App, ohne API-Kosten"}. Ergebnis ungeprüft – bitte kontrollieren.` : ""}
       </span>
-      {ready && !md && !cards && <ProfileSelect disabled={busy} />}
+      {ready && !md && !cards && !bridge && <ProfileSelect disabled={busy} />}
       <Button onClick={onClose}>Schließen</Button>
-      {ready && !md && !cards && (
+      {consent === true && !md && !cards && !bridge && (
+        <Button
+          variant={ready ? "secondary" : "primary"}
+          icon={<ExternalLink size={15} />}
+          disabled={busy || tooShort || (mode === "korrektur" && !training)}
+          onClick={() => void startBridge()}
+          title="Anfrage für die Claude-App kopieren – ohne API-Kosten"
+        >
+          In Claude-App
+        </Button>
+      )}
+      {ready && !md && !cards && !bridge && (
         <Button variant="primary" icon={<Sparkles size={15} />} disabled={busy || tooShort || (mode === "korrektur" && !training)} onClick={() => void run()}>
           {busy ? "Claude arbeitet …" : "Starten"}
         </Button>
@@ -196,9 +264,9 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
       <div className="stack study-dialog">
         {consent === null || !status ? (
           <div className="loading">Lade …</div>
-        ) : !ready ? (
+        ) : consent !== true ? (
           <div className="notice">
-            <p className="small">Für die KI-Lernhilfen muss der KI-Assistent eingerichtet sein (Zustimmung und API-Schlüssel bzw. PIN).</p>
+            <p className="small">Für die KI-Lernhilfen muss der KI-Assistent eingerichtet sein (Zustimmung zur Verarbeitung durch Claude).</p>
             <Button
               icon={<Sparkles size={15} />}
               onClick={() => {
@@ -223,6 +291,10 @@ export function StudyDialog({ mode, node, text, editor, onClose }: { mode: Study
                 </select>
               </Field>
             )}
+            {!ready && !bridge && !md && !cards && (
+              <p className="xs muted">Ohne API-Schlüssel: „In Claude-App“ – du fragst in deiner Claude-App und fügst die Antwort hier ein.</p>
+            )}
+            {bridge && <BridgeSteps prompt={bridge.prompt} onAnswer={(a) => void takeBridgeAnswer(a)} />}
             {busy && <div className="loading">Claude arbeitet … (das kann eine Minute dauern)</div>}
             {error && <p className="error-text small">{error}</p>}
             {md && (

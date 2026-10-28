@@ -182,6 +182,19 @@ scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehe
   (Tippfehler, Normangaben), „gewusst/nicht gewusst“ entscheidest du. Danach lassen sich nur
   die verpassten Punkte wiederholen; das letzte Ergebnis wird je Schema gemerkt.
 
+## KI ohne API-Kosten, Monatsbudget
+
+- **„In Claude-App fragen“** (Assistent) und **„In Claude-App“** (KI-Lernhilfen): Studium OS
+  bereitet die Anfrage mit passenden Gesetzestexten vor (anonymisiert) → kopieren → in der
+  Claude-App einfügen → Antwort kopieren und hier einfügen. Zitate werden geprüft, Namen wieder
+  eingesetzt, Karteikarten und Übungsfälle wie gewohnt angelegt. Ein API-Schlüssel ist dafür
+  nicht nötig.
+- **Modell „Automatisch“** (neuer Standard): Haiku für Karteikarten und Lernskripte, Sonnet für
+  Fragen, Übungsfälle und Korrekturen. Opus nur bei „Genau“. Der Gesprächsverlauf wird
+  zwischengespeichert, Rückfragen werden dadurch deutlich günstiger.
+- **Monatsbudget** unter KI-Assistent → Einstellungen: Ist es erreicht, gehen keine bezahlten
+  Anfragen mehr hinaus.
+
 ## KI-Assistent: Verlauf und Gesetze als PDF
 
 - **Verlauf** (Uhr-Symbol im Assistenten): Unterhaltungen werden nach jeder Antwort auf dem iPad

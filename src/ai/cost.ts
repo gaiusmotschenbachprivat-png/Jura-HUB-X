@@ -56,12 +56,42 @@ export function requestsFor(budgetEur: number, usdPerRequest: number): number {
 }
 
 export const SPENT_SETTING = "ai.spent";
+/** Monatsbudget in Euro (0 = keine Grenze). */
+export const BUDGET_SETTING = "ai.budget";
 export interface Spent {
   usd: number;
   since: string;
   requests: number;
+  /** laufender Monat („2026-10“) und sein Verbrauch */
+  month: string;
+  monthUsd: number;
 }
-export function spentFrom(v: unknown): Spent {
+export const monthKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+
+export function spentFrom(v: unknown, now = new Date()): Spent {
   const o = v && typeof v === "object" ? (v as Partial<Spent>) : {};
-  return { usd: Number(o.usd) || 0, since: typeof o.since === "string" ? o.since : new Date().toISOString(), requests: Number(o.requests) || 0 };
+  const month = monthKey(now);
+  return {
+    usd: Number(o.usd) || 0,
+    since: typeof o.since === "string" ? o.since : now.toISOString(),
+    requests: Number(o.requests) || 0,
+    month,
+    // neuer Monat: Monatszähler beginnt bei 0
+    monthUsd: o.month === month ? Number(o.monthUsd) || 0 : 0,
+  };
+}
+
+export function addToSpent(s: Spent, usd: number, requests: number): Spent {
+  return { ...s, usd: s.usd + usd, requests: s.requests + requests, monthUsd: s.monthUsd + usd };
+}
+
+export function budgetFrom(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+/** Fehlermeldung, wenn das Monatsbudget aufgebraucht ist – sonst null. */
+export function budgetExceeded(s: Spent, budgetEur: number): string | null {
+  if (!budgetEur || s.monthUsd * USD_TO_EUR < budgetEur) return null;
+  return `Dein Monatsbudget für die KI (${budgetEur.toLocaleString("de-DE")} €) ist erreicht. Nutze „In Claude-App fragen“ – das kostet nichts extra – oder erhöhe das Budget unter KI-Assistent → Einstellungen.`;
 }

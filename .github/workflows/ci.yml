@@ -91,6 +91,8 @@ jobs:
         run: node tests/e2e-web/touch-e2e.mjs
       - name: Gutachten nach Rechtsgebiet, farbiger Gutachtenstil
         run: node tests/e2e-web/gutachten-e2e.mjs
+      - name: Claude-App-Brücke (KI ohne API-Kosten)
+        run: node tests/e2e-web/bruecke-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -153,7 +153,10 @@ try {
   check("Drei API-Aufrufe (Werkzeug, Antwort, Überarbeitung)", requests.length === 3, String(requests.length));
   const first = requests[0];
   check("Schlüssel geht nur im Header an api.anthropic.com", first?.headers["x-api-key"] === "sk-ant-test-schluessel");
-  check("Modell Claude Opus 5.5 mit Ausweichmodell", first?.body.model === "claude-opus-5-5" && first?.body.fallbacks === "default");
+  check(
+    "Standard „Automatisch“: Claude Sonnet 5.5 mit Ausweichmodell, Verlauf im Zwischenspeicher",
+    first?.body.model === "claude-sonnet-5-5" && first?.body.fallbacks === "default" && first?.body.cache_control?.type === "ephemeral",
+  );
   check("Name wurde vor dem Senden anonymisiert", !JSON.stringify(requests.map((r) => r.body)).includes("Müller"));
   check("Quellen werden mitgeschickt", JSON.stringify(first?.body.messages).includes("[Q1]"));
   check("Werkzeugergebnis ging zurück", JSON.stringify(requests[1]?.body.messages).includes("Musterfrist"));
@@ -192,7 +195,7 @@ try {
   const ctxBody = JSON.stringify(requests[3]?.body.messages ?? "");
   check("Notiztext wird (anonymisiert) mitgeschickt", ctxBody.includes("Aktuelle Notiz") && ctxBody.includes("Musterpreis") && !ctxBody.includes("Müller"));
   check("Antwort in der Seitenleiste mit Originalnamen", (await panel.locator(".ai-card").innerText()).includes("Herrn Müller"));
-  check("Kosten der Antwort angezeigt", /Opus 5\.5 · ca\. [\d,]+ Cent/.test(await panel.locator(".ai-cost").last().innerText()), await panel.locator(".ai-cost").last().innerText());
+  check("Kosten der Antwort angezeigt", /Sonnet 5\.5 · ca\. [\d,]+ Cent/.test(await panel.locator(".ai-cost").last().innerText()), await panel.locator(".ai-cost").last().innerText());
   await shot("ki-seitenleiste");
 
   // 6b. Modellwahl: Sparsam (Sonnet) und Sehr günstig (Haiku, ohne Ausweichmodell)
@@ -227,7 +230,11 @@ try {
   const mc = page.locator(".card", { hasText: "Modell und Kosten" });
   await mc.getByText(/Bisher verbraucht/).waitFor({ timeout: 10000 });
   const mcText = await mc.innerText();
-  check("Einstellungen: drei Modelle mit Preisbeispiel und Verbrauch", (mcText.match(/mit 5 € etwa [\d.,]+ Fragen/g) ?? []).length === 3 && mcText.includes("Bisher verbraucht"), mcText.slice(250, 650));
+  check(
+    "Einstellungen: vier Modelle mit Preisbeispiel, Verbrauch und Monatsbudget",
+    (mcText.match(/mit 5 € etwa [\d.,]+ Fragen/g) ?? []).length === 4 && mcText.includes("Bisher verbraucht") && mcText.includes("Monatsbudget"),
+    mcText.slice(250, 650),
+  );
   await shot("ki-kosten");
   await page.getByRole("tab", { name: /Fragen/ }).click();
   if (await panel.isVisible()) await panel.getByRole("button", { name: "Schließen" }).click();
