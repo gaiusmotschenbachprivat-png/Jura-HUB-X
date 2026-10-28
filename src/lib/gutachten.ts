@@ -6,6 +6,7 @@
 import type { SchemaItem } from "../api/types";
 import { gliederung } from "./gliederung";
 import { gebietInfo, isProblem, PROBLEM, RECHTSGEBIETE, stageColor, type Rechtsgebiet } from "./schemaLibrary";
+import { gs } from "./gutachtenstil";
 import { b, i, p, type PMNode } from "./pm";
 
 export const PLACEHOLDER = "…";
@@ -30,7 +31,7 @@ const stufe = (label: string, gebiet: Rechtsgebiet) => p({ type: "text", text: l
 
 export const BAUSTEINE: Baustein[] = [
   // Zivilrecht
-  { id: "obersatz-zivil", label: "Obersatz Zivilrecht (Anspruch)", group: "zivil", build: () => [para("… könnte gegen … einen Anspruch auf … aus § … haben.")] },
+  { id: "obersatz-zivil", label: "Obersatz Zivilrecht (Anspruch)", group: "zivil", build: () => [p(gs("… könnte gegen … einen Anspruch auf … aus § … haben.", "obersatz"))] },
   {
     id: "anspruchsaufbau",
     label: "Anspruchsaufbau: entstanden – untergegangen – durchsetzbar",
@@ -57,13 +58,13 @@ export const BAUSTEINE: Baustein[] = [
       p(b("Abgabe und Zugang: "), "… (§ 130 I 1 BGB)."),
     ],
   },
-  { id: "ergebnis", label: "Ergebnis Zivilrecht", group: "zivil", build: () => [p(b("Ergebnis: "), "… hat gegen … einen Anspruch auf … aus § … .")] },
+  { id: "ergebnis", label: "Ergebnis Zivilrecht", group: "zivil", build: () => [p(gs("… hat gegen … einen Anspruch auf … aus § … .", "ergebnis"))] },
   // Strafrecht
   {
     id: "obersatz-straf",
     label: "Obersatz Strafrecht",
     group: "straf",
-    build: () => [para("… könnte sich wegen … gemäß § … StGB strafbar gemacht haben, indem … .")],
+    build: () => [p(gs("… könnte sich wegen … gemäß § … StGB strafbar gemacht haben, indem … .", "obersatz"))],
   },
   {
     id: "deliktsaufbau",
@@ -105,13 +106,13 @@ export const BAUSTEINE: Baustein[] = [
     id: "obersatz-oeff",
     label: "Obersatz Öffentliches Recht (Klage)",
     group: "oeff",
-    build: () => [para("Die Klage des … hat Erfolg, soweit sie zulässig und begründet ist.")],
+    build: () => [p(gs("Die Klage des … hat Erfolg, soweit sie zulässig und begründet ist.", "obersatz"))],
   },
   {
     id: "obersatz-vb",
     label: "Obersatz Verfassungsbeschwerde",
     group: "oeff",
-    build: () => [para("Die Verfassungsbeschwerde des … hat Erfolg, soweit sie zulässig und begründet ist.")],
+    build: () => [p(gs("Die Verfassungsbeschwerde des … hat Erfolg, soweit sie zulässig und begründet ist.", "obersatz"))],
   },
   {
     id: "zulaessig-begruendet",
@@ -152,9 +153,15 @@ export const BAUSTEINE: Baustein[] = [
     ],
   },
   // für jedes Gutachten
-  { id: "voraussetzung", label: "Voraussetzung („Dazu müsste …“)", group: "allgemein", build: () => [para("Dazu müsste … vorliegen.")] },
-  { id: "definition", label: "Definition", group: "allgemein", build: () => [para("… ist … .")] },
-  { id: "subsumtion", label: "Subsumtion", group: "allgemein", build: () => [para("Hier … . ")] },
+  {
+    id: "vier-schritte",
+    label: "Obersatz – Definition – Subsumtion – Ergebnis (farbig)",
+    group: "allgemein",
+    build: () => [p(gs("Dazu müsste … vorliegen.", "obersatz")), p(gs("… ist … .", "definition")), p(gs("Hier … .", "subsumtion")), p(gs("Somit liegt … vor.", "ergebnis"))],
+  },
+  { id: "voraussetzung", label: "Voraussetzung („Dazu müsste …“)", group: "allgemein", build: () => [p(gs("Dazu müsste … vorliegen.", "obersatz"))] },
+  { id: "definition", label: "Definition", group: "allgemein", build: () => [p(gs("… ist … .", "definition"))] },
+  { id: "subsumtion", label: "Subsumtion", group: "allgemein", build: () => [p(gs("Hier … .", "subsumtion"))] },
   {
     id: "streit",
     label: "Streitstand",
@@ -167,7 +174,7 @@ export const BAUSTEINE: Baustein[] = [
       p(b("Stellungnahme: "), "Für … spricht … . Gegen … spricht … . Daher ist … zu folgen."),
     ],
   },
-  { id: "zwischenergebnis", label: "Zwischenergebnis", group: "allgemein", build: () => [para("Folglich liegt … vor.")] },
+  { id: "zwischenergebnis", label: "Zwischenergebnis", group: "allgemein", build: () => [p(gs("Folglich liegt … vor.", "ergebnis"))] },
 ];
 
 export function bausteinById(id: string): Baustein | undefined {

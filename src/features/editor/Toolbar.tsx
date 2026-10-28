@@ -5,6 +5,7 @@ import {
   Baseline,
   Asterisk,
   PenTool,
+  Palette,
   Scale,
   Search,
   ChevronDown,
@@ -48,6 +49,7 @@ import { IconButton } from "../../ui/Button";
 import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
 import { BAUSTEIN_GRUPPEN, BAUSTEINE } from "../../lib/gutachten";
+import { GUTACHTEN_SCHRITTE, legendeNode } from "../../lib/gutachtenstil";
 import { CALLOUTS } from "../../lib/callouts";
 import { FONT_SIZES, FONTS, HIGHLIGHT_COLORS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
 import { insertWithPlaceholder } from "./Gutachten";
@@ -95,6 +97,7 @@ export function Toolbar({
               ? "h4"
               : "p",
       bold: e.isActive("bold"),
+      gutachten: e.isActive("gutachten"),
       italic: e.isActive("italic"),
       underline: e.isActive("underline"),
       strike: e.isActive("strike"),
@@ -362,6 +365,28 @@ export function Toolbar({
           }
         >
           <Scale size={16} />
+        </IconButton>
+        <IconButton
+          label="Farben im Gutachtenstil: Obersatz, Definition, Subsumtion, Ergebnis"
+          active={s.gutachten}
+          onClick={(e) => {
+            const sel = !editor.state.selection.empty;
+            menu.openBelow(e.currentTarget, [
+              { label: sel ? "Auswahl automatisch einfärben" : "Ganze Notiz automatisch einfärben", icon: <Palette size={14} />, onSelect: () => c().colorizeGutachten().run() },
+              { header: true, label: sel ? "Auswahl markieren als" : "Text auswählen, dann markieren als" },
+              ...GUTACHTEN_SCHRITTE.map((g) => ({
+                label: g.label,
+                icon: <span className="callout-dot" style={{ background: g.color }} />,
+                disabled: !sel,
+                onSelect: () => c().setGutachten(g.id).run(),
+              })),
+              { separator: true, label: "" },
+              { label: "Legende einfügen", onSelect: () => c().insertContent(legendeNode()).run() },
+              { label: sel ? "Farben in der Auswahl entfernen" : "Alle Gutachten-Farben entfernen", onSelect: () => c().unsetGutachten().run() },
+            ]);
+          }}
+        >
+          <Palette size={16} />
         </IconButton>
         <IconButton label={`Suchen und Ersetzen (${MOD}+F)`} onClick={onFind}>
           <Search size={16} />

@@ -15,6 +15,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { AssetImage } from "./AssetImage";
 import { Callout } from "./callout";
 import { Footnote, PageBreak, ParagraphFormat } from "./formatting";
+import { GutachtenMark } from "./gutachtenMark";
 import { NormLinks } from "./normLinks";
 import { OutlineJump } from "./outlineJump";
 import { SearchReplace } from "./searchReplace";
@@ -51,6 +52,7 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
       },
     }),
     Highlight.configure({ multicolor: true }),
+    GutachtenMark,
     TextStyle,
     FontFamily,
     FontSize,

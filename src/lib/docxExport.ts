@@ -20,6 +20,7 @@ import {
   PageBreak,
   Paragraph,
   ShadingType,
+  UnderlineType,
   Table,
   TableCell,
   TableRow,
@@ -29,6 +30,7 @@ import {
 } from "docx";
 
 import { calloutInfo, calloutLabel } from "./callouts";
+import { GUTACHTEN_SCHRITTE } from "./gutachtenstil";
 import type { PMMark, PMNode } from "./pm";
 import { fontSizePt, primaryFont } from "./textFormat";
 
@@ -62,6 +64,13 @@ function hasMark(marks: PMMark[] | undefined, type: string) {
 }
 
 /** "#rrggbb"/"#rgb"/"rgb(r, g, b)" → "RRGGBB" für Word. */
+/** Helle Hinterlegung (15 % Deckkraft auf Weiß) für Gutachten-Farben. */
+function tint(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c: number) => Math.round(255 - (255 - c) * 0.15);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => mix(c).toString(16).padStart(2, "0")).join("").toUpperCase();
+}
+
 export function hexColor(v: unknown): string | undefined {
   if (typeof v !== "string") return undefined;
   const s = v.trim();
@@ -102,12 +111,14 @@ function runs(nodes: PMNode[] | undefined, ctx: Ctx, extra: { italics?: boolean;
     const family = markAttr(m, "textStyle", "fontFamily");
     const size = markAttr(m, "textStyle", "fontSize");
     const pt = typeof size === "string" ? fontSizePt(size) : null;
-    const hl = hasMark(m, "highlight") ? (hexColor(markAttr(m, "highlight", "color")) ?? "FFF59D") : undefined;
+    const gsStep = markAttr(m, "gutachten", "step");
+    const gsColor = hasMark(m, "gutachten") ? GUTACHTEN_SCHRITTE.find((s) => s.id === gsStep)?.color : undefined;
+    const hl = hasMark(m, "highlight") ? (hexColor(markAttr(m, "highlight", "color")) ?? "FFF59D") : gsColor ? tint(gsColor) : undefined;
     const run = new TextRun({
       text: n.text ?? "",
       bold: hasMark(m, "bold"),
       italics: hasMark(m, "italic") || extra.italics,
-      underline: hasMark(m, "underline") ? {} : undefined,
+      underline: hasMark(m, "underline") ? {} : gsColor ? { type: UnderlineType.THICK, color: gsColor.slice(1).toUpperCase() } : undefined,
       strike: hasMark(m, "strike"),
       superScript: hasMark(m, "superscript") || undefined,
       subScript: hasMark(m, "subscript") || undefined,

@@ -298,3 +298,18 @@
 :root[data-theme="dark"] .callout { background: color-mix(in srgb, var(--c) 16%, var(--bg, #1b1f27)); }
 .norm-pop-text { -webkit-user-select: text; user-select: text; }
 .norm-pop-actions { gap: 6px; margin-top: 4px; }
+
+/* Gutachtenstil farbig: Obersatz, Definition, Subsumtion, Ergebnis (lib/gutachtenstil.ts) */
+.gs[data-gs="obersatz"] { --gs: #6b5bd6; }
+.gs[data-gs="definition"] { --gs: #2e8a5b; }
+.gs[data-gs="subsumtion"] { --gs: #c98a1a; }
+.gs[data-gs="ergebnis"] { --gs: #c23b5a; }
+.gs {
+  background: color-mix(in srgb, var(--gs) 15%, transparent);
+  border-bottom: 2px solid var(--gs);
+  border-radius: 3px;
+  padding: 1px 0;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  print-color-adjust: exact; -webkit-print-color-adjust: exact;
+}
+.gs-legend { display: inline-flex; gap: 6px; flex-wrap: wrap; }

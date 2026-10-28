@@ -2,6 +2,7 @@
  * Optionale Vorlagen. Sie geben eine Struktur vor, schreiben aber keine
  * inhaltlichen Aussagen vor. Platzhaltertexte stehen kursiv in eckigen Klammern.
  */
+import { GUTACHTEN_ARTEN, gutachtenDoc } from "./gutachtenVorlagen";
 import { b, doc, empty, h, hr, i, ol, p, quote, table, tasks, ul, type PMNode } from "./pm";
 
 export interface Template {
@@ -122,28 +123,15 @@ export const TEMPLATES: Template[] = [
         ul("…"),
       ),
   },
-  {
-    id: "gutachten",
-    name: "Gutachten",
-    group: "Jura",
-    description: "Obersatz, Definition, Subsumtion, Ergebnis.",
-    build: (title) =>
-      doc(
-        h(1, title),
-        h(2, "Sachverhalt (Kurzfassung)"),
-        empty(),
-        h(2, "A. Anspruch … aus §"),
-        p(b("Obersatz: "), ph("A könnte gegen B einen Anspruch auf … aus § … haben.")),
-        h(3, "I. Voraussetzung"),
-        p(b("Definition: "), ph("…")),
-        p(b("Subsumtion: "), ph("Hier …")),
-        p(b("Ergebnis: "), ph("Somit …")),
-        h(3, "II. Voraussetzung"),
-        empty(),
-        h(2, "B. Gesamtergebnis"),
-        empty(),
-      ),
-  },
+  ...GUTACHTEN_ARTEN.map(
+    (art): Template => ({
+      id: art.id === "allgemein" ? "gutachten" : `gutachten-${art.id}`,
+      name: art.id === "allgemein" ? "Gutachten (allgemein)" : `Gutachten ${art.label}`,
+      group: "Jura",
+      description: `${art.description} Farbig: Obersatz, Definition, Subsumtion, Ergebnis.`,
+      build: (title) => gutachtenDoc(title, art.id),
+    }),
+  ),
   {
     id: "fall",
     name: "Falllösung",

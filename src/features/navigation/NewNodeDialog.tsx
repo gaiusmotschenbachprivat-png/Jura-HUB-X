@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import type { NodeKind, StudyNode } from "../../api/types";
 import { KIND_LABEL, SUGGESTED_CHILDREN } from "../../lib/kinds";
 import { lectureDoc, lectureTitle, nextLectureNumber, NOTE_TYPES, noteTypeInfo, todayIso, type NoteType } from "../../lib/noteTypes";
+import { GUTACHTEN_ARTEN } from "../../lib/gutachtenVorlagen";
+import { gebietOf } from "../../lib/schemaLibrary";
 import { TEMPLATES } from "../../lib/templates";
 import { buildTree, type TreeItem } from "../../lib/tree";
 import { useApp } from "../../state/store";
@@ -76,7 +78,11 @@ export function NewNodeDialog({ req, onClose }: { req: NewNodeRequest; onClose: 
   const autoTitle =
     choice.type === "structure" ? defaultTitle(choice.kind) : isLecture ? lectureTitle(nr, topic) : noteTypeInfo(choice.noteType).label;
   const finalTitle = (titleTouched ? title : autoTitle).trim() || autoTitle;
-  const tplId = choice.type === "note" ? (templateId ?? noteTypeInfo(choice.noteType).template) : null;
+  const isFall = choice.type === "note" && choice.noteType === "fall";
+  // Fall/Gutachten: Vorlage nach Rechtsgebiet des Studienbereichs bzw. Ablageorts vorschlagen
+  const gebietHint = gebietOf([areas.find((a) => a.id === areaId)?.name, parent?.title, course?.title].join(" "));
+  const fallDefault = gebietHint === "zivil" ? "gutachten-zivil" : gebietHint === "straf" ? "gutachten-straf" : gebietHint === "oeff" ? "gutachten-oeff-klage" : "gutachten";
+  const tplId = choice.type === "note" ? (templateId ?? (isFall ? fallDefault : noteTypeInfo(choice.noteType).template)) : null;
 
   // Ablageorte: Strukturelemente des Bereichs (keine Notizen), eingerückt
   const places = useMemo(() => {
@@ -264,6 +270,20 @@ export function NewNodeDialog({ req, onClose }: { req: NewNodeRequest; onClose: 
               </select>
             </Field>
           </div>
+          {isFall && (
+            <Field label="Gutachten nach Rechtsgebiet" hint="Jedes Rechtsgebiet hat seinen eigenen Aufbau – die Vorlage gibt ihn mit farbigem Gutachtenstil vor.">
+              <div className="seg wrap" role="radiogroup" aria-label="Rechtsgebiet des Gutachtens">
+                {GUTACHTEN_ARTEN.map((a) => {
+                  const id = a.id === "allgemein" ? "gutachten" : `gutachten-${a.id}`;
+                  return (
+                    <button key={a.id} type="button" role="radio" aria-checked={tplId === id} className={tplId === id ? "is-active" : ""} onClick={() => setTemplateId(id)}>
+                      {a.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </Field>
+          )}
           {choice.type === "note" && (
             <Field label="Vorlage" hint={TEMPLATES.find((t) => t.id === tplId)?.description}>
               <select id="new-template" value={tplId ?? "leer"} onChange={(e) => setTemplateId(e.target.value)}>

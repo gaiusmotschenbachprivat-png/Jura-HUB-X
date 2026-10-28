@@ -50,6 +50,28 @@ dann im Vollbild und funktioniert offline.
   Seitenzahlen, Korrekturrand 7 cm und „Hausarbeit“-Satz (Times 12 pt, 1,5-zeilig, Blocksatz).
   Auf dem iPad im Druckdialog auf Teilen tippen → „In Dateien sichern“ ergibt ein PDF.
 
+## Gutachten nach Rechtsgebiet, farbiger Gutachtenstil
+
+- **Neu … → Fall / Gutachten**: Wähle das Rechtsgebiet – jedes hat seinen eigenen Aufbau.
+  Studium OS schlägt es aus der Veranstaltung vor (z. B. „Strafrecht AT“ → Strafrecht).
+  - **Zivilrecht**: Anspruchsaufbau – entstanden, nicht untergegangen, durchsetzbar; weitere
+    Anspruchsgrundlagen, Gesamtergebnis.
+  - **Strafrecht**: Tatkomplexe, Strafbarkeit je Delikt – Tatbestand (objektiv, subjektiv),
+    Rechtswidrigkeit, Schuld; Konkurrenzen, Gesamtergebnis.
+  - **Öffentliches Recht – Klage (VwGO)**: Zulässigkeit (Rechtsweg, Klageart, Klagebefugnis,
+    Vorverfahren, Frist …), Begründetheit nach § 113 I 1 VwGO.
+  - **Öffentliches Recht – Verfassungsbeschwerde**: Zulässigkeit, Begründetheit (Schutzbereich,
+    Eingriff, Rechtfertigung).
+- Die Sätze sind farbig wie in einer Musterlösung: **Obersatz** (lila), **Definition** (grün),
+  **Subsumtion** (orange), **Ergebnis** (rot) – hinterlegt und unterstrichen, mit Legende oben.
+- **Einfügen**: Kopierst du eine Lösung (z. B. aus einer Chat-Antwort) in ein Gutachten, färbt
+  Studium OS die Sätze beim Einfügen automatisch ein. Die Zuordnung erkennt typische
+  Formulierungen („könnte … haben“, „ist jede …“, „Somit …“) – sie ist eine Lesehilfe, keine
+  inhaltliche Prüfung, und läuft komplett auf dem Gerät.
+- **Palette-Symbol** in der Werkzeugleiste: ganze Notiz bzw. Auswahl automatisch einfärben,
+  Auswahl von Hand als Obersatz/Definition/Subsumtion/Ergebnis markieren, Legende einfügen,
+  Farben entfernen. Die Farben bleiben beim Drucken und im Word-Export erhalten.
+
 ## Zeichnen mit dem Apple Pencil
 
 Stift-Symbol in der Werkzeugleiste → Zeichenfläche über den ganzen Bildschirm: **Stift**

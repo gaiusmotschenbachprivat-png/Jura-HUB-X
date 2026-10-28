@@ -16,6 +16,7 @@ import { DRAWING_EDIT_EVENT, INSERT_SLIDE_EVENT, storeImageFile, type DrawingEdi
 import { DrawingDialog, type DrawingResult } from "./DrawingDialog";
 import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
+import { noteTypeOf } from "../../lib/noteTypes";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
 import { BibliographyDialog, FootnoteDialog, FootnoteList } from "./Footnotes";
@@ -257,6 +258,12 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   useEffect(() => {
     if (nodeTitle && nodeTitle !== title && document.activeElement?.id !== "note-title") setTitle(nodeTitle);
   }, [nodeTitle]);
+
+  // Fall/Gutachten: eingefügter Text (z. B. eine Musterlösung) wird automatisch im Gutachtenstil eingefärbt
+  const isFall = treeNode ? noteTypeOf(treeNode) === "fall" : false;
+  useEffect(() => {
+    if (editor) editor.storage.gutachten.autoPaste = isFall;
+  }, [editor, isFall]);
 
   useEffect(() => {
     if (editor) editor.setOptions({ editorProps: { ...editor.options.editorProps, attributes: { class: `prose prose-${editorFont}`, spellcheck: "true", lang: "de" } } });

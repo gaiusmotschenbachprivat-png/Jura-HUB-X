@@ -152,6 +152,7 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 .seg button { border: 0; background: var(--bg); padding: 6px 14px; color: var(--text-2); }
 .seg button + button { border-left: 1px solid var(--line-strong); }
 .seg button.is-active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg.wrap { flex-wrap: wrap; }
 .kv { display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; margin: 12px 0; }
 .table { width: 100%; border-collapse: collapse; }
 .table th, .table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
