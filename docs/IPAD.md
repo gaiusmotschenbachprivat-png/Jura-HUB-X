@@ -140,6 +140,19 @@ zweiten Notiz: **tauschen**, nebeneinander/untereinander, als Hauptansicht öffn
 Die zweite Notiz zeigt eine kompakte, wischbare Werkzeugleiste. Dieselbe Notiz wird nie in beiden
 Hälften geöffnet – sonst würden sich die Änderungen gegenseitig überschreiben.
 
+## Werkzeugleiste einklappen, Folien-Lupe
+
+- **Werkzeugleiste ein-/ausklappen:** Symbol neben „…“ im Kopf der Mitschrift. Eingeklappt
+  rückt der Text nach oben; die schwebende Leiste (B, I, U) bleibt auf dem iPad erhalten. Die
+  Einstellung bleibt gespeichert.
+- **Folien-Lupe:** In der Folienansicht das Lupen-Symbol (neben der Suche) antippen. Der Bereich
+  der Werkzeugleiste in der Mitschrift zeigt dann eine vergrößerte, rechteckige Ansicht der
+  Stelle, über die der Mauszeiger (Trackpad/Maus) oder der schwebende Apple Pencil fährt – mit
+  dem Finger: auf die Stelle tippen (Wischen scrollt weiter). Ein Rahmen auf der Folie zeigt den
+  Ausschnitt. Vergrößerung 1,5× bis 4× mit − / +; das × schaltet die Lupe aus und holt die
+  Werkzeugleiste zurück. Funktioniert bei PDF-Folien und bei Bildern als Folien. Ist keine
+  Mitschrift daneben geöffnet, erscheint die Lupe schwebend über der Folie.
+
 ## Text in PDFs und Folien markieren
 
 Textmarker-Symbol in der PDF-Leiste (**„Text markieren“**) → Farbe wählen → mit Finger oder

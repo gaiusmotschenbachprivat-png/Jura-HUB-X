@@ -1,5 +1,5 @@
 import { EditorContent, useEditor } from "@tiptap/react";
-import { ArrowLeftRight, BookOpen, Columns2, ExternalLink, GraduationCap, History, ListTree, Maximize2, MoreHorizontal, PencilLine, Printer, Rows2, Search, Unlink, X } from "lucide-react";
+import { ArrowLeftRight, BookOpen, Columns2, ExternalLink, GraduationCap, History, ListTree, Maximize2, MoreHorizontal, PanelTopClose, PanelTopOpen, PencilLine, Printer, Rows2, Search, Unlink, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { api, errorMessage } from "../../api";
@@ -9,6 +9,8 @@ import { parseDoc, plainText, type PMNode } from "../../lib/pm";
 import { areaById, reportError, useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
+import { SlideLensView } from "../documents/SlideLens";
+import { useSlideLens } from "../documents/slideLens";
 import { useMenu } from "../../ui/Menu";
 import { EmptyState, Field, MOD } from "../../ui/misc";
 import { renameNode, trashNode } from "../navigation/actions";
@@ -133,6 +135,13 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const area = areaById(note.area_id);
   const treeNode = nodes.find((n) => n.id === note.node_id);
   const nodeTitle = treeNode?.title;
+
+  const toolsCollapsed = useApp((s) => s.toolbarCollapsed);
+  const setPref = useApp((s) => s.setPref);
+  // Folien-Lupe: Die Hauptmitschrift zeigt sie im Bereich der Werkzeugleiste
+  const lensActive = useSlideLens((s) => s.active);
+  const lensHere = lensActive && !compact && !reading;
+  useEffect(() => (compact ? undefined : useSlideLens.getState().addHost()), [compact]);
 
   const editor = useEditor({
     extensions: editorExtensions({ placeholder: "Mitschrift beginnen … Überschriften mit # , Listen mit - , Checklisten mit [ ]" }),
@@ -540,6 +549,15 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             <IconButton className="hide-narrow" label="Versionshistorie" onClick={() => setShowHistory(true)}>
               <History size={16} />
             </IconButton>
+            {!reading && (
+              <IconButton
+                label={toolsCollapsed ? "Werkzeugleiste ausklappen" : "Werkzeugleiste einklappen"}
+                active={toolsCollapsed}
+                onClick={() => setPref("toolbarCollapsed", !toolsCollapsed)}
+              >
+                {toolsCollapsed ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
+              </IconButton>
+            )}
             <IconButton label="Weitere Aktionen" onClick={(e) => moreMenu(e.currentTarget)}>
               <MoreHorizontal size={16} />
             </IconButton>
@@ -547,6 +565,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         </div>
         {treeNode && <NoteMetaBar node={treeNode} />}
       </div>
+      {lensHere ? (
+        <SlideLensView className="in-toolbar" />
+      ) : toolsCollapsed ? null : (
       <Toolbar
         editor={editor}
         onExternalLink={() => setLinkDialog("external")}
@@ -561,6 +582,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         onFind={() => setFindOpen(true)}
         onDraw={() => setDrawing({ pos: null, data: null })}
       />
+      )}
       {findOpen && (
         <FindBar
           key={findQuery?.n ?? 0}

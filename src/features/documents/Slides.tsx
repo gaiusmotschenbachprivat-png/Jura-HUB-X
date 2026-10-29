@@ -5,6 +5,7 @@
  */
 import { ChevronLeft, ChevronRight, FileUp, ImagePlus, Presentation, Replace, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { LensToggle } from "./SlideLens";
 
 import { api } from "../../api";
 import type { DocumentInfo, StudyNode } from "../../api/types";
@@ -273,6 +274,7 @@ export function ImageSlideBar({ doc, placementNodeId, bytes, noteId }: { doc: Do
           </IconButton>
         </>
       )}
+      <LensToggle />
       <span className="grow" />
       {noteId && (
         <Button size="sm" variant="primary" icon={<ImagePlus size={14} />} disabled={busy || !bytes} onClick={() => void take()} title="Dieses Bild in die Mitschrift einfügen">

@@ -64,6 +64,8 @@ interface State {
   areaRefs: StudyNode[];
   expanded: Record<string, boolean>;
   showArchived: boolean;
+  /** Werkzeugleiste der Mitschrift eingeklappt */
+  toolbarCollapsed: boolean;
   treeSort: SortMode;
 
   view: View;
@@ -118,7 +120,7 @@ interface State {
   toggleContext(): void;
   setPalette(open: boolean): void;
   setSaveStatus(s: SaveStatus, err?: string | null, savedAt?: string | null, id?: string): void;
-  setPref<K extends "theme" | "fontScale" | "topInset" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "secondaryHeight" | "splitLayout" | "showArchived" | "focusMode" | "treeSort">(
+  setPref<K extends "theme" | "fontScale" | "topInset" | "editorFont" | "sidebarWidth" | "contextWidth" | "secondaryWidth" | "secondaryHeight" | "splitLayout" | "showArchived" | "toolbarCollapsed" | "focusMode" | "treeSort">(
     key: K,
     value: State[K],
   ): void;
@@ -138,6 +140,7 @@ const PREF_KEYS: Record<string, string> = {
   secondaryHeight: "ui.secondaryHeight",
   splitLayout: "ui.splitLayout",
   showArchived: "ui.showArchived",
+  toolbarCollapsed: "ui.toolbarCollapsed",
   treeSort: "ui.treeSort",
   contextOpen: "ui.contextOpen",
   areaId: "ui.lastArea",
@@ -169,6 +172,7 @@ export const useApp = create<State>((set, get) => ({
   areaRefs: [],
   expanded: {},
   showArchived: false,
+  toolbarCollapsed: false,
   treeSort: "auto",
   view: { type: "dashboard" },
   history: [{ type: "dashboard" }],
@@ -217,6 +221,7 @@ export const useApp = create<State>((set, get) => ({
         splitLayout: (["auto", "side", "stacked"] as const).find((m) => m === s["ui.splitLayout"]) ?? "auto",
         contextOpen: s["ui.contextOpen"] !== false,
         showArchived: s["ui.showArchived"] === true,
+        toolbarCollapsed: s["ui.toolbarCollapsed"] === true,
         treeSort: (["auto", "manual", "name", "updated"] as const).find((m) => m === s["ui.treeSort"]) ?? "auto",
         expanded: (s["ui.expanded"] as Record<string, boolean>) ?? {},
       });

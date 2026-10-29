@@ -22,6 +22,7 @@ import { DocIcon, TextStatus } from "./DocumentList";
 import { AnnotationPopover, SelectionToolbar } from "./AnnotationPopups";
 import { PdfViewer, type PdfSelection } from "./PdfViewer";
 import { ImageSlideBar, rememberSlides, SwitchSlidesButton } from "./Slides";
+import { LensImage } from "./SlideLens";
 import { useSplitLayoutToggle } from "../editor/SplitNotes";
 import { CardDialog } from "../learn/CardDialog";
 
@@ -411,9 +412,7 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
         ) : imageUrl ? (
           <>
             <ImageSlideBar doc={d} placementNodeId={detail.placements[0]?.node_id ?? null} bytes={bytes} noteId={linkTargetNoteId} />
-            <div className="img-view">
-              <img src={imageUrl} alt={d.title} />
-            </div>
+            <LensImage src={imageUrl} alt={d.title} label={d.title} />
           </>
         ) : bytes && ["txt", "md", "markdown"].includes(d.ext) ? (
           <pre className="text-view">{new TextDecoder().decode(bytes)}</pre>

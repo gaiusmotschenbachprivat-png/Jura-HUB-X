@@ -93,6 +93,8 @@ jobs:
         run: node tests/e2e-web/gutachten-e2e.mjs
       - name: Claude-App-Brücke (KI ohne API-Kosten)
         run: node tests/e2e-web/bruecke-e2e.mjs
+      - name: Werkzeugleiste einklappen, Folien-Lupe
+        run: node tests/e2e-web/lupe-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

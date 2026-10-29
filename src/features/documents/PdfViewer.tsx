@@ -9,7 +9,7 @@
  */
 import "../../styles/pdf-textlayer.css";
 
-import { Bookmark, Check, ChevronLeft, ChevronRight, Eraser, Hand, Highlighter, PanelLeft, PenLine, Redo2, Search, Undo2, ZoomIn, ZoomOut } from "lucide-react";
+import { Bookmark, Check, ChevronLeft, ChevronRight, Eraser, Hand, Highlighter, PanelLeft, PenLine, Redo2, ScanSearch, Search, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
@@ -18,6 +18,8 @@ import type { Stroke } from "../../lib/drawing";
 import { INK_MARKER_COLORS, INK_PEN_COLORS, INK_SIZES } from "../../lib/ink";
 import { closePdf, loadPdf, type PdfDoc } from "../../lib/pdf";
 import { HIGHLIGHT_COLORS, toPageRects } from "../../lib/pdfSelection";
+import { SlideLensView } from "./SlideLens";
+import { lensFrame, relPoint, useSlideLens } from "./slideLens";
 import { IconButton } from "../../ui/Button";
 import { InkLayer, type InkSettings, type InkTool } from "./InkLayer";
 
@@ -133,6 +135,14 @@ export function PdfViewer({
   const [finger, setFinger] = useState(false);
   const [undo, setUndo] = useState<{ page: number; strokes: Stroke[]; ratio: number }[]>([]);
   const [redo, setRedo] = useState<{ page: number; strokes: Stroke[]; ratio: number }[]>([]);
+  // Folien-Lupe
+  const lensOn = useSlideLens((s) => s.active);
+  const lensHosts = useSlideLens((s) => s.hosts);
+  const [lensBox, setLensBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const hiRes = useRef(new Map<number, HTMLCanvasElement>());
+  const hiPending = useRef(new Set<number>());
+  const lensLast = useRef<{ n: number; pageEl: HTMLElement; x: number; y: number } | null>(null);
+  const lensRaf = useRef(0);
   const inkSettings: InkSettings = {
     tool,
     color: tool === "marker" ? markerColor : penColor,
@@ -384,6 +394,61 @@ export function PdfViewer({
     jumpRef.current = currentRef.current;
   };
 
+  // Lupe: neues PDF → Zwischenspeicher leeren; Ansicht geschlossen → Lupe aus
+  useEffect(() => {
+    hiRes.current.clear();
+    hiPending.current.clear();
+  }, [pdf]);
+  useEffect(() => () => useSlideLens.getState().setActive(false), []);
+  useEffect(() => {
+    if (!lensOn) setLensBox(null);
+  }, [lensOn]);
+
+  /** Seite in hoher Auflösung für die Lupe (höchstens drei Seiten im Speicher). */
+  const renderHiRes = async (n: number) => {
+    if (!pdf || !baseSize || hiRes.current.has(n) || hiPending.current.has(n)) return;
+    hiPending.current.add(n);
+    try {
+      const page = await pdf.getPage(n);
+      const vp = page.getViewport({ scale: Math.min(4, 2400 / baseSize.w) });
+      const c = document.createElement("canvas");
+      c.width = Math.floor(vp.width);
+      c.height = Math.floor(vp.height);
+      await page.render({ canvas: c, viewport: vp }).promise;
+      if (hiRes.current.size >= 3) hiRes.current.delete(hiRes.current.keys().next().value!);
+      hiRes.current.set(n, c);
+      const l = lensLast.current;
+      if (l?.n === n) updateLens(l.n, l.pageEl, l.x, l.y);
+    } catch {
+      /* Lupe nutzt dann die Bildschirmauflösung */
+    } finally {
+      hiPending.current.delete(n);
+    }
+  };
+
+  const updateLens = (n: number, pageEl: HTMLElement, x: number, y: number) => {
+    const src = hiRes.current.get(n) ?? pageEl.querySelector("canvas");
+    if (!src || !src.width) return;
+    const rect = pageEl.getBoundingClientRect();
+    lensLast.current = { n, pageEl, x, y };
+    useSlideLens.getState().setTarget({ source: src, srcW: src.width, srcH: src.height, x, y, shownW: rect.width, label: `Seite ${n}` });
+    const f = lensFrame(rect, x, y);
+    setLensBox({ ...f, left: f.left + pageEl.offsetLeft, top: f.top + pageEl.offsetTop });
+    void renderHiRes(n);
+  };
+
+  /** Zeiger über der Folie (Maus, Stift) bzw. Antippen (Finger). */
+  const onLensPointer = (e: React.PointerEvent) => {
+    if (e.type === "pointermove" && e.pointerType === "touch") return;
+    const pageEl = (e.target as Element).closest<HTMLElement>(".pdf-page");
+    if (!pageEl) return;
+    const { x, y } = relPoint(pageEl, e.clientX, e.clientY);
+    const n = Number(pageEl.dataset.page);
+    cancelAnimationFrame(lensRaf.current);
+    lensRaf.current = requestAnimationFrame(() => updateLens(n, pageEl, x, y));
+  };
+  const lensActiveHere = lensOn && !markOn && !inkOn;
+
   if (error) return <div className="pdf-error">{error}</div>;
 
   return (
@@ -421,6 +486,19 @@ export function PdfViewer({
         <IconButton label="Im Dokument suchen" active={searchOpen} onClick={() => setSearchOpen(!searchOpen)}>
           <Search size={16} />
         </IconButton>
+        <IconButton
+          label={lensOn ? "Lupe ausschalten" : "Lupe: vergrößerte Ansicht in der Mitschrift"}
+          active={lensOn}
+          onClick={() => {
+            useSlideLens.getState().setActive(!lensOn);
+            if (!lensOn) {
+              setMarkOn(false);
+              setInkOn(false);
+            }
+          }}
+        >
+          <ScanSearch size={16} />
+        </IconButton>
         {onToggleBookmark && (
           <IconButton label={bookmarked ? "Lesezeichen entfernen" : "Lesezeichen für diese Seite"} active={bookmarked} onClick={() => onToggleBookmark(Number(pageInput) || 1)}>
             <Bookmark size={16} fill={bookmarked ? "currentColor" : "none"} />
@@ -433,6 +511,7 @@ export function PdfViewer({
             onClick={() => {
               setMarkOn(!markOn);
               setInkOn(false);
+              if (!markOn) useSlideLens.getState().setActive(false);
               onTextSelected?.(null);
             }}
           >
@@ -440,7 +519,7 @@ export function PdfViewer({
           </IconButton>
         )}
         {onInkChange && (
-          <IconButton label={inkOn ? "Stiftmodus beenden" : "Mit dem Stift schreiben"} active={inkOn} onClick={() => (setInkOn(!inkOn), setMarkOn(false))}>
+          <IconButton label={inkOn ? "Stiftmodus beenden" : "Mit dem Stift schreiben"} active={inkOn} onClick={() => (setInkOn(!inkOn), setMarkOn(false), !inkOn && useSlideLens.getState().setActive(false))}>
             <PenLine size={16} />
           </IconButton>
         )}
@@ -573,12 +652,12 @@ export function PdfViewer({
           </div>
         )}
         <div
-          className={`pdf-scroll ${inkOn ? "is-inking" : ""} ${markOn ? `is-marking ${markFinger ? "mark-finger" : ""}` : ""}`}
+          className={`pdf-scroll ${inkOn ? "is-inking" : ""} ${markOn ? `is-marking ${markFinger ? "mark-finger" : ""}` : ""} ${lensActiveHere ? "is-lens" : ""}`}
           ref={scroller}
           onScroll={onScroll}
           onMouseUp={markOn ? undefined : onMouseUp}
-          onPointerDown={markOn ? onMarkDown : undefined}
-          onPointerMove={markOn ? onMarkMove : undefined}
+          onPointerDown={markOn ? onMarkDown : lensActiveHere ? onLensPointer : undefined}
+          onPointerMove={markOn ? onMarkMove : lensActiveHere ? onLensPointer : undefined}
           onPointerUp={markOn ? onMarkUp : undefined}
           onPointerCancel={markOn ? () => ((drag.current = null), setPreview(null)) : undefined}
         >
@@ -603,7 +682,9 @@ export function PdfViewer({
               />
             ))
           )}
+          {lensActiveHere && lensBox && <div className="lens-frame" style={lensBox} aria-hidden />}
         </div>
+        {lensOn && lensHosts === 0 && <SlideLensView className="is-floating" />}
       </div>
     </div>
   );

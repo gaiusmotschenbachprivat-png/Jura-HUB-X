@@ -96,3 +96,17 @@
 .pdf-scroll.is-marking .pdf-hl-marker { pointer-events: none; }
 .pdf-hl.is-preview { opacity: 0.55; outline: 1px solid rgb(0 0 0 / 0.18); }
 .mark-bar .color-dot.is-active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+
+/* Folien-Lupe */
+.slide-lens { --lens-bg: #ffffff; display: flex; flex-direction: column; border-bottom: 1px solid var(--line); background: var(--bg-side); }
+.slide-lens-bar { display: flex; align-items: center; gap: 6px; padding: 4px 10px; color: var(--text-2); min-width: 0; }
+.slide-lens-bar .small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slide-lens-canvas { display: block; width: 100%; height: 100%; flex: 1; min-height: 0; background: var(--lens-bg); }
+/* in der Mitschrift: dort, wo sonst die Werkzeugleiste steht */
+.slide-lens.in-toolbar { height: clamp(180px, 34vh, 340px); margin: 0 0 4px; }
+/* ohne Mitschrift daneben: schwebend über der Folie */
+.slide-lens.is-floating { position: absolute; z-index: 30; top: 52px; right: 16px; width: min(560px, calc(100% - 32px)); height: 240px; border: 1px solid var(--line-strong); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden; }
+.pdf, .doc-viewer { position: relative; }
+.lens-frame { position: absolute; pointer-events: none; border: 2px solid var(--accent); border-radius: 3px; background: color-mix(in srgb, var(--accent) 8%, transparent); z-index: 5; }
+.pdf-scroll.is-lens .pdf-page, .img-view.is-lens img { cursor: zoom-in; -webkit-touch-callout: none; }
+.img-view { position: relative; }
