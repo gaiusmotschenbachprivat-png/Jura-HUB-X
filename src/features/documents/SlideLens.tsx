@@ -1,9 +1,9 @@
-/** Anzeige der Folien-Lupe (siehe slideLens.ts). */
+/** Anzeige der Folien-Lupe (siehe lensState.ts). */
 import { Minus, Plus, ScanSearch, X } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { IconButton } from "../../ui/Button";
-import { drawLens, LENS_ZOOMS, lensFrame, relPoint, useSlideLens } from "./slideLens";
+import { drawLens, LENS_ZOOMS, lensFrame, relPoint, useSlideLens } from "./lensState";
 
 export function SlideLensView({ className = "", onClose }: { className?: string; onClose?: () => void }) {
   const target = useSlideLens((s) => s.target);

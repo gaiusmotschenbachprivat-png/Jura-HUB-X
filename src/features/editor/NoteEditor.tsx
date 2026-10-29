@@ -10,7 +10,7 @@ import { areaById, reportError, useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { SlideLensView } from "../documents/SlideLens";
-import { useSlideLens } from "../documents/slideLens";
+import { useSlideLens } from "../documents/lensState";
 import { useMenu } from "../../ui/Menu";
 import { EmptyState, Field, MOD } from "../../ui/misc";
 import { renameNode, trashNode } from "../navigation/actions";

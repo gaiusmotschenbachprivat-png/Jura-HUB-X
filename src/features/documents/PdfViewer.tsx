@@ -19,7 +19,7 @@ import { INK_MARKER_COLORS, INK_PEN_COLORS, INK_SIZES } from "../../lib/ink";
 import { closePdf, loadPdf, type PdfDoc } from "../../lib/pdf";
 import { HIGHLIGHT_COLORS, toPageRects } from "../../lib/pdfSelection";
 import { SlideLensView } from "./SlideLens";
-import { lensFrame, relPoint, useSlideLens } from "./slideLens";
+import { lensFrame, relPoint, useSlideLens } from "./lensState";
 import { IconButton } from "../../ui/Button";
 import { InkLayer, type InkSettings, type InkTool } from "./InkLayer";
 
