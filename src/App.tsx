@@ -29,6 +29,7 @@ import { SearchPalette } from "./features/search/SearchPalette";
 import { SettingsView } from "./features/settings/SettingsView";
 import { TrashView } from "./features/settings/TrashView";
 import { formatRelative } from "./lib/format";
+import { checkInterruptedRecording, RecordingBar } from "./features/recording/Recording";
 import { applyTopInset } from "./lib/safeArea";
 import { ancestors } from "./lib/tree";
 import { contextFloats, NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
@@ -93,6 +94,10 @@ export function App() {
 }
 
 function Shell() {
+  // Unterbrochene Vorlesungsaufnahme (App beendet, Absturz)? Einmal beim Start darauf hinweisen.
+  useEffect(() => {
+    if (api.kind === "web" && !new URLSearchParams(location.search).has("e2e")) void checkInterruptedRecording().catch(() => {});
+  }, []);
   const view = useApp((s) => s.view);
   const secondary = useApp((s) => s.secondary);
   const contextOpen = useApp((s) => s.contextOpen);
@@ -244,6 +249,7 @@ function Shell() {
       <AssistantFab />
       {api.kind === "web" && <BackupReminder />}
       <ImportHost />
+      <RecordingBar />
       <Toasts />
     </div>
   );

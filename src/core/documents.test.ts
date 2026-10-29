@@ -144,7 +144,7 @@ describe("Dokumente", () => {
 
     // Unerlaubte Typen
     await expect(imp(f.ctx, "setup.exe", "MZ", null, "sonstiges")).rejects.toThrow(
-      "Dateityp „.exe“ wird nicht unterstützt. Erlaubt sind PDF, Word, PowerPoint, Excel, Text, Markdown und Bilder.",
+      "Dateityp „.exe“ wird nicht unterstützt. Erlaubt sind PDF, Word, PowerPoint, Excel, Text, Markdown, Bilder und Audioaufnahmen.",
     );
     await expect(imp(f.ctx, "a.txt", "x", null, "unbekannt")).rejects.toThrow("Unbekannter Dokumenttyp.");
 
@@ -165,6 +165,21 @@ describe("Dokumente", () => {
     expect(out[1]!.error).toContain("„.exe“");
     expect(documents.recent(f.db, f.blobs, null, 2)).toHaveLength(2);
     expect(documents.detail(f.db, f.blobs, d1.id).placements).toHaveLength(2);
+  });
+
+  it("Vorlesungsaufnahme: Audio an der Mitschrift, Transkript als durchsuchbarer Text", async () => {
+    const f = await setup();
+    const c = nodes.create(f.db, node(f.jura, null, "course", "Strafrecht AT"));
+    const n = nodes.create(f.db, node(f.jura, c.id, "note", "5. Vorlesung"));
+    const a = await imp(f.ctx, "Aufnahme 5. Vorlesung 2026-10-29 10.15.m4a", new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112]), n.id, "aufnahme");
+    expect(a.ext).toBe("m4a");
+    expect(a.mime).toBe("audio/mp4");
+    expect(a.doc_type).toBe("aufnahme");
+    expect(a.text_status).toBe("none");
+    const withText = documents.setText(f.db, a.id, ["[0:05] Der Totschlag nach § 212 StGB setzt voraus, dass ein Mensch getötet wird."]);
+    expect(withText.text_status).toBe("ok");
+    expect(search(f.db, "Totschlag", null, 10).some((h) => h.entity_id === a.id)).toBe(true);
+    for (const ext of ["mp3", "wav", "webm"]) expect((await imp(f.ctx, `x.${ext}`, "RIFF", null, "aufnahme")).text_status).toBe("none");
   });
 
   it("meldet fehlende Dateien", async () => {

@@ -13,7 +13,7 @@ use crate::{Error, Result};
 
 pub const DOC_TYPES: &[&str] = &[
     "folien", "skript", "uebungsblatt", "loesung", "mitschrift", "gesetz", "aufsatz", "urteil", "klausur",
-    "sonstiges",
+    "aufnahme", "sonstiges",
 ];
 
 /// Höchstmenge an Text je Seite, die indexiert wird.
@@ -97,7 +97,7 @@ fn initial_text_status(ext: &str) -> &'static str {
     match ext {
         "pdf" | "docx" => "pending",
         "txt" | "md" | "markdown" => "ok",
-        "png" | "jpg" | "jpeg" | "gif" | "webp" => "none",
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "m4a" | "mp3" | "wav" | "webm" => "none",
         _ => "unsupported",
     }
 }

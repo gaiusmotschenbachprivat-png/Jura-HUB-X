@@ -25,6 +25,11 @@ export const ALLOWED: readonly (readonly [string, string])[] = [
   ["jpeg", "image/jpeg"],
   ["gif", "image/gif"],
   ["webp", "image/webp"],
+  // Vorlesungsaufnahmen (iPad: m4a, andere Browser: webm)
+  ["m4a", "audio/mp4"],
+  ["mp3", "audio/mpeg"],
+  ["wav", "audio/wav"],
+  ["webm", "audio/webm"],
 ];
 
 export interface StoredBlob {
@@ -86,7 +91,7 @@ export async function importFile(blobs: BlobStore, name: string, data: Blob): Pr
   const mime = mimeFor(ext);
   if (!mime) {
     throw CoreError.invalid(
-      `Dateityp „.${ext}“ wird nicht unterstützt. Erlaubt sind PDF, Word, PowerPoint, Excel, Text, Markdown und Bilder.`,
+      `Dateityp „.${ext}“ wird nicht unterstützt. Erlaubt sind PDF, Word, PowerPoint, Excel, Text, Markdown, Bilder und Audioaufnahmen.`,
     );
   }
   if (data.size > MAX_IMPORT_BYTES) {

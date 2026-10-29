@@ -161,7 +161,7 @@ try {
   // Diktat (nachgebildet)
   await page.locator(".ProseMirror").click();
   await page.keyboard.press("End");
-  await page.getByRole("button", { name: "Diktat", exact: true }).click();
+  await page.getByRole("button", { name: /^Diktat \(Sprache/ }).click();
   const consent = page.getByRole("dialog", { name: "Diktat einschalten?" });
   await consent.waitFor();
   check("Vor dem ersten Diktat: Hinweis auf Spracherkennung durch iPadOS", (await consent.innerText()).includes("Apple"));
@@ -173,7 +173,7 @@ try {
   await page.getByRole("button", { name: "Stopp" }).click();
   const text = await page.locator(".ProseMirror").innerText();
   check("Diktat mit Zeitstempel eingefügt", /\[\d\d:\d\d\] Die Willenserklärung ist empfangsbedürftig\./.test(text), text);
-  await page.getByRole("button", { name: "Diktat", exact: true }).click();
+  await page.getByRole("button", { name: /^Diktat \(Sprache/ }).click();
   await page.locator(".dictation-bar").waitFor();
   check("Zustimmung wird nur einmal erfragt", (await page.getByRole("dialog", { name: "Diktat einschalten?" }).count()) === 0);
   await page.getByRole("button", { name: "Stopp" }).click();

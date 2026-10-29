@@ -217,6 +217,33 @@ scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehe
   einzelne Paragraphen zerlegt – der Assistent findet „§ 242 StGB“ dann wie beim XML-Import.
   Ein früher (vor 0.19) als PDF importiertes Gesetz wird automatisch umgewandelt.
 
+## Vorlesung aufnehmen, Transkript, Zusammenfassung
+
+- **Aufnehmen:** Symbol „Vorlesung aufnehmen“ (Tonwellen) im Kopf der Mitschrift. Nur mit
+  Erlaubnis der Lehrperson – viele Hochschulen untersagen Mitschnitte, heimliches Aufnehmen
+  kann strafbar sein (§ 201 StGB); vor der ersten Aufnahme weist die App darauf hin.
+- **Während der Aufnahme:** Oben steht eine Leiste mit Zeit und dem Live-Transkript (Spracherkennung
+  von iPadOS). **Zeitmarke** fügt „[Aufnahme 12:34]“ an der Schreibposition ein; **Pause**;
+  **Stopp & speichern**. Die Aufnahme läuft weiter, wenn du zu anderen Notizen oder den Folien
+  wechselst. Der Bildschirm bleibt an; die App sollte im Vordergrund bleiben.
+- **Danach:** Die Aufnahme liegt als „Vorlesungsaufnahme“ an der Mitschrift (auch unter
+  Dokumente), am Ende der Mitschrift steht „Anhören und Transkript lesen“. Im Dialog
+  „Aufnahme gespeichert“: **Lernskript / Zusammenfassung erstellen**, **Karteikarten vorschlagen**
+  (über die API oder kostenlos „In Claude-App“) oder **Transkript in die Mitschrift einfügen**.
+  Mit „Künftig direkt das Lernskript vorbereiten“ öffnet sich das Lernskript-Fenster nach jeder
+  Aufnahme von selbst.
+- **Anhören:** Wiedergabe mit Transkript; Antippen einer Zeile springt an die Stelle. Das
+  Transkript ist durchsuchbar (globale Suche).
+- **Abgebrochen?** Wird die App während einer Aufnahme beendet, ist alles bis etwa 10 Sekunden
+  vor dem Abbruch gesichert. Beim nächsten Tippen auf „Vorlesung aufnehmen“ bietet die App an,
+  die Aufnahme zu sichern.
+- **Grenzen:** Das Transkript entsteht nur live während der Aufnahme; eine nachträgliche
+  Transkription importierter Audiodateien gibt es nicht. Erkennungsfehler sind möglich, vor
+  allem bei Fachbegriffen und Paragraphen. Eine Aufnahme braucht etwa 20 MB je Stunde und ist
+  im Backup enthalten.
+- Das **Diktat** (Mikrofon) bleibt, was es war: Gesprochenes wird direkt Text in der Mitschrift,
+  ohne Tonaufnahme.
+
 ## Diktat, Zeitstempel, Lesemodus
 
 - **Diktat** (Mikrofon im Notizkopf): Gesprochenes landet an der Schreibposition, beginnend mit

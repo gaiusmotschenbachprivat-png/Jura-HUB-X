@@ -18,7 +18,7 @@ import * as nodes from "./nodes";
 
 export const DOC_TYPES = [
   "folien", "skript", "uebungsblatt", "loesung", "mitschrift", "gesetz", "aufsatz", "urteil", "klausur",
-  "sonstiges",
+  "aufnahme", "sonstiges",
 ];
 
 /** Höchstmenge an Text je Seite, die indexiert wird. */
@@ -116,6 +116,10 @@ function initialTextStatus(ext: string): TextStatus {
     case "jpeg":
     case "gif":
     case "webp":
+    case "m4a":
+    case "mp3":
+    case "wav":
+    case "webm":
       return "none";
     default:
       return "unsupported";

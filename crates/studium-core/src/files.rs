@@ -30,6 +30,11 @@ pub const ALLOWED: &[(&str, &str)] = &[
     ("jpeg", "image/jpeg"),
     ("gif", "image/gif"),
     ("webp", "image/webp"),
+    // Vorlesungsaufnahmen (iPad: m4a, andere Browser: webm)
+    ("m4a", "audio/mp4"),
+    ("mp3", "audio/mpeg"),
+    ("wav", "audio/wav"),
+    ("webm", "audio/webm"),
 ];
 
 pub fn mime_for(ext: &str) -> Option<&'static str> {
@@ -102,7 +107,7 @@ impl BlobStore {
         let ext = extension_of(src);
         let mime = mime_for(&ext).ok_or_else(|| {
             Error::invalid(format!(
-                "Dateityp „.{ext}“ wird nicht unterstützt. Erlaubt sind PDF, Word, PowerPoint, Excel, Text, Markdown und Bilder."
+                "Dateityp „.{ext}“ wird nicht unterstützt. Erlaubt sind PDF, Word, PowerPoint, Excel, Text, Markdown, Bilder und Audioaufnahmen."
             ))
         })?;
         let meta = fs::metadata(src)

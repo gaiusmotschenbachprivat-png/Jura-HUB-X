@@ -23,6 +23,7 @@ import { AnnotationPopover, SelectionToolbar } from "./AnnotationPopups";
 import { PdfViewer, type PdfSelection } from "./PdfViewer";
 import { ImageSlideBar, rememberSlides, SwitchSlidesButton } from "./Slides";
 import { LensImage } from "./SlideLens";
+import { AUDIO_EXT, AudioView } from "../recording/AudioView";
 import { useSplitLayoutToggle } from "../editor/SplitNotes";
 import { CardDialog } from "../learn/CardDialog";
 
@@ -80,7 +81,7 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
   useEffect(() => {
     if (!detail || !detail.document.file_present) return;
     const ext = detail.document.ext;
-    if (!["pdf", "png", "jpg", "jpeg", "gif", "webp", "txt", "md", "markdown"].includes(ext)) return;
+    if (![...["pdf", "png", "jpg", "jpeg", "gif", "webp", "txt", "md", "markdown"], ...AUDIO_EXT].includes(ext)) return;
     let alive = true;
     api
       .documentBytes(id)
@@ -186,6 +187,11 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
     return URL.createObjectURL(new Blob([bytes.slice().buffer as ArrayBuffer], { type: detail.document.mime }));
   }, [bytes, detail]);
   useEffect(() => () => void (imageUrl && URL.revokeObjectURL(imageUrl)), [imageUrl]);
+  const audioUrl = useMemo(() => {
+    if (!bytes || !detail || !AUDIO_EXT.includes(detail.document.ext)) return null;
+    return URL.createObjectURL(new Blob([bytes.slice().buffer as ArrayBuffer], { type: detail.document.mime }));
+  }, [bytes, detail]);
+  useEffect(() => () => void (audioUrl && URL.revokeObjectURL(audioUrl)), [audioUrl]);
 
   if (error) return <EmptyState title="Dokument nicht verfügbar">{error}</EmptyState>;
   if (!detail) return <div className="loading">Lade Dokument …</div>;
@@ -409,6 +415,8 @@ export function DocumentViewer({ id, page: initialPage = 1, compact = false, lin
           ) : (
             <div className="loading">Lade PDF …</div>
           )
+        ) : audioUrl ? (
+          <AudioView url={audioUrl} pages={texts ?? []} />
         ) : imageUrl ? (
           <>
             <ImageSlideBar doc={d} placementNodeId={detail.placements[0]?.node_id ?? null} bytes={bytes} noteId={linkTargetNoteId} />

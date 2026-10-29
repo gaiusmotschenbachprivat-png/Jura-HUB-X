@@ -14,6 +14,8 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
+  // Vorlesungsaufnahmen abspielen (aus dem lokalen Speicher)
+  "media-src 'self' blob:",
   "worker-src 'self' blob:",
   // Claude API nur für den KI-Assistenten (ausdrücklich eingeschaltet, Schlüssel nur im Speicher)
   "connect-src 'self' https://api.anthropic.com",

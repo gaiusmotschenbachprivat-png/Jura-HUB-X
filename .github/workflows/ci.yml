@@ -95,6 +95,8 @@ jobs:
         run: node tests/e2e-web/bruecke-e2e.mjs
       - name: Werkzeugleiste einklappen, Folien-Lupe
         run: node tests/e2e-web/lupe-e2e.mjs
+      - name: Vorlesung aufnehmen (Ton, Live-Transkript, Wiederherstellen)
+        run: node tests/e2e-web/aufnahme-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -20,7 +20,7 @@ export type StudyTask = "aufbereiten" | "karteikarten" | "uebungsfall" | "korrek
 export const STUDY_PROMPTS: Record<StudyTask, string> = { aufbereiten, karteikarten, uebungsfall, korrektur };
 
 /** Höchstlänge der mitgeschickten Unterlagen (Zeichen). */
-export const MAX_MATERIAL = 60_000;
+export const MAX_MATERIAL = 150_000;
 
 export const CARD_SCHEMA = {
   type: "object",

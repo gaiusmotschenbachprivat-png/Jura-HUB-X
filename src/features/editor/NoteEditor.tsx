@@ -10,6 +10,8 @@ import { areaById, reportError, useApp } from "../../state/store";
 import { Button, IconButton } from "../../ui/Button";
 import { Dialog } from "../../ui/Dialog";
 import { SlideLensView } from "../documents/SlideLens";
+import { AUTO_SUMMARY_KEY, insertRecordingLink, RecordButton, RecordingDoneDialog, useRecording, type SavedRecording } from "../recording/Recording";
+import { formatTime, transcriptText } from "../../lib/transcript";
 import { useSlideLens } from "../documents/lensState";
 import { useMenu } from "../../ui/Menu";
 import { EmptyState, Field, MOD } from "../../ui/misc";
@@ -123,6 +125,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [schemaOpen, setSchemaOpen] = useState(false);
   const [printDoc, setPrintDoc] = useState<PMNode | null>(null);
   const [study, setStudy] = useState<StudyMode | null>(null);
+  /** Lernhilfe mit anderem Stoff als der Mitschrift (z. B. Transkript einer Aufnahme) */
+  const [studyText, setStudyText] = useState<string | null>(null);
+  const [recDone, setRecDone] = useState<SavedRecording | null>(null);
   const [bibOpen, setBibOpen] = useState(false);
   const [harvest, setHarvest] = useState(false);
   const [reading, setReading] = useState(false);
@@ -404,6 +409,28 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     };
   }, [editor]);
 
+  // Aufnahme: Zeitmarken in diese Mitschrift; nach dem Speichern Verweis einfügen
+  const savedRec = useRecording((s) => s.saved);
+  useEffect(() => {
+    if (!editor || compact) return;
+    const mark = (t: number) => editor.chain().focus().insertContent({ type: "text", text: `[Aufnahme ${formatTime(t)}] `, marks: [{ type: "bold" }] }).insertContent(" ").run();
+    useRecording.getState().set({ mark });
+    return () => {
+      if (useRecording.getState().mark === mark) useRecording.getState().set({ mark: null });
+    };
+  }, [editor, compact]);
+  useEffect(() => {
+    if (!editor || compact || !savedRec || savedRec.noteId !== note.node_id) return;
+    useRecording.getState().set({ saved: null });
+    insertRecordingLink(editor, savedRec);
+    void api.settingsAll().then((s) => {
+      if (s[AUTO_SUMMARY_KEY] === true && savedRec.meta.segments.length) {
+        setStudyText(`Transkript der Vorlesungsaufnahme (automatische Spracherkennung, kann Hör- und Schreibfehler enthalten):\n\n${transcriptText(savedRec.meta.segments)}`);
+        setStudy("aufbereiten");
+      } else setRecDone(savedRec);
+    });
+  }, [editor, compact, savedRec, note.node_id]);
+
   if (!editor) return null;
 
   const insertLink = (href: string, text: string) => {
@@ -535,6 +562,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               </IconButton>
             )}
             {!compact && !reading && <DictationButton editor={editor} />}
+            {!compact && !reading && <RecordButton noteId={note.node_id} noteTitle={title} />}
             {!compact && !reading && treeNode && <SecondNoteButton node={treeNode} />}
             {compact && <SecondaryNoteControls noteId={note.node_id} />}
             <IconButton label="KI-Lernhilfen" onClick={(e) => menu.openBelow(e.currentTarget, studyItems())}>
@@ -761,8 +789,20 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           }}
         />
       )}
+      {recDone && (
+        <RecordingDoneDialog saved={recDone} editor={editor} onClose={() => setRecDone(null)} onStudy={(mode, text) => (setStudyText(text), setStudy(mode))} />
+      )}
       {study && treeNode && (
-        <StudyDialog mode={study} node={treeNode} text={plainText(editor.getJSON() as PMNode)} editor={editor} onClose={() => setStudy(null)} />
+        <StudyDialog
+          mode={study}
+          node={treeNode}
+          text={studyText ?? plainText(editor.getJSON() as PMNode)}
+          editor={editor}
+          onClose={() => {
+            setStudy(null);
+            setStudyText(null);
+          }}
+        />
       )}
       {normPop && (
         <NormPopover

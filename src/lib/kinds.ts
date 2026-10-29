@@ -44,6 +44,7 @@ export const DOC_TYPE_LABEL: Record<string, string> = {
   aufsatz: "Aufsatz",
   urteil: "Urteil",
   klausur: "Klausur",
+  aufnahme: "Vorlesungsaufnahme",
   sonstiges: "Sonstiges",
 };
 

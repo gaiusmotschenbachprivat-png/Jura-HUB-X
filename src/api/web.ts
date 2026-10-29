@@ -19,6 +19,11 @@ export function webSessionKey(): string | null {
 }
 let fileSeq = 0;
 
+/** Datei für `documentsImport` bereitstellen (z. B. eine Aufnahme). */
+export function registerFile(f: File): string {
+  return register(f);
+}
+
 function register(f: File): string {
   const key = `web-file:${++fileSeq}/${f.name}`;
   files.set(key, f);

@@ -157,7 +157,7 @@ export function DictationButton({ editor }: { editor: Editor }) {
 
   return (
     <>
-      <IconButton label={active ? "Diktat beenden" : "Diktat"} active={active} onClick={() => (active ? stop() : void start())}>
+      <IconButton label={active ? "Diktat beenden" : "Diktat (Sprache wird Text, ohne Tonaufnahme)"} active={active} onClick={() => (active ? stop() : void start())}>
         <Mic size={16} />
       </IconButton>
       {active &&
