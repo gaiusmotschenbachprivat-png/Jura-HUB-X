@@ -43,7 +43,7 @@ function block(n: PMNode, indent = ""): string {
     case "blockquote":
       return (n.content ?? []).map((c) => block(c).split("\n").map((l) => "> " + l).join("\n")).join("\n>\n");
     case "callout":
-      return [`> **${calloutLabel(n.attrs?.kind, n.attrs?.title)}**`, ...(n.content ?? []).map((c) => block(c).split("\n").map((l) => "> " + l).join("\n"))].join("\n>\n");
+      return [`> **${calloutLabel(n.attrs?.kind, n.attrs?.title, n.attrs)}**`, ...(n.content ?? []).map((c) => block(c).split("\n").map((l) => "> " + l).join("\n"))].join("\n>\n");
     case "codeBlock":
       return "```" + String(n.attrs?.language ?? "") + "\n" + (n.content ?? []).map((c) => c.text ?? "").join("") + "\n```";
     case "horizontalRule":

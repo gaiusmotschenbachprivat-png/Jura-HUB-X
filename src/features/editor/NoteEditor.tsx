@@ -35,7 +35,8 @@ import { DictationButton, insertTimestamp } from "./Dictation";
 import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes";
 import { OUTLINE_JUMP_EVENT, type OutlineJumpDetail } from "./outlineJump";
 import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
-import { CALLOUTS, calloutInfo } from "../../lib/callouts";
+import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
+import { openCalloutKinds } from "./CalloutKinds";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, setDefaultLaws, type NormRef } from "./normLinks";
@@ -387,18 +388,51 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             return true;
           })
           .run();
-      menu.openAt({ clientX: d.x, clientY: d.y }, [
-        ...CALLOUTS.map((k) => ({
-          label: k.kind === node.attrs.kind ? `✓ ${k.label}` : k.label,
+      // Kasten direkt darüber (gleiche Ebene)? Dann lässt sich dieser anschließen.
+      const $pos = editor.state.doc.resolve(d.pos);
+      const prev = $pos.index() > 0 ? $pos.parent.child($pos.index() - 1) : null;
+      const kindItems = (pick: (kind: string) => void, mark?: string) =>
+        calloutKinds().map((k) => ({
+          label: k.kind === mark ? `✓ ${k.label}` : k.label,
           icon: <span className="callout-dot" style={{ background: k.color }} />,
-          onSelect: () => setAttrs({ kind: k.kind }),
-        })),
+          onSelect: () => pick(k.kind),
+        }));
+      /** neuen Kasten ohne Lücke unter diesen setzen, Cursor hinein */
+      const addJoined = (kind: string) => {
+        const at = d.pos + node.nodeSize;
+        const { schema } = editor.state;
+        const box = schema.nodes.callout!.create({ ...calloutAttrs(kind), joined: true }, schema.nodes.paragraph!.create());
+        editor
+          .chain()
+          .command(({ tr }) => {
+            tr.insert(at, box);
+            return true;
+          })
+          .setTextSelection(at + 2)
+          .focus()
+          .run();
+      };
+      menu.openAt({ clientX: d.x, clientY: d.y }, [
+        ...kindItems((kind) => setAttrs(calloutAttrs(kind)), String(node.attrs.kind)),
         { separator: true, label: "" },
-        { label: node.attrs.title ? "Überschrift ändern …" : "Überschrift ergänzen (z. B. § 433 BGB) …", onSelect: () => setCalloutTitle({ pos: d.pos, title: String(node.attrs.title ?? ""), label: calloutInfo(node.attrs.kind).label }) },
+        {
+          label: "Verbundenen Kasten darunter anfügen …",
+          onSelect: () => setTimeout(() => menu.openAt({ clientX: d.x, clientY: d.y }, [{ header: true, label: "Ohne Lücke darunter" }, ...kindItems(addJoined)]), 0),
+        },
+        ...(prev?.type.name === "callout" || node.attrs.joined
+          ? [
+              node.attrs.joined
+                ? { label: "Vom Kasten darüber lösen (mit Abstand)", onSelect: () => setAttrs({ joined: false }) }
+                : { label: "Mit dem Kasten darüber verbinden (ohne Lücke)", onSelect: () => setAttrs({ joined: true }) },
+            ]
+          : []),
+        { label: node.attrs.title ? "Überschrift ändern …" : "Überschrift ergänzen (z. B. § 433 BGB) …", onSelect: () => setCalloutTitle({ pos: d.pos, title: String(node.attrs.title ?? ""), label: calloutInfo(node.attrs.kind, node.attrs).label }) },
         {
           label: "Kasten auflösen (Text bleibt)",
           onSelect: () => editor.chain().focus().setTextSelection(d.pos + 2).unsetCallout().run(),
         },
+        { separator: true, label: "" },
+        { label: "Kästen anpassen (Bezeichnung, Farbe, eigene Arten) …", onSelect: openCalloutKinds },
       ]);
     };
     dom.addEventListener(CALLOUT_EDIT_EVENT, onCallout);

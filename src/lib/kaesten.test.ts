@@ -4,8 +4,8 @@ import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 
 import { editorExtensions } from "../features/editor/extensions";
-import { buildPrintHtml } from "../features/editor/print";
-import { CALLOUTS, calloutLabel } from "./callouts";
+import { buildPrintHtml, printCss } from "../features/editor/print";
+import { calloutAttrs, calloutInfo, calloutKinds, CALLOUTS, calloutLabel, parseCalloutConfig, setCalloutConfig } from "./callouts";
 import { exportDocx } from "./docxExport";
 import { toMarkdown } from "./markdownExport";
 import { plainText, type PMNode } from "./pm";
@@ -31,7 +31,7 @@ describe("Farbige Kästen", () => {
   it("Beschriftung mit Überschrift", () => {
     expect(calloutLabel("gesetz", "§ 433 BGB")).toBe("Gesetzestext · § 433 BGB");
     expect(calloutLabel("quatsch", "")).toBe("Beispiel");
-    expect(CALLOUTS.map((c) => c.label)).toEqual(["Beispiel", "Gesetzestext", "Definition", "Fall", "Merke", "Problem / Streitstand", "Hinweis"]);
+    expect(CALLOUTS.map((c) => c.label)).toEqual(["Beispiel", "Erklärung", "Gesetzestext", "Definition", "Fall", "Merke", "Problem / Streitstand", "Hinweis"]);
   });
   it("Auswahl in Kasten legen, Art ändern, auflösen", () => {
     const e = editorWith({ type: "doc", content: [P("Erster Absatz"), P("Zweiter Absatz")] });
@@ -85,5 +85,61 @@ describe("Farbige Kästen", () => {
     expect(xml).toContain('w:fill="F3EFF9"');
     expect(xml).toContain('w:color="6B4FA3"');
     expect(xml).toContain("A kauft bei B ein Fahrrad.");
+  });
+
+  it("Arten anpassen: umbenennen, umfärben, eigene Art – ungültige Werte werden verworfen", () => {
+    try {
+      setCalloutConfig({
+        overrides: { hinweis: { label: "Erläuterung", color: "#123456" }, quatsch: { label: "x" } },
+        extra: [
+          { kind: "eigen-klausurtipp", label: "Klausurtipp", color: "#b03a8c" },
+          { kind: "böse<script>", label: "x", color: "#000000" },
+          { kind: "eigen-ohnefarbe", label: "x", color: "rot" },
+        ],
+      });
+      expect(calloutKinds().map((k) => k.label)).toContain("Erläuterung");
+      expect(calloutKinds().map((k) => k.kind)).toEqual([...CALLOUTS.map((c) => c.kind), "eigen-klausurtipp"]);
+      expect(calloutInfo("hinweis")).toMatchObject({ label: "Erläuterung", color: "#123456", fill: "EEF1F3" });
+      expect(calloutLabel("eigen-klausurtipp", "Irrtum")).toBe("Klausurtipp · Irrtum");
+      // eigene Art: Kasten trägt Bezeichnung und Farbe mit
+      expect(calloutAttrs("eigen-klausurtipp")).toEqual({ kind: "eigen-klausurtipp", label: "Klausurtipp", color: "#b03a8c" });
+      expect(calloutAttrs("definition")).toEqual({ kind: "definition", label: "", color: "" });
+    } finally {
+      setCalloutConfig({ overrides: {}, extra: [] });
+    }
+    // Art nicht (mehr) bekannt: Kasten nutzt seine mitgetragene Bezeichnung/Farbe
+    expect(calloutInfo("eigen-klausurtipp", { label: "Klausurtipp", color: "#b03a8c" })).toMatchObject({ label: "Klausurtipp", color: "#b03a8c", custom: true });
+    expect(calloutInfo("eigen-weg").kind).toBe("beispiel");
+    expect(parseCalloutConfig("Unsinn")).toEqual({ overrides: {}, extra: [] });
+  });
+
+  it("Verbundene Kästen: ohne Lücke, je eigene Farbe – im Editor, Druck und Word", async () => {
+    const joined: PMNode = {
+      type: "doc",
+      content: [
+        box("beispiel", "", P("A schlägt B.")),
+        { type: "callout", attrs: { kind: "eigen-erl", label: "Erläuterung", color: "#b03a8c", joined: true }, content: [P("Das ist eine Körperverletzung.")] },
+        P("Weiter"),
+      ],
+    };
+    const e = editorWith(joined);
+    const boxes = [...e.view.dom.querySelectorAll<HTMLElement>(".callout")];
+    expect(boxes.map((b) => b.classList.contains("is-joined"))).toEqual([false, true]);
+    expect(boxes[1]!.style.getPropertyValue("--c")).toBe("#b03a8c");
+    expect(boxes[1]!.querySelector(".callout-label")!.textContent).toBe("Erläuterung");
+    expect(JSON.stringify(e.getJSON())).toContain('"joined":true');
+    e.destroy();
+    const html = generateHTML(joined as never, editorExtensions());
+    expect(html).toContain('data-joined="1"');
+    expect(html).toContain("is-joined");
+    expect(html).toContain('data-label="Erläuterung"');
+    const po = { title: "T", toc: false, margins: "normal", style: "notiz", pageNumbers: true } as const;
+    expect(buildPrintHtml(joined, po, () => undefined)).toContain("callout callout-eigen is-joined");
+    expect(printCss(po)).toContain(".callout.is-joined { margin-top: 0; }");
+    const xml = await (await JSZip.loadAsync(await exportDocx(joined, { title: "T" }))).file("word/document.xml")!.async("string");
+    // zwischen den Kästen kein leerer Absatz: zwei Tabellen direkt hintereinander
+    expect(xml).toMatch(/<\/w:tbl><w:tbl>/);
+    expect(xml).toContain("ERLÄUTERUNG");
+    expect(xml).toContain('w:color="B03A8C"');
   });
 });

@@ -127,6 +127,54 @@ try {
   check("Druck: Kasten mit Beschriftung", label.includes("Gesetzestext · § 433 BGB"), label);
   await shot("kaesten-2-druck");
   await page.getByRole("button", { name: "Druckansicht schließen" }).click();
+
+  // 8. Verbundener Kasten: Erklärung ohne Lücke unter dem Gesetzestext
+  const gesetz = page.locator(".ProseMirror .callout-gesetz");
+  await gesetz.locator(".callout-label").click();
+  await page.getByRole("menuitem", { name: /Verbundenen Kasten darunter/ }).click();
+  await page.getByRole("menuitem", { name: "Erklärung" }).click();
+  await page.keyboard.type("Übergabe heißt Verschaffung des unmittelbaren Besitzes.");
+  const erkl = page.locator(".ProseMirror .callout-erklaerung");
+  await erkl.waitFor();
+  const gap = async () => (await erkl.boundingBox()).y - ((await gesetz.boundingBox()).y + (await gesetz.boundingBox()).height);
+  check("Verbundener Kasten: eigene Farbe, keine Lücke", (await erkl.evaluate((e) => e.classList.contains("is-joined"))) && Math.abs(await gap()) < 1.5 && (await erkl.innerText()).includes("Übergabe heißt"), String(await gap()));
+  await erkl.locator(".callout-label").click();
+  await page.getByRole("menuitem", { name: /Vom Kasten darüber lösen/ }).click();
+  check("Lösen: wieder mit Abstand", (await gap()) > 6, String(await gap()));
+  await erkl.locator(".callout-label").click();
+  await page.getByRole("menuitem", { name: /Mit dem Kasten darüber verbinden/ }).click();
+  check("Wieder verbunden", Math.abs(await gap()) < 1.5, String(await gap()));
+  await shot("kaesten-3-verbunden");
+
+  // 9. Kästen anpassen: umbenennen und eigene Art
+  await page.locator(".ProseMirror p", { hasText: "Weiter im Text" }).click();
+  await page.getByRole("button", { name: /^Kasten:/ }).click();
+  await page.getByRole("menuitem", { name: /Kästen anpassen/ }).click();
+  const kd = page.getByRole("dialog", { name: "Kästen anpassen" });
+  await kd.locator('input[aria-label="Bezeichnung"]').nth(1).fill("Erläuterung");
+  await kd.getByRole("button", { name: "Neue Art" }).click();
+  await kd.locator('input[aria-label="Bezeichnung"]').last().fill("Klausurtipp");
+  await kd.locator('input[type="color"]').last().fill("#b03a8c");
+  await kd.getByRole("button", { name: "Speichern" }).click();
+  await kd.waitFor({ state: "detached" });
+  check("Umbenannt: vorhandener Kasten heißt sofort „Erläuterung“", (await erkl.locator(".callout-label").textContent()) === "Erläuterung", await erkl.locator(".callout-label").textContent());
+  await page.locator(".ProseMirror p", { hasText: "Weiter im Text" }).click();
+  await page.getByRole("button", { name: /^Kasten:/ }).click();
+  await page.getByRole("menuitem", { name: "Klausurtipp" }).click();
+  const tipp = page.locator(".ProseMirror .callout-eigen");
+  await tipp.waitFor();
+  const tippStyle = await tipp.evaluate((el) => getComputedStyle(el).borderLeftColor);
+  check("Eigene Art „Klausurtipp“ mit eigener Farbe", (await tipp.locator(".callout-label").textContent()) === "Klausurtipp" && tippStyle === "rgb(176, 58, 140)", tippStyle);
+  let saved2 = "";
+  for (let i = 0; i < 30; i++) {
+    saved2 = (await call("noteGet", id)).content_json;
+    if (saved2.includes("Klausurtipp")) break;
+    await sleep(200);
+  }
+  check("Gespeichert: verbunden, eigene Art trägt Bezeichnung und Farbe", saved2.includes('"joined":true') && saved2.includes('"label":"Klausurtipp"') && saved2.includes('"color":"#b03a8c"'));
+  const setting = (await call("settingsAll"))["editor.callouts"];
+  check("Anpassung gespeichert", setting?.overrides?.erklaerung?.label === "Erläuterung" && setting?.extra?.[0]?.label === "Klausurtipp", JSON.stringify(setting));
+  await shot("kaesten-4-eigene-art");
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Ablauf ohne Ausnahme", false, e.stack ?? String(e));

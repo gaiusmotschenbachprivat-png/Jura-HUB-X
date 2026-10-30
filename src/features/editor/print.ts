@@ -117,6 +117,9 @@ hr { border: 0; border-top: 0.5pt solid #777; }
 .callout-merke { --c: #a86a12; --f: #FBF4E6; }
 .callout-problem { --c: #b4471f; --f: #FBEFEA; }
 .callout-hinweis { --c: #5b6676; --f: #F1F3F6; }
+.callout-erklaerung { --c: #1f7a85; --f: #EAF4F5; }
+.callout.is-joined { margin-top: 0; }
+.callout:has(+ .callout.is-joined) { margin-bottom: 0; }
 .pb { break-after: page; height: 0; border: 0; }
 .footnote { float: footnote; font-size: 9pt; line-height: 1.25; text-align: left; font-style: normal; font-weight: normal; }
 ::footnote-call { content: counter(footnote); vertical-align: super; font-size: 65%; line-height: 0; }

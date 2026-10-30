@@ -50,7 +50,8 @@ import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
 import { BAUSTEIN_GRUPPEN, BAUSTEINE } from "../../lib/gutachten";
 import { GUTACHTEN_SCHRITTE, legendeNode } from "../../lib/gutachtenstil";
-import { CALLOUTS } from "../../lib/callouts";
+import { calloutKinds } from "../../lib/callouts";
+import { openCalloutKinds } from "./CalloutKinds";
 import { FONT_SIZES, FONTS, HIGHLIGHT_COLORS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
 import { insertWithPlaceholder } from "./Gutachten";
 
@@ -333,12 +334,14 @@ export function Toolbar({
           active={s.callout}
           onClick={(e) =>
             menu.openBelow(e.currentTarget, [
-              ...CALLOUTS.map((k) => ({
+              ...calloutKinds().map((k) => ({
                 label: k.label,
                 icon: <span className="callout-dot" style={{ background: k.color }} />,
                 onSelect: () => c().setCallout(k.kind).run(),
               })),
-              ...(s.callout ? [{ separator: true, label: "" }, { label: "Kasten auflösen", onSelect: () => c().unsetCallout().run() }] : []),
+              { separator: true, label: "" },
+              ...(s.callout ? [{ label: "Kasten auflösen", onSelect: () => c().unsetCallout().run() }] : []),
+              { label: "Kästen anpassen …", onSelect: openCalloutKinds },
             ])
           }
         >

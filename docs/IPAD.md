@@ -115,6 +115,16 @@ eine kleine Beschriftung. Diese **antippen**: Art ändern, Überschrift ergänze
 gewohnt; **Enter auf einer leeren Zeile** am Ende verlässt ihn. Kästen erscheinen auch im Druck,
 im Word-Export (hinterlegt, mit Rand) und im Markdown-Export (als Zitatblock mit Beschriftung).
 
+- **Verbundene Kästen:** Beschriftung eines Kastens antippen → „Verbundenen Kasten darunter
+  anfügen …“ → Art wählen (z. B. Gesetzestext + Erklärung, Beispiel + Lösung). Der neue Kasten
+  schließt ohne Lücke an, jeder in seiner Farbe. „Mit dem Kasten darüber verbinden“ bzw. „Vom
+  Kasten darüber lösen“ ändert das nachträglich. Gilt auch für Druck/PDF und Word.
+- **Kästen anpassen** (im Kasten-Menü der Werkzeugleiste, im Menü der Beschriftung oder unter
+  Einstellungen → Farbige Kästen): Bezeichnung und Farbe jeder Art ändern, eigene Arten anlegen
+  (z. B. „Klausurtipp“) oder wieder entfernen. Neu mitgeliefert: **Erklärung**. Umbenennen wirkt
+  sofort auf alle vorhandenen Kästen; ein Kasten einer gelöschten eigenen Art behält Bezeichnung
+  und Farbe.
+
 ## Gliederung antippen → zur Stelle in der Mitschrift
 
 In der nummerierten **Gliederung** oben (Liste unter „Gliederung“, „Inhalt“ oder „Übersicht“)

@@ -167,7 +167,7 @@ type Block = Paragraph | Table;
 function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
   const out: Block[] = [];
   const contIndent = depth >= 0 ? { left: 720 * (depth + 1) } : undefined;
-  for (const n of nodes ?? []) {
+  for (const [i, n] of (nodes ?? []).entries()) {
     switch (n.type) {
       case "paragraph":
         out.push(new Paragraph({ children: runs(n.content, ctx), alignment: alignment(n), indent: indentOf(n, contIndent), spacing: spacing(n) }));
@@ -292,7 +292,7 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
       }
       case "callout": {
         // Kasten: einspaltige Tabelle mit heller Hinterlegung und farbigem Rand links
-        const info = calloutInfo(n.attrs?.kind);
+        const info = calloutInfo(n.attrs?.kind, n.attrs);
         const color = info.color.replace("#", "").toUpperCase();
         const none = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
         const inner = blocks(n.content, ctx);
@@ -309,7 +309,7 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
                     borders: { left: { style: BorderStyle.SINGLE, size: 24, color }, top: none, bottom: none, right: none },
                     margins: { left: 160, right: 160, top: 80, bottom: 80 },
                     children: [
-                      new Paragraph({ children: [new TextRun({ text: calloutLabel(n.attrs?.kind, n.attrs?.title).toUpperCase(), bold: true, size: 16, color })] }),
+                      new Paragraph({ children: [new TextRun({ text: calloutLabel(n.attrs?.kind, n.attrs?.title, n.attrs).toUpperCase(), bold: true, size: 16, color })] }),
                       ...(inner.length ? inner : [new Paragraph({ children: [] })]),
                     ],
                   }),
@@ -318,7 +318,9 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
             ],
           }),
         );
-        out.push(new Paragraph({ children: [] }));
+        // Abstand nur, wenn kein verbundener Kasten folgt
+        const next = nodes?.[i + 1];
+        if (!(next?.type === "callout" && next.attrs?.joined)) out.push(new Paragraph({ children: [] }));
         break;
       }
       default:

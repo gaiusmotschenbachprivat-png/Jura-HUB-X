@@ -278,6 +278,11 @@
 .callout.callout-merke { --c: #a86a12; }
 .callout.callout-problem { --c: #b4471f; }
 .callout.callout-hinweis { --c: #5b6676; }
+.callout.callout-erklaerung { --c: #1f7a85; }
+/* Verbundene Kästen: ohne Lücke untereinander, jeder in seiner Farbe */
+.prose .callout.is-joined, .callout.is-joined { margin-top: 0; border-top-right-radius: 0; }
+.prose .callout:has(+ .callout.is-joined), .callout:has(+ .callout.is-joined) { margin-bottom: 0; border-bottom-right-radius: 0; }
+.callout:has(+ .callout.is-joined) + .callout.is-joined, .callout.is-joined { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--c) 22%, transparent); }
 .callout-gesetz .callout-body, .callout-gesetz > p { font-family: var(--font-serif, Georgia, serif); }
 .prose .callout .callout-body > :first-child { margin-top: 2px; }
 .prose .callout .callout-body > :last-child { margin-bottom: 0; }
@@ -331,3 +336,11 @@
 .transcript-line .tnum { color: var(--accent); flex: none; min-width: 48px; }
 .transcript-line.is-current { background: var(--accent-soft); }
 @media (hover: hover) { .transcript-line:hover { background: var(--bg-hover); } }
+
+/* Kästen anpassen */
+.callout-kinds { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.callout-kind-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-left: 3px solid var(--c); border-radius: 0 8px 8px 0; background: color-mix(in srgb, var(--c) 8%, var(--bg)); flex-wrap: wrap; }
+.callout-kind-row input[type="color"] { width: 34px; height: 30px; padding: 0; border: 1px solid var(--line-strong); border-radius: 6px; background: none; flex: none; }
+.callout-kind-row input:not([type]) { min-width: 140px; }
+.callout-kind-palette { display: flex; gap: 4px; }
+.callout-kind-palette .color-dot { width: 18px; height: 18px; }

@@ -4,6 +4,7 @@ import { api } from "../../api";
 import type { AppInfo, Area } from "../../api/types";
 import { AREA_COLORS } from "../../lib/kinds";
 import { TOP_INSET_AUTO, TOP_INSET_MAX } from "../../lib/safeArea";
+import { openCalloutKinds } from "../editor/CalloutKinds";
 import { reportError, useApp, type View } from "../../state/store";
 import { Button } from "../../ui/Button";
 import { BackupSettings } from "./BackupSettings";
@@ -66,6 +67,15 @@ function Appearance() {
               {l}
             </button>
           ))}
+        </div>
+      </section>
+      <section className="card">
+        <h3>Farbige Kästen</h3>
+        <p className="small muted">Beispiel, Erklärung, Definition, Hinweis … umbenennen, umfärben oder eigene Arten anlegen.</p>
+        <div>
+          <Button size="sm" onClick={openCalloutKinds}>
+            Kästen anpassen …
+          </Button>
         </div>
       </section>
       <section className="card">
