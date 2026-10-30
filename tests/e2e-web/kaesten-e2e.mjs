@@ -133,11 +133,15 @@ try {
   await gesetz.locator(".callout-label").click();
   await page.getByRole("menuitem", { name: /Verbundenen Kasten darunter/ }).click();
   await page.getByRole("menuitem", { name: "Erklärung" }).click();
-  await page.keyboard.type("Übergabe heißt Verschaffung des unmittelbaren Besitzes.");
   const erkl = page.locator(".ProseMirror .callout-erklaerung");
   await erkl.waitFor();
+  // Schreibmarke steht im neuen Kasten
+  await page.waitForFunction(() => !!window.getSelection()?.anchorNode?.parentElement?.closest(".callout-erklaerung"), null, { timeout: 3000 }).catch(() => {});
+  await page.keyboard.type("Übergabe heißt Verschaffung des unmittelbaren Besitzes.");
+  await erkl.filter({ hasText: "Übergabe heißt" }).waitFor({ timeout: 5000 }).catch(() => {});
   const gap = async () => (await erkl.boundingBox()).y - ((await gesetz.boundingBox()).y + (await gesetz.boundingBox()).height);
-  check("Verbundener Kasten: eigene Farbe, keine Lücke", (await erkl.evaluate((e) => e.classList.contains("is-joined"))) && Math.abs(await gap()) < 1.5 && (await erkl.innerText()).includes("Übergabe heißt"), String(await gap()));
+  check("Verbundener Kasten: eigene Farbe, keine Lücke", (await erkl.evaluate((e) => e.classList.contains("is-joined"))) && Math.abs(await gap()) < 1.5, String(await gap()));
+  check("Schreibmarke im neuen Kasten, Text landet dort", (await erkl.innerText()).includes("Übergabe heißt"), await erkl.innerText());
   await erkl.locator(".callout-label").click();
   await page.getByRole("menuitem", { name: /Vom Kasten darüber lösen/ }).click();
   check("Lösen: wieder mit Abstand", (await gap()) > 6, String(await gap()));
