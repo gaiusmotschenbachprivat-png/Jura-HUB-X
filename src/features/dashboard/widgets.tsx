@@ -158,7 +158,17 @@ export function NowWidget({ data }: { data: DashboardData }) {
         <div className="now-title">
           <NotebookPen size={18} />
           <span>
-            Weiter bei <strong>{last.title}</strong> <span className="muted small">· {formatRelative(last.updated_at)}</span>
+            Weiter bei{" "}
+            <button
+              className="link-like"
+              onClick={() => {
+                requestResume(last.node_id);
+                openNote({ id: last.node_id, title: last.title });
+              }}
+            >
+              <strong>{last.title}</strong>
+            </button>{" "}
+            <span className="muted small">· {formatRelative(last.updated_at)}</span>
           </span>
         </div>
         <div className="row wrap">
