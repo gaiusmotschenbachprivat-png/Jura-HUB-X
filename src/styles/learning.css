@@ -312,3 +312,8 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .explanation { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); margin-bottom: 8px; }
 .explanation-src { margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--line-strong); }
 .explanation-src p { margin: 0 0 2px; }
+
+/* Stundenplan: Uni-Kalender */
+.calendar-connect { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.calendar-connect h3 { margin: 0; }
+.calendar-connect input[type="url"] { min-width: 220px; }

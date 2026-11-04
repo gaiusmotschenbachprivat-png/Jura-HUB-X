@@ -81,8 +81,8 @@ pub async fn export_write(request: Request<'_>) -> CmdResult<()> {
 pub async fn read_external_file(path: String) -> CmdResult<Response> {
     let p = PathBuf::from(path);
     let ext = studium_core::files::extension_of(&p);
-    if !["docx", "md", "markdown", "txt"].contains(&ext.as_str()) {
-        return Err(CmdError::new("invalid", "Nur DOCX-, Markdown- und Textdateien können als Notiz importiert werden."));
+    if !["docx", "md", "markdown", "txt", "ics"].contains(&ext.as_str()) {
+        return Err(CmdError::new("invalid", "Nur DOCX-, Markdown-, Text- und Kalenderdateien (.ics) können importiert werden."));
     }
     let meta = std::fs::metadata(&p).map_err(|_| CmdError::new("not_found", "Die Datei wurde nicht gefunden."))?;
     if !meta.is_file() || meta.len() > 50 * 1024 * 1024 {

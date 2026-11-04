@@ -18,7 +18,8 @@ const CSP = [
   "media-src 'self' blob:",
   "worker-src 'self' blob:",
   // Claude API nur für den KI-Assistenten (ausdrücklich eingeschaltet, Schlüssel nur im Speicher)
-  "connect-src 'self' https://api.anthropic.com",
+  // Uni-Kalender-Abo (nur der vom Nutzer eingetragene Link; derzeit Universität Bayreuth)
+  "connect-src 'self' https://api.anthropic.com https://my.uni-bayreuth.de",
   "object-src 'none'",
   "frame-src 'none'",
   "base-uri 'none'",

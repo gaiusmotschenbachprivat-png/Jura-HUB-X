@@ -13,7 +13,7 @@ import { descendantIds } from "../../lib/learnStats";
 import { lectureDoc, lectureTitle, nextLectureNumber, noteTypeOf, todayIso } from "../../lib/noteTypes";
 import { doc as pmDoc, parseDoc, plainText, type PMNode } from "../../lib/pm";
 import { buildTree } from "../../lib/tree";
-import { courseSlots, lectureOn, type Slot } from "../../lib/timetable";
+import { lectureOn, slotsOnDate, type Slot } from "../../lib/timetable";
 import { reportError, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
 import type { StudyMode } from "../assistant/StudyTools";
@@ -76,14 +76,17 @@ export function NowWidget({ data }: { data: DashboardData }) {
   const scope = areaId === "all" ? null : areaId;
   const [record, setRecord] = useState(false);
   const [busy, setBusy] = useState(false);
-  const slots = useMemo(() => courseSlots(data.nodes).slots.filter((s) => !scope || s.course.area_id === scope), [data.nodes, scope]);
-  const live = lectureNow(slots, now);
+  const inScope = useMemo(() => data.nodes.filter((n) => !scope || n.area_id === scope), [data.nodes, scope]);
   const today = todayIso();
-  const pending = lecturesDoneToday(slots, now)
+  const slotsOn = (iso: string) => slotsOnDate(inScope, iso);
+  const todaySlots = slotsOn(today);
+  const live = lectureNow(todaySlots, now);
+  const pending = lecturesDoneToday(todaySlots, now)
     .map((s) => ({ slot: s, note: lectureOn(data.nodes, s.course.id, today) }))
     .filter((x): x is { slot: Slot; note: StudyNode } => !!x.note && !isReviewed(x.note, null, data.nodes, data.cardSources) && !data.scans.get(x.note.id)?.lernskript);
-  const next = slots
-    .map((s) => ({ s, at: nextOccurrence(slots, s.course.id, now) }))
+  const courses = [...new Set(inScope.filter((n) => n.kind === "course").map((n) => n.id))];
+  const next = courses
+    .map((id) => ({ s: { course: inScope.find((n) => n.id === id)! }, at: nextOccurrence(slotsOn, id, now) }))
     .filter((x) => x.at && x.at.date > now)
     .sort((a, b) => a.at!.date.getTime() - b.at!.date.getTime())[0];
   const last = data.recent[0];
@@ -463,7 +466,7 @@ export function CoursesWidget({ data }: { data: DashboardData }) {
   const areaId = useApp((s) => s.areaId);
   const areas = useApp((s) => s.areas);
   const scope = areaId === "all" ? null : areaId;
-  const slots = useMemo(() => courseSlots(data.nodes).slots, [data.nodes]);
+  const slotsOn = (iso: string) => slotsOnDate(data.nodes, iso);
   const courses = useMemo(() => {
     // Veranstaltungen des jeweils neuesten Semesters je Bereich, sonst alle nicht archivierten
     const out: StudyNode[] = [];
@@ -498,7 +501,7 @@ export function CoursesWidget({ data }: { data: DashboardData }) {
           const ids = descendantIds(data.nodes, c.id);
           const mine = lectures.filter((l) => ids.has(l.id));
           const done = mine.filter((l) => data.scans.get(l.id)?.lernskript || isReviewed(l, null, data.nodes, data.cardSources)).length;
-          const next = nextOccurrence(slots, c.id, now);
+          const next = nextOccurrence(slotsOn, c.id, now);
           const color = areas.find((a) => a.id === c.area_id)?.color;
           return (
             <button key={c.id} className="course-tile" style={{ ["--area" as string]: color }} onClick={() => openNode(c)}>

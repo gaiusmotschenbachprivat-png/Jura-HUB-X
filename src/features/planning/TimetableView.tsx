@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 
 import type { StudyNode } from "../../api/types";
-import { courseSlots, fmtTime, isoWeekday, lectureOn, WEEKDAYS, type Slot } from "../../lib/timetable";
+import { CalendarConnect } from "./CalendarConnect";
+import { courseSlots, fmtTime, isoWeekday, lectureOn, slotsOnDate, WEEKDAYS, type Slot } from "../../lib/timetable";
 import { todayIso } from "../../lib/noteTypes";
 import { areaById, useApp } from "../../state/store";
 import { Button } from "../../ui/Button";
@@ -31,8 +32,7 @@ export function useTodaySlots(): Slot[] {
   const nodes = useApp((s) => s.nodes);
   const areaId = useApp((s) => s.areaId);
   return useMemo(() => {
-    const day = isoWeekday(todayIso());
-    return courseSlots(nodes).slots.filter((s) => s.day === day && (areaId === "all" || s.course.area_id === areaId));
+    return slotsOnDate(nodes, todayIso()).filter((s) => areaId === "all" || s.course.area_id === areaId);
   }, [nodes, areaId]);
 }
 
@@ -58,6 +58,7 @@ export function TimetableView() {
         <h1 className="page-title-static">Stundenplan</h1>
         <p className="small muted">Aus Wochentag, Uhrzeit und Ort deiner Veranstaltungen. Am Vorlesungstag: „Mitschrift starten“.</p>
       </header>
+      <CalendarConnect />
       <div className="timetable" style={{ gridTemplateColumns: `48px repeat(${days.length}, minmax(0, 1fr))` }}>
         <div />
         {days.map((d) => (

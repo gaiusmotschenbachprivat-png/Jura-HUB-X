@@ -32,6 +32,7 @@ import { TrashView } from "./features/settings/TrashView";
 import { formatRelative } from "./lib/format";
 import { checkInterruptedRecording, RecordingBar } from "./features/recording/Recording";
 import { CalloutKindsHost, loadCalloutConfig } from "./features/editor/CalloutKinds";
+import { syncCalendarIfDue } from "./features/planning/calendarSync";
 import { applyTopInset } from "./lib/safeArea";
 import { ancestors } from "./lib/tree";
 import { contextFloats, NARROW_WIDTH, useApp, viewId, type View } from "./state/store";
@@ -99,6 +100,15 @@ function Shell() {
   // Angepasste Kästen (Bezeichnungen, Farben, eigene Arten)
   useEffect(() => {
     void loadCalloutConfig().catch(() => {});
+  }, []);
+  // Uni-Kalender (Abo) beim Start aktualisieren, höchstens alle sechs Stunden
+  useEffect(() => {
+    if (api.kind !== "web" || new URLSearchParams(location.search).has("e2e")) return;
+    void syncCalendarIfDue()
+      .then((r) => {
+        if (r && (r.created || r.updated)) useApp.getState().toast(`Stundenplan aus dem Uni-Kalender aktualisiert: ${r.created} neu, ${r.updated} geändert.`, "success");
+      })
+      .catch(() => {});
   }, []);
   // Unterbrochene Vorlesungsaufnahme (App beendet, Absturz)? Einmal beim Start darauf hinweisen.
   useEffect(() => {

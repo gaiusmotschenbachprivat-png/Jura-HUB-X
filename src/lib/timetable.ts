@@ -72,6 +72,48 @@ export function courseSlots(nodes: StudyNode[]): { slots: Slot[]; unscheduled: S
   return { slots, unscheduled };
 }
 
+/** Einzeltermin aus dem Uni-Kalender (an der Veranstaltung gespeichert). */
+export interface CalendarDate {
+  date: string;
+  start: number;
+  end: number;
+  room: string;
+  cancelled?: boolean;
+}
+
+const calendarDates = (n: StudyNode): CalendarDate[] | null => {
+  const t = n.meta?.termine;
+  return Array.isArray(t) && t.length ? (t as CalendarDate[]) : null;
+};
+
+/**
+ * Termine an einem Tag. Hat eine Veranstaltung Einzeltermine aus dem
+ * Uni-Kalender, gelten nur diese (Ausfälle, Verschiebungen, Raumänderungen);
+ * sonst das Wochenmuster aus Wochentag und Uhrzeit.
+ */
+export function slotsOnDate(nodes: StudyNode[], dateIso: string): Slot[] {
+  const day = isoWeekday(dateIso);
+  const out: Slot[] = [];
+  for (const n of nodes) {
+    if (n.kind !== "course" || n.archived_at || n.deleted_at) continue;
+    const room = typeof n.meta?.room === "string" ? n.meta.room : "";
+    const dated = calendarDates(n);
+    if (dated) {
+      for (const t of dated) if (t.date === dateIso && !t.cancelled) out.push({ course: n, day, start: t.start, end: t.end, room: t.room || room });
+      continue;
+    }
+    if (!parseWeekdays(n.meta?.weekday).includes(day)) continue;
+    const time = parseTimeRange(n.meta?.time);
+    if (time) out.push({ course: n, day, ...time, room });
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
+
+/** Abgesagte Termine an einem Tag (aus dem Uni-Kalender). */
+export function cancelledOnDate(nodes: StudyNode[], dateIso: string): { course: StudyNode; start: number }[] {
+  return nodes.flatMap((n) => (n.kind === "course" && !n.deleted_at ? (calendarDates(n) ?? []).filter((t) => t.date === dateIso && t.cancelled).map((t) => ({ course: n, start: t.start })) : []));
+}
+
 /** Wochentag eines ISO-Datums (1 = Montag). */
 export function isoWeekday(iso: string): number {
   const [y, m, d] = iso.split("-").map(Number);

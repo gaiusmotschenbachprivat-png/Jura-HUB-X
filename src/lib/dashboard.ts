@@ -7,7 +7,6 @@ import type { StudyNode } from "../api/types";
 import { explanationsOf } from "./erklaerungen";
 import type { PMNode } from "./pm";
 import type { Slot } from "./timetable";
-import { isoWeekday } from "./timetable";
 
 const minutesOf = (d: Date) => d.getHours() * 60 + d.getMinutes();
 const isoDate = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -17,11 +16,13 @@ export type NowLecture =
   | { phase: "bald"; slot: Slot; minutes: number }
   | null;
 
-/** Vorlesung, die gerade läuft oder in den nächsten 60 Minuten beginnt (heute). */
-export function lectureNow(slots: Slot[], now: Date): NowLecture {
-  const day = isoWeekday(isoDate(now));
+/** Termine eines Tages (Wochenmuster bzw. Einzeltermine aus dem Uni-Kalender, siehe `slotsOnDate`). */
+export type SlotsOn = (dateIso: string) => Slot[];
+
+/** Vorlesung, die gerade läuft oder in den nächsten 60 Minuten beginnt (`today` = heutige Termine). */
+export function lectureNow(today: Slot[], now: Date): NowLecture {
   const m = minutesOf(now);
-  const today = slots.filter((s) => s.day === day).sort((a, b) => a.start - b.start);
+  today = [...today].sort((a, b) => a.start - b.start);
   const running = today.find((s) => s.start - 15 <= m && m < s.end);
   if (running) return m < running.start ? { phase: "bald", slot: running, minutes: running.start - m } : { phase: "laeuft", slot: running, minutes: m - running.start };
   const soon = today.find((s) => s.start > m && s.start - m <= 60);
@@ -29,18 +30,17 @@ export function lectureNow(slots: Slot[], now: Date): NowLecture {
 }
 
 /** Heute schon vorbei. */
-export function lecturesDoneToday(slots: Slot[], now: Date): Slot[] {
-  const day = isoWeekday(isoDate(now));
-  return slots.filter((s) => s.day === day && s.end <= minutesOf(now)).sort((a, b) => a.start - b.start);
+export function lecturesDoneToday(today: Slot[], now: Date): Slot[] {
+  return today.filter((s) => s.end <= minutesOf(now)).sort((a, b) => a.start - b.start);
 }
 
-/** Nächster Termin einer Veranstaltung ab jetzt (innerhalb von 7 Tagen). */
-export function nextOccurrence(slots: Slot[], courseId: string, now: Date): { date: Date; slot: Slot } | null {
-  const mine = slots.filter((s) => s.course.id === courseId);
-  for (let add = 0; add <= 7; add++) {
+/** Nächster Termin einer Veranstaltung ab jetzt (innerhalb von 14 Tagen). */
+export function nextOccurrence(slotsOn: SlotsOn, courseId: string, now: Date): { date: Date; slot: Slot } | null {
+  for (let add = 0; add <= 14; add++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + add);
-    const day = isoWeekday(isoDate(d));
-    const hit = mine.filter((s) => s.day === day && (add > 0 || s.end > minutesOf(now))).sort((a, b) => a.start - b.start)[0];
+    const hit = slotsOn(isoDate(d))
+      .filter((s) => s.course.id === courseId && (add > 0 || s.end > minutesOf(now)))
+      .sort((a, b) => a.start - b.start)[0];
     if (hit) return { date: new Date(d.getFullYear(), d.getMonth(), d.getDate(), Math.floor(hit.start / 60), hit.start % 60), slot: hit };
   }
   return null;

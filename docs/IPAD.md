@@ -327,6 +327,25 @@ und **Uhrzeit** (z. B. „10:15–11:45“) ein. Dann erscheint sie im **Stunden
 und am Vorlesungstag auf der Übersicht unter **„Heute“** – mit **„Mitschrift starten“**
 (Vorlesung mit Nr., Datum und Dozent/in) bzw. „Mitschrift öffnen“, wenn es sie schon gibt.
 
+### Uni-Kalender verbinden
+
+Oben im Stundenplan steht die Karte **„Uni-Kalender“**:
+
+- **Abo-Link:** Den Link aus dem Uni-Portal (beginnt mit `webcal://`) einfügen und **Verbinden**
+  tippen. Eine Vorschau zeigt alle Veranstaltungen mit Wochentag, Uhrzeit, Raum und Zahl der
+  Termine; Einträge wie Sprechstunden lassen sich abwählen. Nach **Übernehmen** legt Studium OS
+  die Veranstaltungen im neuesten Semester an (oder ergänzt vorhandene – Dozent/in usw. bleiben).
+  Beim App-Start wird das Abo höchstens alle sechs Stunden neu geladen; **Jetzt aktualisieren**
+  lädt sofort.
+- **Ausfälle, Verlegungen, Raumänderungen:** Alle Einzeltermine werden gespeichert und haben für
+  „Jetzt“, „Mitschrift starten“ und den nächsten Termin Vorrang vor dem Wochenmuster.
+- **Datenschutz:** Der Link enthält einen persönlichen Schlüssel. Er wird nur verschlüsselt auf
+  diesem Gerät gespeichert (Schlüssel nicht auslesbar) und nur direkt vom Gerät abgerufen –
+  ohne Zwischenserver. **Trennen** löscht ihn.
+- **Wenn der Abruf scheitert:** Manche Uni-Server erlauben den Abruf aus Web-Apps nicht. Dann
+  im Uni-Portal die **Kalenderdatei (.ics)** herunterladen und mit „Kalenderdatei (.ics)
+  importieren“ übernehmen (geht auch in der Desktop-App).
+
 ## Klausurenphase
 
 Unter „Aufgaben & Prüfungen“ hat jeder Prüfungstermin einen Countdown und den Knopf
