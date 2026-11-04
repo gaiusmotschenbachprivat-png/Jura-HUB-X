@@ -179,6 +179,39 @@ try {
   const setting = (await call("settingsAll"))["editor.callouts"];
   check("Anpassung gespeichert", setting?.overrides?.erklaerung?.label === "Erläuterung" && setting?.extra?.[0]?.label === "Klausurtipp", JSON.stringify(setting));
   await shot("kaesten-4-eigene-art");
+
+  // 9. Kleiner Kasten im Kasten: über die Werkzeugleiste und über die Beschriftung
+  await tipp.locator("p").first().click();
+  await page.keyboard.press("End");
+  await page.getByRole("button", { name: /^Kasten:/ }).click();
+  await page.getByRole("menuitem", { name: "Merke darin" }).click();
+  await page.waitForFunction(() => !!window.getSelection()?.anchorNode?.parentElement?.closest(".callout-eigen .callout-merke"), null, { timeout: 3000 }).catch(() => {});
+  await page.keyboard.type("Merksatz im Tipp");
+  const inner = tipp.locator(".callout-merke");
+  await inner.waitFor({ timeout: 4000 });
+  const sizes = await inner.evaluate((el) => [parseFloat(getComputedStyle(el).fontSize), parseFloat(getComputedStyle(el.parentElement.closest(".callout")).fontSize)]);
+  check("Merke-Kasten im Kasten, etwas kleiner", (await inner.innerText()).includes("Merksatz im Tipp") && sizes[0] < sizes[1] && (await tipp.locator(".callout-label").first().textContent()) === "Klausurtipp", JSON.stringify(sizes));
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("Zurück im Tipp");
+  check("Enter auf leerer Zeile: zurück in den äußeren Kasten", !(await inner.innerText()).includes("Zurück im Tipp") && (await tipp.locator(":scope > .callout-body > p", { hasText: "Zurück im Tipp" }).count()) === 1);
+  await tipp.locator(":scope > .callout-label").click();
+  await page.getByRole("menuitem", { name: "Kleinen Kasten darin einfügen …" }).click();
+  await page.getByRole("menuitem", { name: "Beispiel" }).click();
+  await page.waitForFunction(() => !!window.getSelection()?.anchorNode?.parentElement?.closest(".callout-eigen .callout-beispiel"), null, { timeout: 3000 }).catch(() => {});
+  await page.keyboard.type("Beispiel im Tipp");
+  const innerBsp = tipp.locator(".callout-beispiel");
+  await innerBsp.waitFor({ timeout: 4000 });
+  check("Über die Beschriftung: kleiner Beispiel-Kasten am Ende", (await innerBsp.innerText()).includes("Beispiel im Tipp") && (await tipp.locator(".callout").count()) === 2);
+  let saved3 = "";
+  for (let i = 0; i < 30; i++) {
+    saved3 = (await call("noteGet", id)).content_json;
+    if (saved3.includes("Beispiel im Tipp")) break;
+    await sleep(200);
+  }
+  const nested = JSON.parse(saved3).content.find((n) => n.type === "callout" && n.attrs?.label === "Klausurtipp");
+  check("Gespeichert: Kästen im Kasten", nested?.content?.filter((n) => n.type === "callout").map((n) => n.attrs.kind).join() === "merke,beispiel", JSON.stringify(nested?.content?.map((n) => n.type)));
+  await shot("kaesten-5-im-kasten");
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Ablauf ohne Ausnahme", false, e.stack ?? String(e));

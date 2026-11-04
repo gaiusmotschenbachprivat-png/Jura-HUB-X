@@ -294,6 +294,12 @@
 .callout-label:focus-visible { background: color-mix(in srgb, var(--c) 14%, transparent); outline: none; }
 @media (hover: hover) { .callout-label:hover { background: color-mix(in srgb, var(--c) 14%, transparent); outline: none; } }
 .callout-dot { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.callout-dot.is-small { width: 8px; height: 8px; margin: 2px; }
+/* Kasten im Kasten (z. B. Merke im Beispiel): etwas kleiner, eingerückt */
+.prose .callout .callout, .callout .callout { margin: 8px 0 6px; padding: 4px 10px 6px; font-size: 0.93em; border-left-width: 2.5px; }
+.prose .callout .callout.is-joined, .callout .callout.is-joined { margin-top: 0; }
+.prose .callout .callout:has(+ .callout.is-joined), .callout .callout:has(+ .callout.is-joined) { margin-bottom: 0; }
+.callout .callout .callout-label { font-size: 0.68em; }
 /* Ohne Editor (Vorschau, Druck): Beschriftung aus dem Attribut */
 .callout[data-label]:not(:has(> .callout-label))::before {
   content: attr(data-label); display: block; margin-bottom: 2px;

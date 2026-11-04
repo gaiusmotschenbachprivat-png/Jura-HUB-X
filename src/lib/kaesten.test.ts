@@ -142,4 +142,56 @@ describe("Farbige Kästen", () => {
     expect(xml).toContain("ERLÄUTERUNG");
     expect(xml).toContain('w:color="B03A8C"');
   });
+
+  it("Kleiner Kasten im Kasten (Merke im Beispiel)", async () => {
+    const e = editorWith({ type: "doc", content: [box("beispiel", "", P("A kauft bei B ein Fahrrad."))] });
+    // Schreibmarke mitten im Text: neuer leerer Kasten nach dem Absatz, Schreibmarke darin
+    e.commands.setTextSelection(5);
+    expect(e.commands.insertInnerCallout("merke")).toBe(true);
+    e.commands.insertContent("Kaufvertrag ist ein Verpflichtungsgeschäft.");
+    let outer = blocksOf(e)[0]!;
+    expect(outer.type).toBe("callout");
+    expect(outer.attrs?.kind).toBe("beispiel");
+    expect(outer.content!.map((n) => n.type)).toEqual(["paragraph", "callout"]);
+    expect(outer.content![1]!.attrs?.kind).toBe("merke");
+    expect(plainText(outer.content![1]!)).toContain("Verpflichtungsgeschäft");
+    // Art ändern trifft den inneren Kasten, der äußere bleibt
+    expect(e.commands.setCallout("hinweis")).toBe(true);
+    outer = blocksOf(e)[0]!;
+    expect([outer.attrs?.kind, outer.content![1]!.attrs?.kind]).toEqual(["beispiel", "hinweis"]);
+    // Enter auf leerer Zeile im inneren Kasten: zurück in den äußeren
+    e.commands.splitBlock();
+    e.commands.keyboardShortcut("Enter");
+    e.commands.insertContent("Weiter im Beispiel");
+    outer = blocksOf(e)[0]!;
+    expect(outer.content!.map((n) => n.type)).toEqual(["paragraph", "callout", "paragraph"]);
+    expect(plainText(outer.content![2]!)).toBe("Weiter im Beispiel");
+    // markierter Absatz wird in den kleinen Kasten gelegt
+    const f = editorWith({ type: "doc", content: [box("definition", "", P("Besitz ist die tatsächliche Sachherrschaft."), P("Beachte § 854 BGB."))] });
+    f.commands.setTextSelection({ from: 47, to: 52 });
+    expect(f.commands.insertInnerCallout("merke")).toBe(true);
+    const d = blocksOf(f)[0]!;
+    expect(d.content!.map((n) => n.type)).toEqual(["paragraph", "callout"]);
+    expect(plainText(d.content![1]!)).toBe("Beachte § 854 BGB.");
+    // außerhalb eines Kastens nicht möglich
+    const g = editorWith({ type: "doc", content: [P("Text")] });
+    g.commands.setTextSelection(2);
+    expect(g.commands.insertInnerCallout("merke")).toBe(false);
+    // inneren Kasten gezielt auflösen
+    let pos = -1;
+    f.state.doc.descendants((n, p) => {
+      if (n.type.name === "callout" && n.attrs.kind === "merke") pos = p;
+    });
+    expect(f.commands.unsetCallout(pos)).toBe(true);
+    expect(blocksOf(f)[0]!.content!.map((n) => n.type)).toEqual(["paragraph", "paragraph"]);
+    expect(blocksOf(f)[0]!.attrs?.kind).toBe("definition");
+
+    // Exporte
+    const nested: PMNode = { type: "doc", content: [box("beispiel", "", P("A kauft ein Rad."), box("merke", "", P("Merksatz")))] };
+    expect(toMarkdown(nested)).toContain("> > **Merke**");
+    const xml = await (await JSZip.loadAsync(await exportDocx(nested, { title: "T" }))).file("word/document.xml")!.async("string");
+    expect((xml.match(/<w:tbl>/g) ?? []).length).toBe(2);
+    expect(xml).toMatch(/<\/w:tbl><w:p[ />][\s\S]*?<\/w:tc>/);
+    expect(printCss({ title: "T", toc: false, margins: "normal", style: "notiz", pageNumbers: true })).toContain(".callout .callout");
+  });
 });

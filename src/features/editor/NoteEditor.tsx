@@ -420,9 +420,29 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           .focus()
           .run();
       };
+      /** kleinen Kasten am Ende dieses Kastens einfügen, Cursor hinein */
+      const addInner = (kind: string) => {
+        const at = d.pos + node.nodeSize - 1;
+        const { schema } = editor.state;
+        const box = schema.nodes.callout!.create(calloutAttrs(kind), schema.nodes.paragraph!.create());
+        editor
+          .chain()
+          .command(({ tr }) => {
+            tr.insert(at, box);
+            return true;
+          })
+          .setTextSelection(at + 2)
+          .focus()
+          .scrollIntoView()
+          .run();
+      };
       menu.openAt({ clientX: d.x, clientY: d.y }, [
         ...kindItems((kind) => setAttrs(calloutAttrs(kind)), String(node.attrs.kind)),
         { separator: true, label: "" },
+        {
+          label: "Kleinen Kasten darin einfügen …",
+          onSelect: () => setTimeout(() => menu.openAt({ clientX: d.x, clientY: d.y }, [{ header: true, label: "Kleiner Kasten im Kasten" }, ...kindItems(addInner)]), 0),
+        },
         {
           label: "Verbundenen Kasten darunter anfügen …",
           onSelect: () => setTimeout(() => menu.openAt({ clientX: d.x, clientY: d.y }, [{ header: true, label: "Ohne Lücke darunter" }, ...kindItems(addJoined)]), 0),
@@ -437,7 +457,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         { label: node.attrs.title ? "Überschrift ändern …" : "Überschrift ergänzen (z. B. § 433 BGB) …", onSelect: () => setCalloutTitle({ pos: d.pos, title: String(node.attrs.title ?? ""), label: calloutInfo(node.attrs.kind, node.attrs).label }) },
         {
           label: "Kasten auflösen (Text bleibt)",
-          onSelect: () => editor.chain().focus().setTextSelection(d.pos + 2).unsetCallout().run(),
+          onSelect: () => editor.chain().focus().unsetCallout(d.pos).run(),
         },
         { separator: true, label: "" },
         { label: "Kästen anpassen (Bezeichnung, Farbe, eigene Arten) …", onSelect: openCalloutKinds },

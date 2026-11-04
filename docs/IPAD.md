@@ -140,6 +140,12 @@ im Word-Export (hinterlegt, mit Rand) und im Markdown-Export (als Zitatblock mit
   anfügen …“ → Art wählen (z. B. Gesetzestext + Erklärung, Beispiel + Lösung). Der neue Kasten
   schließt ohne Lücke an, jeder in seiner Farbe. „Mit dem Kasten darüber verbinden“ bzw. „Vom
   Kasten darüber lösen“ ändert das nachträglich. Gilt auch für Druck/PDF und Word.
+- **Kasten im Kasten:** Im Kasten (z. B. Beispiel) die Schreibmarke setzen → Kasten-Knopf in
+  der Werkzeugleiste → „Kleiner Kasten hier hinein“, z. B. „Merke darin“. Steht die Schreibmarke
+  mitten im Text, kommt der kleine Kasten unter den Absatz; markierter Text bzw. eine leere Zeile
+  wird zum kleinen Kasten. Alternativ: Beschriftung antippen → „Kleinen Kasten darin einfügen …“
+  (am Ende des Kastens). Innere Kästen sind etwas kleiner; Enter auf leerer Zeile führt zurück in
+  den äußeren Kasten. Gilt auch für Druck/PDF, Word und Markdown.
 - **Kästen anpassen** (im Kasten-Menü der Werkzeugleiste, im Menü der Beschriftung oder unter
   Einstellungen → Farbige Kästen): Bezeichnung und Farbe jeder Art ändern, eigene Arten anlegen
   (z. B. „Klausurtipp“) oder wieder entfernen. Neu mitgeliefert: **Erklärung**. Umbenennen wirkt

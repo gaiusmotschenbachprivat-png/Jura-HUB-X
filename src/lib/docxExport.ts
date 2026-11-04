@@ -324,6 +324,8 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
                     children: [
                       new Paragraph({ children: [new TextRun({ text: calloutLabel(n.attrs?.kind, n.attrs?.title, n.attrs).toUpperCase(), bold: true, size: 16, color })] }),
                       ...(inner.length ? inner : [new Paragraph({ children: [] })]),
+                      // Word verlangt, dass eine Zelle mit einem Absatz endet (Kasten im Kasten)
+                      ...(inner.at(-1) instanceof Table ? [new Paragraph({ children: [] })] : []),
                     ],
                   }),
                 ],

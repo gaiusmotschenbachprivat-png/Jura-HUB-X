@@ -339,6 +339,18 @@ export function Toolbar({
           active={s.callout}
           onClick={(e) =>
             menu.openBelow(e.currentTarget, [
+              // im Kasten: zuerst kleinen Kasten darin anbieten, dann Art ändern
+              ...(s.callout
+                ? [
+                    { header: true, label: "Kleiner Kasten hier hinein" },
+                    ...calloutKinds().map((k) => ({
+                      label: `${k.label} darin`,
+                      icon: <span className="callout-dot is-small" style={{ background: k.color }} />,
+                      onSelect: () => c().insertInnerCallout(k.kind).run(),
+                    })),
+                    { header: true, label: "Art dieses Kastens" },
+                  ]
+                : []),
               ...calloutKinds().map((k) => ({
                 label: k.label,
                 icon: <span className="callout-dot" style={{ background: k.color }} />,
