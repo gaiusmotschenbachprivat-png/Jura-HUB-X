@@ -18,6 +18,7 @@ export type View =
   | { type: "learn"; kind?: CardKind; node?: string; label?: string }
   | { type: "schema-train"; id: string }
   | { type: "planning" }
+  | { type: "explanations" }
   | { type: "timetable" }
   | { type: "assistant" }
   | { type: "settings"; tab?: "allgemein" | "backup" | "daten" | "bereiche" };

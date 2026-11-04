@@ -4,6 +4,8 @@ import {
   AlignCenter,
   Baseline,
   Asterisk,
+  BookText,
+  CornerDownRight,
   PenTool,
   Palette,
   Scale,
@@ -73,6 +75,7 @@ export function Toolbar({
   onSchema,
   onFind,
   onDraw,
+  onJumpLink,
 }: {
   editor: Editor;
   onExternalLink: () => void;
@@ -83,6 +86,8 @@ export function Toolbar({
   onSchema: () => void;
   onFind: () => void;
   onDraw: () => void;
+  /** Sprungmarke zu einer Stelle der Mitschrift */
+  onJumpLink: () => void;
 }) {
   const menu = useMenu();
   const s = useEditorState({
@@ -390,6 +395,15 @@ export function Toolbar({
           }}
         >
           <Palette size={16} />
+        </IconButton>
+        <IconButton label="Sprungmarke: von hier zu einer anderen Stelle der Mitschrift springen" onClick={onJumpLink}>
+          <CornerDownRight size={16} />
+        </IconButton>
+        <IconButton
+          label="Begriff erklären (Eintrag unten in „Begriffe & Erklärungen“)"
+          onClick={() => c().addExplanation().run()}
+        >
+          <BookText size={16} />
         </IconButton>
         <IconButton label={`Suchen und Ersetzen (${MOD}+F)`} onClick={onFind}>
           <Search size={16} />

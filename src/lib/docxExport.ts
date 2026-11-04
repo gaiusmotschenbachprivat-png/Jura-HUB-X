@@ -30,6 +30,7 @@ import {
 } from "docx";
 
 import { calloutInfo, calloutLabel } from "./callouts";
+import { SECTION_LABEL } from "./erklaerungen";
 import { GUTACHTEN_SCHRITTE } from "./gutachtenstil";
 import type { PMMark, PMNode } from "./pm";
 import { fontSizePt, primaryFont } from "./textFormat";
@@ -288,6 +289,18 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
         );
         out.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
         out.push(new Paragraph({ children: [] }));
+        break;
+      }
+      case "erklaerungen": {
+        // Bereich „Begriffe & Erklärungen“: Trennlinie und Überschrift, dann die Einträge
+        out.push(
+          new Paragraph({
+            border: { top: { style: BorderStyle.SINGLE, size: 6, color: "888888", space: 6 } },
+            spacing: { before: 240 },
+            children: [new TextRun({ text: SECTION_LABEL.toUpperCase(), bold: true, size: 18, color: "555555" })],
+          }),
+        );
+        out.push(...blocks(n.content, ctx, depth));
         break;
       }
       case "callout": {

@@ -1,4 +1,5 @@
 import {
+  BookText,
   ArrowUpDown,
   Check,
   Scale,
@@ -242,6 +243,7 @@ export function Sidebar() {
               onClick={() => open({ type: "knowledge-list", kind: k })}
             />
           ))}
+          <NavItem icon={<BookText size={15} />} label="Erklärungen" active={view.type === "explanations"} onClick={() => open({ type: "explanations" })} />
         </div>
         {groups.map(({ area, items }) => (
           <section key={area?.id ?? "tree"} className="side-section">

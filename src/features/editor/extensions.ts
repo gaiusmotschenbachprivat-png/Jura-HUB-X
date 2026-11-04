@@ -16,6 +16,7 @@ import { AssetImage } from "./AssetImage";
 import { Callout } from "./callout";
 import { Footnote, PageBreak, ParagraphFormat } from "./formatting";
 import { GutachtenMark } from "./gutachtenMark";
+import { Anchors, Explanations, JumpLink, TermRef } from "./erklaerungen";
 import { NormLinks } from "./normLinks";
 import { OutlineJump } from "./outlineJump";
 import { SearchReplace } from "./searchReplace";
@@ -66,6 +67,10 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
     NormLinks,
     OutlineJump,
     Callout,
+    Explanations,
+    Anchors,
+    JumpLink,
+    TermRef,
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({ table: { resizable: true, cellMinWidth: 60 } }),

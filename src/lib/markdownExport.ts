@@ -1,5 +1,6 @@
 /** Export einer Notiz als Markdown (CommonMark + GFM-Tabellen und -Checklisten). */
 import { calloutLabel } from "./callouts";
+import { SECTION_LABEL } from "./erklaerungen";
 import type { PMMark, PMNode } from "./pm";
 
 const escapeMd = (s: string) => s.replace(/([\\`*_[\]#|<>])/g, "\\$1");
@@ -42,6 +43,8 @@ function block(n: PMNode, indent = ""): string {
       return "#".repeat(Number(n.attrs?.level ?? 1)) + " " + inline(n.content);
     case "blockquote":
       return (n.content ?? []).map((c) => block(c).split("\n").map((l) => "> " + l).join("\n")).join("\n>\n");
+    case "erklaerungen":
+      return ["---", `**${SECTION_LABEL}**`, ...(n.content ?? []).map((c) => block(c, indent))].join("\n\n");
     case "callout":
       return [`> **${calloutLabel(n.attrs?.kind, n.attrs?.title, n.attrs)}**`, ...(n.content ?? []).map((c) => block(c).split("\n").map((l) => "> " + l).join("\n"))].join("\n>\n");
     case "codeBlock":

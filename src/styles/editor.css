@@ -344,3 +344,26 @@
 .callout-kind-row input:not([type]) { min-width: 140px; }
 .callout-kind-palette { display: flex; gap: 4px; }
 .callout-kind-palette .color-dot { width: 18px; height: 18px; }
+
+/* Sprungmarken */
+.jump-link { color: var(--accent); text-decoration: underline; text-decoration-style: solid; text-underline-offset: 3px; cursor: pointer; border-radius: 3px; }
+@media (hover: hover) { .jump-link:hover { background: var(--accent-soft); } }
+.jump-targets { display: flex; flex-direction: column; gap: 2px; max-height: min(52vh, 460px); overflow: auto; margin-top: 8px; }
+.jump-target { text-align: left; border: 0; background: none; color: inherit; font: inherit; padding: 6px 8px; border-radius: 6px; line-height: 1.35; }
+.jump-target.is-h1, .jump-target.is-h2 { font-weight: 650; }
+.jump-target.is-h3, .jump-target.is-h4 { font-weight: 600; }
+.jump-target:not([class*="is-h"]) { padding-left: 22px; color: var(--text-2); }
+@media (hover: hover) { .jump-target:hover { background: var(--bg-hover); } }
+
+/* Begriffe & Erklärungen */
+.term-ref { text-decoration: underline dotted; text-decoration-color: color-mix(in srgb, var(--text) 55%, transparent); text-underline-offset: 3px; cursor: help; }
+.prose .erklaerungen, .erklaerungen { margin: 28px 0 8px; padding: 10px 14px 6px; border-top: 2px solid var(--line-strong); background: var(--bg-side); border-radius: 0 0 8px 8px; }
+.erklaerungen-head, .erklaerungen[data-label]:not(:has(> .erklaerungen-head))::before {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 4px;
+  font: 650 0.75em/1.4 var(--font-sans, system-ui); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2);
+  -webkit-user-select: none; user-select: none;
+}
+.erklaerungen[data-label]:not(:has(> .erklaerungen-head))::before { content: attr(data-label); display: block; }
+.erklaerungen-hint { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-3); }
+.prose .erklaerungen .erklaerungen-body > p { margin: 4px 0; }
+@media print { .erklaerungen-hint { display: none; } }

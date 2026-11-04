@@ -34,6 +34,8 @@ import { SlidesButton } from "../documents/Slides";
 import { DictationButton, insertTimestamp } from "./Dictation";
 import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes";
 import { OUTLINE_JUMP_EVENT, type OutlineJumpDetail } from "./outlineJump";
+import { JumpTargetDialog } from "./JumpTargetDialog";
+import { findEntry, takeEntryJump } from "./erklaerungen";
 import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
 import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
@@ -129,6 +131,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   /** Lernhilfe mit anderem Stoff als der Mitschrift (z. B. Transkript einer Aufnahme) */
   const [studyText, setStudyText] = useState<string | null>(null);
   const [recDone, setRecDone] = useState<SavedRecording | null>(null);
+  const [jumpPick, setJumpPick] = useState(false);
   const [bibOpen, setBibOpen] = useState(false);
   const [harvest, setHarvest] = useState(false);
   const [reading, setReading] = useState(false);
@@ -375,6 +378,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       timer = setTimeout(() => setBackTo(null), 15000);
     };
     dom.addEventListener(OUTLINE_JUMP_EVENT, onJump);
+    const onMissing = () => useApp.getState().toast("Das Sprungziel gibt es nicht mehr (Stelle gelöscht). Sprungmarke antippen und neu setzen.", "info");
+    dom.addEventListener("studium:jump-missing", onMissing);
     // Beschriftung eines Kastens angetippt: Art ändern, Überschrift, auflösen
     const onCallout = (e: Event) => {
       const d = (e as CustomEvent<CalloutEditDetail>).detail;
@@ -439,9 +444,30 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     return () => {
       clearTimeout(timer);
       dom.removeEventListener(OUTLINE_JUMP_EVENT, onJump);
+      dom.removeEventListener("studium:jump-missing", onMissing);
       dom.removeEventListener(CALLOUT_EDIT_EVENT, onCallout);
     };
   }, [editor]);
+
+  // Aus „Erklärungen“ geöffnet: zum Eintrag springen
+  useEffect(() => {
+    if (!editor) return;
+    const term = takeEntryJump(note.node_id);
+    if (!term) return;
+    const t = setTimeout(() => {
+      const at = findEntry(editor.state.doc, term);
+      if (at === null) return;
+      const node = editor.state.doc.nodeAt(at);
+      editor.chain().setTextSelection(at + (node?.nodeSize ?? 2) - 1).run();
+      const dom = editor.view.nodeDOM(at);
+      if (dom instanceof HTMLElement) {
+        dom.scrollIntoView({ block: "center", behavior: "smooth" });
+        dom.classList.add("outline-flash");
+        setTimeout(() => dom.classList.remove("outline-flash"), 1600);
+      }
+    }, 150);
+    return () => clearTimeout(t);
+  }, [editor, note.node_id]);
 
   // Aufnahme: Zeitmarken in diese Mitschrift; nach dem Speichern Verweis einfügen
   const savedRec = useRecording((s) => s.saved);
@@ -643,6 +669,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         onSchema={() => setSchemaOpen(true)}
         onFind={() => setFindOpen(true)}
         onDraw={() => setDrawing({ pos: null, data: null })}
+        onJumpLink={() => setJumpPick(true)}
       />
       )}
       {findOpen && (
@@ -722,7 +749,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             setBackTo(null);
           }}
         >
-          ↑ Zurück zur Gliederung
+          ↑ {backTo.back ?? "Zurück zur Gliederung"}
         </button>
       )}
       <div className="note-foot xs muted tnum">
@@ -820,6 +847,16 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
                 }
               })
               .catch(reportError);
+          }}
+        />
+      )}
+      {jumpPick && (
+        <JumpTargetDialog
+          editor={editor}
+          onClose={() => setJumpPick(false)}
+          onPick={(pos, label) => {
+            setJumpPick(false);
+            editor.chain().focus().setJumpLink(pos, label).run();
           }}
         />
       )}

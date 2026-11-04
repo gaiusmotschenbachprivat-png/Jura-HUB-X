@@ -305,3 +305,10 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .schema-lib-split { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 @media (min-width: 1000px) { .schema-lib-split.has-preview { grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.2fr); align-items: start; } .schema-lib-split.has-preview .schema-lib-grid { grid-template-columns: 1fr; } }
 .schema-lib-preview { position: sticky; top: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+/* Erklärungen (gesammelt aus allen Mitschriften) */
+.explanations { display: flex; flex-direction: column; gap: 18px; padding-bottom: 40px; }
+.explanations-letter > h2 { margin: 0 0 6px; }
+.explanation { padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); margin-bottom: 8px; }
+.explanation-src { margin-top: 6px; padding-left: 10px; border-left: 2px solid var(--line-strong); }
+.explanation-src p { margin: 0 0 2px; }

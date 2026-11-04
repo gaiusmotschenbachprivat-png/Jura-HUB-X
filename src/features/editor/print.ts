@@ -119,6 +119,9 @@ hr { border: 0; border-top: 0.5pt solid #777; }
 .callout-hinweis { --c: #5b6676; --f: #F1F3F6; }
 .callout-erklaerung { --c: #1f7a85; --f: #EAF4F5; }
 .callout.is-joined { margin-top: 0; }
+.erklaerungen { margin-top: 16pt; padding-top: 6pt; border-top: 1pt solid #888; }
+.erklaerungen::before { content: attr(data-label); display: block; font: bold 9pt sans-serif; letter-spacing: 0.05em; text-transform: uppercase; color: #555; margin-bottom: 4pt; }
+.term-ref { text-decoration: underline dotted; }
 .callout:has(+ .callout.is-joined) { margin-bottom: 0; }
 .pb { break-after: page; height: 0; border: 0; }
 .footnote { float: footnote; font-size: 9pt; line-height: 1.25; text-align: left; font-style: normal; font-weight: normal; }

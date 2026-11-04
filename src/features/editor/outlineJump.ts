@@ -17,6 +17,8 @@ export interface OutlineJumpDetail {
   /** Position des Gliederungspunkts (für „zurück“) */
   from: number;
   label: string;
+  /** Beschriftung des Zurück-Knopfs (Standard: „Zurück zur Gliederung“) */
+  back?: string;
 }
 
 const OUTLINE_HEADING = /^(gliederung|inhalt|inhaltsübersicht|inhaltsverzeichnis|übersicht|themen|agenda)\s*:?$/i;
@@ -153,10 +155,19 @@ function jump(view: EditorView, item: OutlineItem) {
     tr = tr.insert(pos, [heading, schema.nodes.paragraph!.create()]);
     target = pos;
   }
-  const node = tr.doc.nodeAt(target);
-  const inside = Math.min(tr.doc.content.size, target + (node ? node.nodeSize - 1 : 1));
-  tr = tr.setSelection(TextSelection.create(tr.doc, inside)).scrollIntoView();
-  view.dispatch(tr);
+  if (tr.docChanged) view.dispatch(tr);
+  jumpTo(view, target, current.start, current.text);
+}
+
+/**
+ * Zu einem Textblock springen: Schreibmarke ans Ende, kurz hervorheben, und
+ * „zurück zu …“ anbieten (`from` = Stelle, von der aus gesprungen wurde).
+ */
+export function jumpTo(view: EditorView, target: number, from: number, label: string, back?: string) {
+  const doc = view.state.doc;
+  const node = doc.nodeAt(target);
+  const inside = Math.min(doc.content.size, target + (node ? node.nodeSize - 1 : 1));
+  view.dispatch(view.state.tr.setSelection(TextSelection.create(doc, inside)).scrollIntoView());
   view.focus();
   const dom = view.nodeDOM(target);
   if (dom instanceof HTMLElement) {
@@ -164,7 +175,7 @@ function jump(view: EditorView, item: OutlineItem) {
     dom.classList.add("outline-flash");
     setTimeout(() => dom.classList.remove("outline-flash"), 1600);
   }
-  view.dom.dispatchEvent(new CustomEvent<OutlineJumpDetail>(OUTLINE_JUMP_EVENT, { bubbles: true, detail: { from: current.start, label: current.text } }));
+  view.dom.dispatchEvent(new CustomEvent<OutlineJumpDetail>(OUTLINE_JUMP_EVENT, { bubbles: true, detail: { from, label, back } }));
 }
 
 export const outlineKey = new PluginKey<DecorationSet>("outlineJump");

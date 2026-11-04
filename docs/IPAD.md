@@ -140,6 +140,24 @@ Nach einem Sprung bringt **„↑ Zurück zur Gliederung“** wieder nach oben. 
 Anzeige, sie werden nicht gespeichert, gedruckt oder exportiert. Im Lesemodus springt ↓ ebenfalls,
 angelegt wird dort nichts.
 
+- **Sprungmarken an jeder Stelle:** Text markieren (oder einfach an eine Stelle tippen) →
+  Werkzeugleiste „Sprungmarke“ (abknickender Pfeil) → Ziel wählen: jede Überschrift oder jeder
+  Absatz der Mitschrift, mit Suche. Der Text wird zur Sprungmarke (ohne Auswahl wird
+  „→ Ziel“ eingefügt). Antippen springt dorthin, „Zurück zur Sprungmarke“ wieder zurück. Ist
+  das Ziel gelöscht, meldet die App das.
+
+## Begriffe & Erklärungen
+
+- **Begriff erklären:** Wort oder Ausdruck im Text markieren → Werkzeugleiste „Begriff
+  erklären“ (Buch-Symbol). Am Ende der Mitschrift entsteht der abgetrennte Bereich
+  **„Begriffe & Erklärungen“** mit dem Begriff fett; die Schreibmarke steht dahinter für die
+  Erklärung. Im Text ist der Begriff gepunktet unterstrichen – Antippen springt zur Erklärung.
+- Im Bereich kannst du auch frei schreiben: je Absatz ein Eintrag, „**Begriff** – Erklärung“
+  oder „Begriff: Erklärung“.
+- **Wissen → Erklärungen** sammelt automatisch die Einträge aus allen Mitschriften (A–Z, Suche,
+  Studienbereich oben links beachten). „aus „…““ öffnet die Mitschrift am Eintrag;
+  **Ins Glossar** übernimmt einen Begriff als Definition ins Glossar.
+
 ## Zwei Mitschriften nebeneinander
 
 Spalten-Symbol im Notizkopf („Zweite Notiz daneben öffnen“) → Notiz wählen (zuerst die anderen
