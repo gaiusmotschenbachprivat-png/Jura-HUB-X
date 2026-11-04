@@ -193,6 +193,11 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
         reviews_7d: reviews.filter((r) => r.at >= new Date(Date.now() - 7 * 864e5).toISOString()).length,
         retention_30d: month.length ? month.filter((r) => r.rating > 1).length / month.length : null,
         due_7d: all.filter((c) => !c.suspended && c.due <= wk).length,
+        reviews_by_day: Array.from({ length: 7 }, (_, i) => {
+          const from = new Date(Date.parse(dayStart) - (6 - i) * 864e5).toISOString();
+          const to = new Date(Date.parse(dayStart) - (5 - i) * 864e5).toISOString();
+          return reviews.filter((r) => r.at >= from && r.at < to).length;
+        }),
       };
     },
 

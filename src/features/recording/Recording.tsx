@@ -91,7 +91,7 @@ async function askRecover(p: RecordingMeta): Promise<boolean> {
   return drop;
 }
 
-async function startRecording(noteId: string, noteTitle: string) {
+export async function startRecording(noteId: string, noteTitle: string) {
   const toast = useApp.getState().toast;
   if (api.kind !== "web") return toast("Aufnahmen gibt es derzeit in der iPad-/Browser-Version.", "info");
   if (!canRecord()) return toast("Dieser Browser kann keine Tonaufnahmen machen.", "error");

@@ -46,16 +46,21 @@ const DAYS = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freita
 const todayName = DAYS[now.getDay()];
 const otherName = DAYS[(now.getDay() + 2) % 7];
 const examDate = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 20));
+// Vorlesung „läuft gerade“: seit 10 Minuten, noch 80 Minuten (über Mitternacht hinweg nicht möglich)
+const hm = (min) => `${Math.floor(min / 60)}:${String(min % 60).padStart(2, "0")}`;
+const nowMin = now.getHours() * 60 + now.getMinutes();
+const LIVE = nowMin >= 15 && nowMin <= 22 * 60 + 30;
+const lectureTime = LIVE ? `${hm(nowMin - 10)}–${hm(nowMin + 80)}` : "10:15–11:45";
 
 try {
   await page.goto(`http://127.0.0.1:${PORT}/?e2e`);
   await page.getByRole("button", { name: "Loslegen" }).click({ timeout: 20000 });
   await page.locator(".area-tab").first().waitFor({ timeout: 20000 });
   await page.evaluate(
-    async ({ todayName, otherName, examDate }) => {
+    async ({ todayName, otherName, examDate, lectureTime }) => {
       const api = window.__STUDIUM_API__;
       const area = (await api.areasList())[0];
-      const c = await api.nodeCreate({ area_id: area.id, parent_id: null, kind: "course", title: "BGB AT", meta: { weekday: todayName, time: "10:15–11:45", room: "H 1", lecturer: "Prof. Muster" } });
+      const c = await api.nodeCreate({ area_id: area.id, parent_id: null, kind: "course", title: "BGB AT", meta: { weekday: todayName, time: lectureTime, room: "H 1", lecturer: "Prof. Muster" } });
       await api.nodeCreate({ area_id: area.id, parent_id: null, kind: "course", title: "Staatsrecht", meta: { weekday: otherName.slice(0, 2), time: "14–16" } });
       await api.nodeCreate({ area_id: area.id, parent_id: null, kind: "course", title: "Ohne Termin" });
       for (const [nr, d] of [[1, "2026-10-01"], [2, "2026-10-08"], [3, "2026-10-12"]])
@@ -63,24 +68,27 @@ try {
       await api.nodeCreate({ area_id: area.id, parent_id: c.id, kind: "note", title: "Fall 1", meta: { noteType: "fall" } });
       await api.examSave(null, { title: "Klausur BGB AT", date: examDate, node_id: c.id, kind: "Klausur" });
     },
-    { todayName, otherName, examDate },
+    { todayName, otherName, examDate, lectureTime },
   );
   await page.reload();
   await page.locator(".area-tab").first().waitFor({ timeout: 20000 });
 
-  // 1. Übersicht: Heute + Klausurenphase
-  const today = page.locator(".today-card", { hasText: "Heute" });
-  await today.waitFor({ timeout: 10000 });
-  check("Übersicht zeigt heutige Veranstaltung mit Zeit und Raum", /10:15–11:45[\s\S]*BGB AT[\s\S]*H 1/.test(await today.innerText()), await today.innerText());
-  const phase = page.locator(".today-card", { hasText: "Klausurenphase" });
-  check("Klausurenphase: Klausur in 20 Tagen", (await phase.innerText()).includes("Klausur BGB AT") && (await phase.innerText()).includes("in 20 Tagen"));
-  await today.getByRole("button", { name: "Mitschrift starten" }).click();
-  check("Mitschrift-Dialog: Vorlesung Nr. 4, heutiges Datum, Dozent", (await page.getByLabel("Nummer der Vorlesung").inputValue()) === "4" && (await page.getByLabel("Datum der Vorlesung").inputValue()) === TODAY);
-  await page.getByRole("button", { name: "Anlegen" }).click();
-  await page.locator(".ProseMirror").waitFor();
-  await page.getByRole("button", { name: "Übersicht" }).click();
-  await today.getByRole("button", { name: "Mitschrift öffnen" }).waitFor({ timeout: 5000 });
-  check("Danach „Mitschrift öffnen“ statt neu anlegen", true);
+  // 1. Übersicht: „Jetzt“ (Vorlesung läuft) + nächste Prüfung
+  const exam = page.locator(".exam-widget");
+  await exam.waitFor({ timeout: 10000 });
+  check("Nächste Prüfung: Klausur in 20 Tagen", (await exam.innerText()).includes("Klausur BGB AT") && (await exam.innerText()).includes("in 20 Tagen"), await exam.innerText());
+  const nowCard = page.locator(".now-card");
+  if (LIVE) {
+    await nowCard.getByText("läuft seit").waitFor({ timeout: 10000 });
+    check("Jetzt: BGB AT läuft, mit Raum", /BGB AT[\s\S]*läuft seit 10 Min[\s\S]*H 1/.test(await nowCard.innerText()), await nowCard.innerText());
+    await nowCard.getByRole("button", { name: "Mitschrift starten" }).click();
+    await page.locator(".ProseMirror").waitFor();
+    const made = await api(async () => (await window.__STUDIUM_API__.nodesList(null)).find((n) => n.title === "4. Vorlesung"));
+    check("Ein Tipp: Vorlesung Nr. 4 mit heutigem Datum und Dozent angelegt", made?.meta?.number === 4 && made?.meta?.date === TODAY && made?.meta?.lecturer === "Prof. Muster", JSON.stringify(made?.meta));
+    await page.getByRole("button", { name: "Übersicht" }).click();
+    await nowCard.getByRole("button", { name: "Mitschrift öffnen" }).waitFor({ timeout: 5000 });
+    check("Danach „Mitschrift öffnen“ statt neu anlegen", true);
+  } else console.log("HINWEIS  Uhrzeit nahe Mitternacht – „Jetzt“-Prüfung übersprungen");
   await shot("etappe2-uebersicht");
 
   // 2. Stundenplan

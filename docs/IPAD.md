@@ -50,6 +50,27 @@ dann im Vollbild und funktioniert offline.
   Seitenzahlen, Korrekturrand 7 cm und „Hausarbeit“-Satz (Times 12 pt, 1,5-zeilig, Blocksatz).
   Auf dem iPad im Druckdialog auf Teilen tippen → „In Dateien sichern“ ergibt ein PDF.
 
+## Übersicht
+
+Die Startseite zeigt in Kacheln, was gerade ansteht (Reihenfolge und Auswahl über **Anpassen**):
+
+- **Jetzt:** Läuft laut Stundenplan gleich oder gerade eine Vorlesung, legt **Mitschrift starten**
+  mit einem Tipp die nächste nummerierte Vorlesung an (Datum, Dozent/in), öffnet die zuletzt
+  benutzten Folien daneben und startet auf Wunsch die Aufnahme. Nach den Vorlesungen des Tages:
+  Lernskript oder Karteikarten für noch nicht Nachbereitetes. Sonst **Weiterschreiben** an der
+  Stelle, an der du zuletzt geschrieben hast. Darunter der nächste Termin.
+- **Heute lernen:** fällige Karten, Tagesziel (einstellbar), Wiederholungen der letzten 7 Tage,
+  Tage in Folge; **15 Minuten lernen** startet eine Lernrunde mit Restzeit (ohne fällige Karten
+  werden die nächsten vorgezogen).
+- **Nächste Prüfung:** Countdown, Lernplan-Fortschritt, wie viele Karten des Fachs sitzen.
+- **Offene Enden:** Vorlesungen der letzten drei Wochen ohne Lernskript oder Karten, Aufnahmen
+  ohne Lernskript, nicht abgehakte **Offene Fragen** aus allen Mitschriften, Begriffe ohne
+  Erklärung, offene Aufgaben, Übungsblätter ohne Lösung, Termine ohne Mitschrift – jeweils mit
+  Ein-Tipp-Aktion.
+- **Veranstaltungen:** je Veranstaltung nächster Termin und wie viele Vorlesungen nachbereitet sind.
+- **Gedanke festhalten:** Text eintippen → landet mit Uhrzeit in der Notiz „Eingang“.
+- **Zuletzt bearbeitet**; das Backup steht als Zeile unten (Warnung oben, wenn es fällig ist).
+
 ## Gutachten nach Rechtsgebiet, farbiger Gutachtenstil
 
 - **Neu … → Fall / Gutachten**: Wähle das Rechtsgebiet – jedes hat seinen eigenen Aufbau.

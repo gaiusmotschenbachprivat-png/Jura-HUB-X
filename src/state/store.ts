@@ -15,7 +15,7 @@ export type View =
   | { type: "knowledge"; id: string }
   | { type: "knowledge-list"; kind: KnowledgeType }
   | { type: "cards"; id?: string }
-  | { type: "learn"; kind?: CardKind; node?: string; label?: string }
+  | { type: "learn"; kind?: CardKind; node?: string; label?: string; minutes?: number }
   | { type: "schema-train"; id: string }
   | { type: "planning" }
   | { type: "explanations" }

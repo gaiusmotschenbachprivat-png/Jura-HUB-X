@@ -278,6 +278,19 @@ export function stats(db: Db, areaId: string | null, dayStart: string): CardStat
     return [Number(r?.n ?? 0), Number(r?.ok ?? 0)];
   };
   const [n, ok] = lq(monthAgo);
+  // Wiederholungen je Kalendertag (ab dem übergebenen Tagesbeginn rückwärts)
+  const startMs = Date.parse(start);
+  const reviewsByDay = Array.from({ length: 7 }, (_, i) => {
+    const from = iso(startMs - (6 - i) * DAY_MS);
+    const to = iso(startMs - (5 - i) * DAY_MS);
+    return Number(
+      db.value(
+        `SELECT COUNT(*) FROM review_log l JOIN flashcards c ON c.id = l.card_id
+         WHERE l.reviewed_at >= ?2 AND l.reviewed_at < ?3 AND (?1 IS NULL OR c.area_id = ?1 OR c.area_id IS NULL)`,
+        [areaId, from, to],
+      ) ?? 0,
+    );
+  });
   return {
     total: q("?2 = ?2", ""),
     due_now: q("suspended = 0 AND due <= ?2", ts),
@@ -290,6 +303,7 @@ export function stats(db: Db, areaId: string | null, dayStart: string): CardStat
     reviews_7d: lq(weekAgo)[0],
     retention_30d: n > 0 ? ok / n : null,
     due_7d: q("suspended = 0 AND due <= ?2", weekAhead),
+    reviews_by_day: reviewsByDay,
   };
 }
 

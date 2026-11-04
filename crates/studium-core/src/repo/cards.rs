@@ -319,6 +319,8 @@ pub struct CardStats {
     pub retention_30d: Option<f64>,
     /// fällig in den nächsten 7 Tagen (inkl. heute)
     pub due_7d: i64,
+    /// Wiederholungen je Tag, die letzten 7 Tage (letzter Eintrag = heute)
+    pub reviews_by_day: Vec<i64>,
 }
 
 /// `day_start` / `day_end`: lokaler Tag als RFC-3339-Zeitpunkte (von der Oberfläche).
@@ -368,6 +370,19 @@ pub fn stats(conn: &Connection, area_id: Option<&str>, day_start: &str) -> Resul
     s.reviews_7d = lq(&week_ago)?.0;
     let (n, ok) = lq(&month_ago)?;
     s.retention_30d = if n > 0 { Some(ok as f64 / n as f64) } else { None };
+    let fmt = |t: time::OffsetDateTime| t.to_offset(time::UtcOffset::UTC).format(&time::format_description::well_known::Rfc3339).unwrap_or(ts.clone());
+    s.reviews_by_day = (0..7i64)
+        .map(|i| -> Result<i64> {
+            let from = fmt(start - time::Duration::days(6 - i));
+            let to = fmt(start - time::Duration::days(5 - i));
+            Ok(conn.query_row(
+                "SELECT COUNT(*) FROM review_log l JOIN flashcards c ON c.id = l.card_id
+                 WHERE l.reviewed_at >= ?2 AND l.reviewed_at < ?3 AND (?1 IS NULL OR c.area_id = ?1 OR c.area_id IS NULL)",
+                params![area_id, from, to],
+                |r| r.get(0),
+            )?)
+        })
+        .collect::<Result<Vec<_>>>()?;
     Ok(s)
 }
 

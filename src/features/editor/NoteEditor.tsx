@@ -36,6 +36,7 @@ import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes"
 import { OUTLINE_JUMP_EVENT, type OutlineJumpDetail } from "./outlineJump";
 import { JumpTargetDialog } from "./JumpTargetDialog";
 import { findEntry, takeEntryJump } from "./erklaerungen";
+import { savedCursor, saveCursor, takeRequest } from "./pending";
 import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
 import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
@@ -233,6 +234,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     },
     onSelectionUpdate({ editor: e }) {
       setLinkHref(e.isActive("link") ? ((e.getAttributes("link").href as string) ?? null) : null);
+      // letzte Schreibposition merken („Weiter bei …“ auf der Übersicht)
+      if (e.isFocused) saveCursor(note.node_id, e.state.selection.from);
     },
   });
 
@@ -448,6 +451,22 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       dom.removeEventListener(CALLOUT_EDIT_EVENT, onCallout);
     };
   }, [editor]);
+
+  // Von der Übersicht geöffnet: an der letzten Stelle weiterschreiben bzw. Lernhilfe öffnen
+  useEffect(() => {
+    if (!editor) return;
+    const r = takeRequest(note.node_id);
+    if (!r) return;
+    if (r.kind === "study") {
+      setStudy(r.mode);
+      return;
+    }
+    const t = setTimeout(() => {
+      const pos = Math.min(savedCursor(note.node_id) ?? editor.state.doc.content.size, editor.state.doc.content.size);
+      editor.chain().focus().setTextSelection(pos).scrollIntoView().run();
+    }, 150);
+    return () => clearTimeout(t);
+  }, [editor, note.node_id]);
 
   // Aus „Erklärungen“ geöffnet: zum Eintrag springen
   useEffect(() => {

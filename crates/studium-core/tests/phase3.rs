@@ -166,6 +166,12 @@ fn flashcards_review_and_stats() {
     let st = cards::stats(&f.conn, Some(&f.jura), "2000-01-01T00:00:00Z").unwrap();
     assert_eq!(st.total, 1);
     assert_eq!(st.reviewed_today, 2);
+    // Wiederholungen je Tag: mit dem echten Tagesbeginn liegen beide heute
+    let today = time::OffsetDateTime::now_utc().replace_time(time::Time::MIDNIGHT).format(&time::format_description::well_known::Rfc3339).unwrap();
+    let by_day = cards::stats(&f.conn, Some(&f.jura), &today).unwrap().reviews_by_day;
+    assert_eq!(by_day.len(), 7);
+    assert_eq!(by_day[6], 2);
+    assert!(by_day[..6].iter().all(|n| *n == 0));
     assert_eq!(st.difficult, 1);
     assert_eq!(st.retention_30d, Some(0.5));
     let other = cards::stats(&f.conn, Some(&f.wiwi), "2000-01-01T00:00:00Z").unwrap();

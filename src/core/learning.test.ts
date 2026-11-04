@@ -222,6 +222,13 @@ describe("Karteikarten (phase3.rs)", () => {
     const st = cards.stats(db, jura, "2000-01-01T00:00:00Z");
     expect(st.total).toBe(1);
     expect(st.reviewed_today).toBe(2);
+    // Wiederholungen je Tag: mit dem echten Tagesbeginn liegen beide heute
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const byDay = cards.stats(db, jura, today.toISOString()).reviews_by_day;
+    expect(byDay).toHaveLength(7);
+    expect(byDay[6]).toBe(2);
+    expect(byDay.slice(0, 6).every((n) => n === 0)).toBe(true);
     expect(st.difficult).toBe(1);
     expect(st.retention_30d).toBe(0.5);
     expect(cards.stats(db, wiwi, "2000-01-01T00:00:00Z").total).toBe(0);

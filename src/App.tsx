@@ -287,7 +287,7 @@ function ViewSwitch({ view }: { view: View }) {
     case "cards":
       return <CardsView focusId={view.id} />;
     case "learn":
-      return <LearnSession kind={view.kind} node={view.node} label={view.label} />;
+      return <LearnSession key={view.minutes ? "timed" : "free"} kind={view.kind} node={view.node} label={view.label} minutes={view.minutes} />;
     case "schema-train":
       return <SchemaTrainer id={view.id} />;
     case "planning":

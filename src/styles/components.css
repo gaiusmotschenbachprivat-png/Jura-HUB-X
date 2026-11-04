@@ -281,3 +281,52 @@ input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px;
 .bridge-steps > li { display: flex; flex-direction: column; gap: 6px; }
 .bridge-steps textarea { width: 100%; }
 .bridge a.btn { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+
+/* Übersicht (neu): Kacheln im Raster, „Jetzt“ und „Gedanke festhalten“ über die volle Breite */
+.dash2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
+.dash-slot { min-width: 0; display: flex; flex-direction: column; }
+.dash-slot > .card { flex: 1; }
+.dash-jetzt, .dash-notiz, .dash-offen { grid-column: 1 / -1; }
+@media (max-width: 900px) { .dash2 { grid-template-columns: minmax(0, 1fr); } }
+.dash-card { display: flex; flex-direction: column; gap: 10px; }
+.dash-card h3 { margin: 0; }
+.dash-slot.is-editing { outline: 2px dashed var(--line-strong); outline-offset: 4px; border-radius: var(--r-lg); }
+.dash-edit { gap: 4px; padding: 0 4px 6px; }
+.dash-backup { margin-top: 18px; gap: 6px; }
+
+.now-card { border-left: 4px solid var(--accent); }
+.now-title { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; line-height: 1.4; }
+.now-title svg { color: var(--accent); flex: none; }
+.now-row { display: flex; align-items: center; gap: 8px; }
+.link-like { border: 0; background: none; padding: 4px 0; text-align: left; color: inherit; font: inherit; }
+.now-next { margin: 0; }
+
+.learn-today { display: flex; align-items: center; gap: 16px; }
+.learn-today .big { font-size: 2rem; font-weight: 700; line-height: 1; }
+.goal-bar { display: block; height: 10px; border-radius: 99px; background: var(--bg-sunken, var(--bg-side)); overflow: hidden; margin: 4px 0; }
+.goal-bar.thin { height: 5px; }
+.goal-bar > span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; height: 64px; align-items: end; }
+.week-bar { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; }
+.week-bar > span { width: 70%; max-width: 26px; border-radius: 4px 4px 2px 2px; background: var(--line-strong); }
+.week-bar > span.is-some { background: color-mix(in srgb, var(--accent) 55%, var(--bg)); }
+.week-bar > span.is-goal { background: var(--accent); }
+.week-bar em { font-style: normal; color: var(--text-3); }
+
+.exam-big { display: flex; align-items: center; gap: 12px; }
+.exam-widget .exam-days { font-size: 2rem; }
+.exam-rest { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.open-list { display: flex; flex-direction: column; }
+.open-row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+.open-row:last-of-type { border-bottom: 0; }
+.open-icon { color: var(--text-3); display: inline-flex; flex: none; }
+.open-text { border: 0; background: none; text-align: left; color: inherit; font: inherit; padding: 6px 0; min-width: 0; line-height: 1.35; }
+.open-actions { gap: 4px; flex: none; }
+
+.course-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+.course-tile { text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); box-shadow: inset 3px 0 0 var(--area, var(--accent)); display: flex; flex-direction: column; gap: 3px; min-width: 0; color: inherit; font: inherit; }
+@media (hover: hover) { .course-tile:hover, .open-text:hover, .link-like:hover { color: var(--accent); } }
+
+.quick-note form { gap: 8px; }
+.quick-note input { min-width: 0; }

@@ -447,6 +447,8 @@ export interface CardStats {
   reviews_7d: number;
   retention_30d: number | null;
   due_7d: number;
+  /** Wiederholungen je Tag, die letzten 7 Tage (letzter Eintrag = heute) */
+  reviews_by_day: number[];
 }
 
 export type TaskKind = "aufgabe" | "frage" | "lernziel";

@@ -22,7 +22,7 @@ const KIND_FILTERS: { kind: CardKind | undefined; label: string }[] = [
 ];
 
 /** `kind`/`node`: nur Karten einer Art bzw. eines Fachs (Veranstaltung mit allem darunter). */
-export function LearnSession({ kind: initialKind, node, label }: { kind?: CardKind; node?: string; label?: string } = {}) {
+export function LearnSession({ kind: initialKind, node, label, minutes }: { kind?: CardKind; node?: string; label?: string; /** Lernrunde mit Zeitlimit */ minutes?: number } = {}) {
   const areaId = useApp((s) => s.areaId);
   const nodes = useApp((s) => s.nodes);
   const [kind, setKind] = useState<CardKind | undefined>(initialKind);
@@ -50,7 +50,21 @@ export function LearnSession({ kind: initialKind, node, label }: { kind?: CardKi
   }, [areaId, onlyDifficult, ahead, kind, scope, node]);
   useEffect(load, [load]);
 
-  const card = queue?.[0];
+  // Lernrunde mit Zeitlimit: Restzeit, und ohne fällige Karten automatisch vorziehen
+  const [endAt] = useState(() => (minutes ? Date.now() + minutes * 60000 : null));
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (!endAt) return;
+    const t = setInterval(() => tick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [endAt]);
+  const left = endAt ? Math.max(0, endAt - Date.now()) : null;
+  const timeUp = left === 0;
+  useEffect(() => {
+    if (minutes && queue && !queue.length && !ahead && !done) setAhead(true);
+  }, [minutes, queue, ahead, done]);
+
+  const card = timeUp ? undefined : queue?.[0];
   const preview = useMemo(() => (card ? previewIntervals(card) : null), [card]);
 
   const rate = useCallback(
@@ -121,12 +135,13 @@ export function LearnSession({ kind: initialKind, node, label }: { kind?: CardKi
         </div>
         <div className="xs muted tnum">
           {done} erledigt · {queue.length} offen
+          {left !== null && ` · noch ${Math.floor(left / 60000)}:${String(Math.floor((left % 60000) / 1000)).padStart(2, "0")} Min.`}
         </div>
       </header>
 
       {!card ? (
         <EmptyState
-          title={done ? "Für heute geschafft" : "Keine Karten fällig"}
+          title={timeUp ? `${minutes} Minuten geschafft` : done ? "Für heute geschafft" : "Keine Karten fällig"}
           action={
             <div className="row" style={{ justifyContent: "center" }}>
               <Button onClick={() => open({ type: "cards" })}>Zu den Karteikarten</Button>
