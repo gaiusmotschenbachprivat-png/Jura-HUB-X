@@ -185,6 +185,24 @@ angelegt wird dort nichts.
   Studienbereich oben links beachten). „aus „…““ öffnet die Mitschrift am Eintrag;
   **Ins Glossar** übernimmt einen Begriff als Definition ins Glossar.
 
+## Zeitstrahl zum Sachverhalt
+
+Werkzeugleiste → **Zeitstrahl** (senkrechter Strich mit Punkt):
+
+- **Zeitstrahl aus dem Abschnitt „Sachverhalt“** (oder **aus dem markierten Text**): Jeder Satz mit
+  einer Zeitangabe wird ein Eintrag – Datum („1.3.2024“, „3. März 2024“, „Mitte April“), Uhrzeit
+  („14 Uhr“) oder relative Angabe („zwei Tage später“, „am nächsten Morgen“, „drei Wochen nach der
+  Übergabe“). Sätze ohne Zeitangabe gehören zum Eintrag davor, der Anfang wird „Ausgangslage“.
+  Erkannt wird nach festen Regeln (keine KI) – bitte prüfen und ergänzen.
+- **Leeren Zeitstrahl einfügen** und selbst schreiben: links der Zeitpunkt, rechts was passiert.
+  **Enter** springt vom Zeitpunkt zum Text und vom Text zum nächsten Eintrag; Enter auf einem leeren
+  letzten Eintrag verlässt den Zeitstrahl. **Tab** / **⇧Tab** wechseln die Felder.
+- **Nach Zeit sortieren** (oben im Zeitstrahl oder im Menü) ordnet chronologisch. Fehlende Teile
+  werden aus dem Eintrag davor ergänzt („5.3.“ bekommt das Jahr, „14 Uhr“ den Tag); Einträge ohne
+  Datum („danach“) bleiben bei ihrem Vorgänger. Steht etwas außer der Reihe, zeigt der Zeitstrahl
+  „Reihenfolge nicht chronologisch“.
+- **+ Eintrag** fügt am Ende an. Druck/PDF, Word und Markdown enthalten den Zeitstrahl.
+
 ## Zum Wiederholen (Sammlung)
 
 Alles, was du in Mitschriften unter der Überschrift **„Zum Wiederholen“** (auch „Wiederholen“

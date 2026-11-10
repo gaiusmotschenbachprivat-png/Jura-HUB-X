@@ -105,6 +105,8 @@ jobs:
         run: node tests/e2e-web/kalender-e2e.mjs
       - name: Zum Wiederholen (Sammlung aus allen Mitschriften)
         run: node tests/e2e-web/wiederholen-e2e.mjs
+      - name: Zeitstrahl zum Sachverhalt
+        run: node tests/e2e-web/zeitstrahl-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -21,6 +21,7 @@ import { NormLinks } from "./normLinks";
 import { OutlineJump } from "./outlineJump";
 import { SearchReplace } from "./searchReplace";
 import { Flash } from "./flash";
+import { Timeline, TimelineEntry, TimelineText, TimelineTime } from "./timeline";
 
 /** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
 export const MATH_EDIT_EVENT = "studium:edit-math";
@@ -66,6 +67,10 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
     PageBreak,
     SearchReplace,
     Flash,
+    Timeline,
+    TimelineEntry,
+    TimelineTime,
+    TimelineText,
     NormLinks,
     OutlineJump,
     Callout,

@@ -28,6 +28,8 @@ export const BLOCK_TYPES = new Set([
   "horizontalRule",
   "image",
   "pageBreak",
+  "timelineTime",
+  "timelineText",
 ]);
 
 /** Alle Bildquellen (`studium:asset/…`) eines Dokuments. */

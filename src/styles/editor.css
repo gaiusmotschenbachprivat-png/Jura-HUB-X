@@ -373,3 +373,26 @@
 .erklaerungen-hint { font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--text-3); }
 .prose .erklaerungen .erklaerungen-body > p { margin: 4px 0; }
 @media print { .erklaerungen-hint { display: none; } }
+
+/* Zeitstrahl (features/editor/timeline.ts) */
+.prose .timeline, .timeline { --tl: var(--accent, #2f5fb3); margin: 14px 0; padding: 8px 12px 10px; border: 1px solid var(--line, #dde2ea); border-radius: 10px; background: var(--bg, #fff); }
+.tl-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; -webkit-user-select: none; user-select: none; }
+.tl-label { font: 650 0.72em/1.4 var(--font-sans, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tl); flex: 1; }
+.tl-hint { font: 0.75em var(--font-sans, system-ui); color: #b4471f; }
+.tl-btn { border: 1px solid var(--line-strong, #c9d0db); border-radius: 6px; background: var(--bg, #fff); color: var(--text-2, #555); font: 500 0.75em var(--font-sans, system-ui); padding: 3px 8px; min-height: 28px; cursor: pointer; }
+@media (hover: hover) { .tl-btn:hover { background: var(--bg-hover, #f2f4f7); } }
+.timeline.is-unsorted .tl-btn:first-of-type { border-color: #b4471f; color: #b4471f; }
+.tl-body { position: relative; }
+.tl-entry { position: relative; display: grid; grid-template-columns: minmax(7.5em, 10em) 1fr; gap: 2px 14px; padding: 4px 0 6px 22px; }
+/* Linie und Punkt */
+.tl-entry::before { content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 2px; background: color-mix(in srgb, var(--tl) 30%, transparent); }
+.tl-entry:first-child::before { top: 0.85em; }
+.tl-entry:last-child::before { bottom: calc(100% - 0.85em); }
+.tl-entry::after { content: ""; position: absolute; left: 2px; top: calc(0.45em + 4px); width: 10px; height: 10px; border-radius: 50%; background: var(--bg, #fff); border: 2px solid var(--tl); box-sizing: border-box; }
+.prose .tl-time { font-weight: 650; color: var(--tl); font-variant-numeric: tabular-nums; min-height: 1.4em; }
+.prose .tl-text { min-height: 1.4em; }
+.tl-time:has(> br.ProseMirror-trailingBreak:only-child)::before { content: "Zeitpunkt"; color: var(--text-3, #9aa3b2); font-weight: 400; pointer-events: none; position: absolute; }
+.tl-text:has(> br.ProseMirror-trailingBreak:only-child)::before { content: "Was passiert? (Wer handelt, was genau)"; color: var(--text-3, #9aa3b2); pointer-events: none; position: absolute; }
+@media (max-width: 600px) { .tl-entry { grid-template-columns: 1fr; } }
+/* ohne Editor (Vorschau): Beschriftung aus dem Attribut */
+.timeline[data-label]:not(:has(> .tl-head))::before { content: attr(data-label); display: block; margin-bottom: 4px; font: 650 0.72em/1.4 var(--font-sans, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tl); }

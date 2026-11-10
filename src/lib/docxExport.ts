@@ -291,6 +291,39 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
         out.push(new Paragraph({ children: [] }));
         break;
       }
+      case "timeline": {
+        // Zeitstrahl: Beschriftung, dann zweispaltige Tabelle (Zeitpunkt | Geschehen) mit Linie links
+        const none = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+        const line = { style: BorderStyle.SINGLE, size: 12, color: "B9C7E3" };
+        out.push(new Paragraph({ children: [new TextRun({ text: "ZEITSTRAHL", bold: true, size: 16, color: "2F5FB3" })] }));
+        out.push(
+          new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: { top: none, bottom: none, left: none, right: none, insideHorizontal: none, insideVertical: none },
+            rows: (n.content ?? []).map(
+              (e) =>
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    new TableCell({
+                      width: { size: 25, type: WidthType.PERCENTAGE },
+                      borders: { left: line, top: none, bottom: none, right: none },
+                      margins: { left: 140, right: 140, top: 40, bottom: 60 },
+                      children: [new Paragraph({ children: [new TextRun({ text: (e.content?.[0]?.content ?? []).map((t) => t.text ?? "").join(""), bold: true, color: "2F5FB3" })] })],
+                    }),
+                    new TableCell({
+                      borders: { left: none, top: none, bottom: none, right: none },
+                      margins: { left: 80, right: 80, top: 40, bottom: 60 },
+                      children: [new Paragraph({ children: runs(e.content?.[1]?.content, ctx) })],
+                    }),
+                  ],
+                }),
+            ),
+          }),
+        );
+        out.push(new Paragraph({ children: [] }));
+        break;
+      }
       case "erklaerungen": {
         // Bereich „Begriffe & Erklärungen“: Trennlinie und Überschrift, dann die Einträge
         out.push(

@@ -41,6 +41,7 @@ import {
   Undo2,
   Waypoints,
   PanelTop,
+  GitCommitHorizontal,
 } from "lucide-react";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -50,6 +51,7 @@ import { fontSizePt } from "../../lib/textFormat";
 import { IconButton } from "../../ui/Button";
 import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
+import { useApp } from "../../state/store";
 import { BAUSTEIN_GRUPPEN, BAUSTEINE } from "../../lib/gutachten";
 import { GUTACHTEN_SCHRITTE, legendeNode } from "../../lib/gutachtenstil";
 import { calloutKinds } from "../../lib/callouts";
@@ -90,6 +92,9 @@ export function Toolbar({
   onJumpLink: () => void;
 }) {
   const menu = useMenu();
+  const toast = useApp((st) => st.toast);
+  const onTimelineHint = () =>
+    toast("Keine Zeitangaben gefunden. Text des Sachverhalts markieren (oder einen Abschnitt „Sachverhalt“ anlegen) – oder einen leeren Zeitstrahl einfügen.", "info");
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -124,6 +129,8 @@ export function Toolbar({
       callout: e.isActive("callout"),
       codeBlock: e.isActive("codeBlock"),
       table: e.isActive("table"),
+      timeline: e.isActive("timeline"),
+      hasSelection: !e.state.selection.empty,
       align: (["center", "right", "justify"] as const).find((a) => e.isActive({ textAlign: a })) ?? "left",
       canUndo: e.can().undo(),
       canRedo: e.can().redo(),
@@ -422,6 +429,30 @@ export function Toolbar({
         </IconButton>
         <IconButton label="Fußnote einfügen (⌥+⌘+F)" onClick={onFootnote}>
           <Asterisk size={16} />
+        </IconButton>
+        <IconButton
+          label="Zeitstrahl (Daten und Handlungen aus dem Sachverhalt)"
+          active={s.timeline}
+          onClick={(e) =>
+            menu.openBelow(e.currentTarget, [
+              ...(s.timeline
+                ? [
+                    { label: "Eintrag hinzufügen", onSelect: () => c().addTimelineEntry().run() },
+                    { label: "Nach Zeit sortieren", onSelect: () => c().sortTimeline().run() },
+                    { separator: true, label: "" },
+                  ]
+                : []),
+              {
+                label: s.hasSelection ? "Zeitstrahl aus dem markierten Text" : "Zeitstrahl aus dem Abschnitt „Sachverhalt“",
+                onSelect: () => {
+                  if (!c().timelineFromText().run()) onTimelineHint();
+                },
+              },
+              { label: "Leeren Zeitstrahl einfügen", onSelect: () => c().insertTimeline().run() },
+            ])
+          }
+        >
+          <GitCommitHorizontal size={16} style={{ transform: "rotate(90deg)" }} />
         </IconButton>
         <IconButton label="Tabelle" active={s.table} onClick={(e) => tableMenu(e.currentTarget)}>
           <TableIcon size={16} />
