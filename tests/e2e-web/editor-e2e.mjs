@@ -79,7 +79,7 @@ try {
   await tb.getByRole("button", { name: "Schriftfarbe" }).click();
   await page.locator(".color-pop").getByRole("button", { name: "Farbe #c00000" }).click();
   await tb.getByRole("button", { name: /^Hervorheben/ }).click();
-  await page.locator(".color-pop").getByRole("button", { name: "Farbe #c5f5c1" }).click();
+  await page.locator(".color-pop").getByRole("button", { name: "Grün (#c5f5c1)" }).click();
   let h = await html();
   check("Schriftart Times New Roman", h.includes("Times New Roman"), h.slice(0, 300));
   check("Schriftgröße 14 pt", h.includes("font-size: 14pt"));

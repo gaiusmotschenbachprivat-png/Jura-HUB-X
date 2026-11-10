@@ -496,6 +496,13 @@ Die Werkzeugleiste über jeder Notiz bietet:
 | Absatz | linksbündig, zentriert, rechtsbündig, Blocksatz, **Zeilenabstand** (1,0–3,0), **Einzug** vergrößern/verkleinern (auch Tab / ⇧Tab), Aufzählung, Nummerierung, Checkliste, Zitat, Textblock |
 | Einfügen | **Fußnote** (⌥⌘F), Tabelle, Bild, Formel, Trennlinie, **Seitenumbruch** (⌘Enter), Weblink, interne Verknüpfung |
 
+**Markerfarben anpassen:** Hervorheben-Knopf → **„Farben anpassen …“**. Jede Farbe lässt sich
+ändern und mit einer Bedeutung versehen (z. B. Gelb = „Definition“, Rot = „Problem“); bis zu drei
+eigene Farben kommen dazu. Schon markierte Stellen ändern sich mit. Die Bedeutung erscheint in der
+Farbauswahl und beim Antippen einer Markierung. Im **dunklen Modus** werden Markierungen
+abgedunkelt und mit einem farbigen Strich unterlegt, damit die Schrift gut lesbar bleibt; Druck
+und Word-Export verwenden die hellen Farben.
+
 **Fußnoten** werden automatisch nummeriert und unter dem Text aufgelistet. Antippen einer
 Fußnotenzahl (im Text oder in der Liste) öffnet sie zum Bearbeiten oder Entfernen. Die Suche
 findet auch Text in Fußnoten.

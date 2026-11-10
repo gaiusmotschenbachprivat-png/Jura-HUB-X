@@ -106,7 +106,12 @@
 .mono { font-family: var(--font-mono) !important; font-size: var(--fs-sm); }
 
 /* Word-ähnliche Formatierung */
-.prose mark[data-color] { color: #1d2433; }
+/* Textmarker (lib/highlights): Farbe über --hl; im dunklen Modus abgedunkelt mit kräftigem Strich, Schrift bleibt hell */
+.prose mark[data-color], .hl-sample mark[data-color] { background: var(--hl, #fff59d); color: #1d2433; border-radius: 2px; padding: 0 1px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .prose mark[data-color], :root:not([data-theme="light"]) .hl-sample mark[data-color] { background: color-mix(in srgb, var(--hl, #fff59d) 32%, var(--bg, #17191e)); color: inherit; box-shadow: inset 0 -0.16em 0 var(--hl, #fff59d); }
+}
+:root[data-theme="dark"] .prose mark[data-color], :root[data-theme="dark"] .hl-sample mark[data-color] { background: color-mix(in srgb, var(--hl, #fff59d) 32%, var(--bg, #17191e)); color: inherit; box-shadow: inset 0 -0.16em 0 var(--hl, #fff59d); }
 .prose sup, .prose sub { font-size: 0.72em; line-height: 0; }
 .prose { counter-reset: footnote; }
 .prose .footnote-ref { counter-increment: footnote; cursor: pointer; color: var(--accent); font-weight: 600; padding: 0 1px; user-select: none; }
@@ -396,3 +401,4 @@
 @media (max-width: 600px) { .tl-entry { grid-template-columns: 1fr; } }
 /* ohne Editor (Vorschau): Beschriftung aus dem Attribut */
 .timeline[data-label]:not(:has(> .tl-head))::before { content: attr(data-label); display: block; margin-bottom: 4px; font: 650 0.72em/1.4 var(--font-sans, system-ui); letter-spacing: 0.04em; text-transform: uppercase; color: var(--tl); }
+.hl-row .hl-sample { flex: none; font-size: 0.9em; }

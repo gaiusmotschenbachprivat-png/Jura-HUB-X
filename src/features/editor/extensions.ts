@@ -1,5 +1,4 @@
 import type { Extensions } from "@tiptap/core";
-import Highlight from "@tiptap/extension-highlight";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import { TableKit } from "@tiptap/extension-table";
@@ -21,6 +20,7 @@ import { NormLinks } from "./normLinks";
 import { OutlineJump } from "./outlineJump";
 import { SearchReplace } from "./searchReplace";
 import { Flash } from "./flash";
+import { Marker } from "./marker";
 import { Timeline, TimelineEntry, TimelineText, TimelineTime } from "./timeline";
 
 /** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
@@ -54,7 +54,7 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
         HTMLAttributes: { rel: "noopener noreferrer nofollow", target: null },
       },
     }),
-    Highlight.configure({ multicolor: true }),
+    Marker,
     GutachtenMark,
     TextStyle,
     FontFamily,

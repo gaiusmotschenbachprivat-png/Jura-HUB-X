@@ -312,5 +312,4 @@ export const TEXT_COLORS = [
   "#00b050", "#0070c0", "#002060", "#7030a0", "#c55a11", "#2e75b6",
 ];
 
-export const HIGHLIGHT_COLORS = ["#fff59d", "#c5f5c1", "#b3ecff", "#ffc9de", "#ffd8a8", "#d7c8ff", "#e2e5ea"];
 

@@ -30,6 +30,7 @@ import {
 } from "docx";
 
 import { calloutInfo, calloutLabel } from "./callouts";
+import { highlightColor } from "./highlights";
 import { SECTION_LABEL } from "./erklaerungen";
 import { GUTACHTEN_SCHRITTE } from "./gutachtenstil";
 import type { PMMark, PMNode } from "./pm";
@@ -114,7 +115,7 @@ function runs(nodes: PMNode[] | undefined, ctx: Ctx, extra: { italics?: boolean;
     const pt = typeof size === "string" ? fontSizePt(size) : null;
     const gsStep = markAttr(m, "gutachten", "step");
     const gsColor = hasMark(m, "gutachten") ? GUTACHTEN_SCHRITTE.find((s) => s.id === gsStep)?.color : undefined;
-    const hl = hasMark(m, "highlight") ? (hexColor(markAttr(m, "highlight", "color")) ?? "FFF59D") : gsColor ? tint(gsColor) : undefined;
+    const hl = hasMark(m, "highlight") ? (hexColor(highlightColor(markAttr(m, "highlight", "color"), markAttr(m, "highlight", "slot"))) ?? "FFF59D") : gsColor ? tint(gsColor) : undefined;
     const run = new TextRun({
       text: n.text ?? "",
       bold: hasMark(m, "bold"),

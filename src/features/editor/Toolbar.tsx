@@ -56,7 +56,9 @@ import { BAUSTEIN_GRUPPEN, BAUSTEINE } from "../../lib/gutachten";
 import { GUTACHTEN_SCHRITTE, legendeNode } from "../../lib/gutachtenstil";
 import { calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
-import { FONT_SIZES, FONTS, HIGHLIGHT_COLORS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
+import { FONT_SIZES, FONTS, indent, LINE_HEIGHTS, TEXT_COLORS } from "./formatting";
+import { highlightColor, highlightSlots, HIGHLIGHTS_CHANGED } from "../../lib/highlights";
+import { openHighlightColors } from "./HighlightColors";
 import { insertWithPlaceholder } from "./Gutachten";
 
 const STYLES = [
@@ -93,6 +95,13 @@ export function Toolbar({
 }) {
   const menu = useMenu();
   const toast = useApp((st) => st.toast);
+  // Markerfarben (anpassbar): bei Änderung neu zeichnen
+  const [slots, setSlots] = useState(highlightSlots);
+  useEffect(() => {
+    const on = () => setSlots(highlightSlots());
+    window.addEventListener(HIGHLIGHTS_CHANGED, on);
+    return () => window.removeEventListener(HIGHLIGHTS_CHANGED, on);
+  }, []);
   const onTimelineHint = () =>
     toast("Keine Zeitangaben gefunden. Text des Sachverhalts markieren (oder einen Abschnitt „Sachverhalt“ anlegen) – oder einen leeren Zeitstrahl einfügen.", "info");
   const s = useEditorState({
@@ -113,7 +122,7 @@ export function Toolbar({
       underline: e.isActive("underline"),
       strike: e.isActive("strike"),
       highlight: e.isActive("highlight"),
-      highlightColor: (e.getAttributes("highlight").color as string | undefined) ?? null,
+      highlightColor: e.isActive("highlight") ? highlightColor(e.getAttributes("highlight").color, e.getAttributes("highlight").slot) : null,
       sup: e.isActive("superscript"),
       sub: e.isActive("subscript"),
       font: (e.getAttributes("textStyle").fontFamily as string | undefined) ?? "",
@@ -282,12 +291,17 @@ export function Toolbar({
         <ColorButton
           label={`Hervorheben (${MOD}+⇧+H)`}
           icon={<Highlighter size={16} />}
-          current={s.highlight ? (s.highlightColor ?? HIGHLIGHT_COLORS[0]!) : null}
+          current={s.highlight ? s.highlightColor : null}
           active={s.highlight}
-          colors={HIGHLIGHT_COLORS}
+          colors={slots.map((x) => x.color)}
+          titles={slots.map((x) => x.label)}
           clearLabel="Keine Hervorhebung"
-          onPick={(col) => c().setHighlight({ color: col }).run()}
+          onPick={(col) => {
+            const slot = slots.find((x) => x.color === col)?.slot ?? null;
+            c().setHighlight({ color: col, slot } as { color: string }).run();
+          }}
           onClear={() => c().unsetHighlight().run()}
+          extra={{ label: "Farben anpassen …", onSelect: openHighlightColors }}
         />
         <IconButton label="Code / Fachbegriff" active={s.code} onClick={() => c().toggleCode().run()}>
           <Code size={16} />
@@ -490,19 +504,24 @@ function ColorButton({
   icon,
   current,
   colors,
+  titles,
   clearLabel,
   active,
   onPick,
   onClear,
+  extra,
 }: {
   label: string;
   icon: ReactNode;
   current: string | null;
   colors: string[];
+  /** Bezeichnungen der Farben (Tooltip und Bedienhilfe) */
+  titles?: string[];
   clearLabel: string;
   active?: boolean;
   onPick: (color: string) => void;
   onClear: () => void;
+  extra?: { label: string; onSelect: () => void };
 }) {
   const btn = useRef<HTMLButtonElement>(null);
   const pop = useRef<HTMLDivElement>(null);
@@ -551,14 +570,14 @@ function ColorButton({
         createPortal(
           <div ref={pop} className="color-pop" style={{ left: pos.x, top: pos.y }} role="dialog" aria-label={label}>
             <div className="color-grid">
-              {colors.map((col) => (
+              {colors.map((col, i) => (
                 <button
-                  key={col}
+                  key={`${col}-${i}`}
                   type="button"
-                  className={`swatch ${current?.toLowerCase() === col ? "is-active" : ""}`}
+                  className={`swatch ${current?.toLowerCase() === col.toLowerCase() ? "is-active" : ""}`}
                   style={{ background: col }}
-                  aria-label={`Farbe ${col}`}
-                  title={col}
+                  aria-label={titles?.[i] ? `${titles[i]} (${col})` : `Farbe ${col}`}
+                  title={titles?.[i] ?? col}
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => choose(() => onPick(col))}
                 />
@@ -567,6 +586,11 @@ function ColorButton({
             <button type="button" className="menu-item" onMouseDown={(e) => e.preventDefault()} onClick={() => choose(onClear)}>
               {clearLabel}
             </button>
+            {extra && (
+              <button type="button" className="menu-item" onMouseDown={(e) => e.preventDefault()} onClick={() => choose(extra.onSelect)}>
+                {extra.label}
+              </button>
+            )}
           </div>,
           document.body,
         )}

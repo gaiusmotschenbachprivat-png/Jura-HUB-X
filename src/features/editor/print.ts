@@ -103,6 +103,7 @@ table { border-collapse: collapse; width: 100%; margin: 6pt 0; break-inside: avo
 td, th { border: 0.5pt solid #777; padding: 3pt 5pt; vertical-align: top; }
 img { max-width: 100%; }
 mark { padding: 0 1pt; }
+mark[data-color] { background: var(--hl, #fff59d) !important; color: inherit !important; box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 ul[data-type="taskList"] { list-style: none; padding-left: 0.2em; }
 ul[data-type="taskList"] li { display: flex; gap: 0.4em; }
 ul[data-type="taskList"] li > label input { margin: 0.25em 0 0; }
