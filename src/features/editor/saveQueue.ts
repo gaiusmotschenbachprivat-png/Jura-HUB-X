@@ -33,6 +33,7 @@ async function run(p: Pending): Promise<void> {
       try {
         const res = await api.noteSave(p.id, json, text);
         p.failed = false;
+        savedStamps.set(p.id, res.updated_at);
         st.setSaveStatus("saved", null, res.updated_at, p.id);
       } catch (e) {
         p.failed = true;
@@ -46,6 +47,14 @@ async function run(p: Pending): Promise<void> {
   } finally {
     p.running = null;
   }
+}
+
+/** Zeitpunkt der letzten Speicherung je Mitschrift in dieser Sitzung (die Knotenliste kennt ihn erst nach dem Neuladen). */
+const savedStamps = new Map<string, string>();
+/** aktueller Stand einer Mitschrift: Knotendatum oder letzte Speicherung, je nachdem was neuer ist */
+export function noteStamp(n: { id: string; updated_at: string }): string {
+  const s = savedStamps.get(n.id);
+  return s && s > n.updated_at ? s : n.updated_at;
 }
 
 /** Meldet eine Änderung; gespeichert wird nach kurzer Pause. */

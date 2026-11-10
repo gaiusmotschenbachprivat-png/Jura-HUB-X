@@ -19,6 +19,7 @@ export type View =
   | { type: "schema-train"; id: string }
   | { type: "planning" }
   | { type: "explanations" }
+  | { type: "review" }
   | { type: "timetable" }
   | { type: "assistant" }
   | { type: "settings"; tab?: "allgemein" | "backup" | "daten" | "bereiche" };

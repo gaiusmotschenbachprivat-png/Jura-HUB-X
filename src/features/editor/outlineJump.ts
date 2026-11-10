@@ -8,6 +8,7 @@
  * Nur Anzeige: Der gespeicherte Text bleibt unverändert, bis eine Stelle angelegt wird.
  */
 import { Extension } from "@tiptap/core";
+import { flashAt } from "./flash";
 import type { Node as PMNode } from "@tiptap/pm/model";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
 import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
@@ -172,9 +173,8 @@ export function jumpTo(view: EditorView, target: number, from: number, label: st
   const dom = view.nodeDOM(target);
   if (dom instanceof HTMLElement) {
     dom.scrollIntoView?.({ block: "start", behavior: "smooth" });
-    dom.classList.add("outline-flash");
-    setTimeout(() => dom.classList.remove("outline-flash"), 1600);
   }
+  flashAt(view, target);
   view.dom.dispatchEvent(new CustomEvent<OutlineJumpDetail>(OUTLINE_JUMP_EVENT, { bubbles: true, detail: { from, label, back } }));
 }
 

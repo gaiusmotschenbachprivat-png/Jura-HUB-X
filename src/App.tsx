@@ -13,6 +13,7 @@ import { PlanningView } from "./features/planning/PlanningView";
 import { TimetableView } from "./features/planning/TimetableView";
 import { GlossaryView } from "./features/knowledge/GlossaryView";
 import { ExplanationsView } from "./features/knowledge/ExplanationsView";
+import { ReviewView } from "./features/knowledge/ReviewView";
 import { AssistantView } from "./features/assistant/AssistantView";
 import { AssistantFab } from "./features/assistant/AssistantPanel";
 import { Dashboard } from "./features/dashboard/Dashboard";
@@ -304,6 +305,8 @@ function ViewSwitch({ view }: { view: View }) {
       return <PlanningView />;
     case "explanations":
       return <ExplanationsView />;
+    case "review":
+      return <ReviewView />;
     case "timetable":
       return <TimetableView />;
     case "assistant":

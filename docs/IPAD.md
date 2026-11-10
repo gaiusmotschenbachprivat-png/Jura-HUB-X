@@ -185,6 +185,23 @@ angelegt wird dort nichts.
   Studienbereich oben links beachten). „aus „…““ öffnet die Mitschrift am Eintrag;
   **Ins Glossar** übernimmt einen Begriff als Definition ins Glossar.
 
+## Zum Wiederholen (Sammlung)
+
+Alles, was du in Mitschriften unter der Überschrift **„Zum Wiederholen“** (auch „Wiederholen“
+oder „Wiederholung“) notierst, sammelt die App automatisch an einem Ort: Seitenleiste →
+**Wissen → Zum Wiederholen**.
+
+- Jeder Listenpunkt (bzw. Absatz) ist ein Eintrag; Unterpunkte erscheinen eingerückt. Der
+  Bereich reicht bis zur nächsten gleich hohen Überschrift. Platzhalter der Vorlage („…“) zählen
+  nicht.
+- Geordnet nach **Veranstaltung**, darin nach **Vorlesung (Datum)**. Suche, Filter nach
+  Veranstaltung und Zähler „x Einträge aus y Mitschriften“.
+- Schreibst du den Bereich als **Checkliste**, gelten abgehakte Punkte als erledigt
+  („Erledigte ausblenden“).
+- Eintrag antippen: Die Mitschrift öffnet sich an genau dieser Stelle (kurz hervorgehoben).
+- **Liste kopieren** legt die angezeigten Einträge als Text in die Zwischenablage.
+- Neue Einträge schreibst du einfach in der Mitschrift dazu – die Sammlung ist sofort aktuell.
+
 ## Zwei Mitschriften nebeneinander
 
 Spalten-Symbol im Notizkopf („Zweite Notiz daneben öffnen“) → Notiz wählen (zuerst die anderen

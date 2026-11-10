@@ -12,6 +12,7 @@ import { hasLernskript, missingExplanations, openQuestionsOf } from "../../lib/d
 import { noteTypeOf, todayIso } from "../../lib/noteTypes";
 import { parseDoc, type PMNode } from "../../lib/pm";
 import { useApp } from "../../state/store";
+import { noteStamp } from "../editor/saveQueue";
 
 export interface NoteScan {
   updated_at: string;
@@ -35,13 +36,13 @@ function scanDoc(doc: PMNode, updated_at: string): NoteScan {
 
 /** Mitschriften durchsehen (nur neue oder geänderte werden gelesen). */
 async function scanNotes(notes: StudyNode[]): Promise<Map<string, NoteScan>> {
-  const todo = notes.filter((n) => scanCache.get(n.id)?.updated_at !== n.updated_at);
+  const todo = notes.filter((n) => scanCache.get(n.id)?.updated_at !== noteStamp(n));
   for (let i = 0; i < todo.length; i += 20) {
     await Promise.all(
       todo.slice(i, i + 20).map(async (n) => {
         try {
           const note = await api.noteGet(n.id);
-          scanCache.set(n.id, scanDoc(parseDoc(note.content_json), n.updated_at));
+          scanCache.set(n.id, scanDoc(parseDoc(note.content_json), noteStamp(n)));
         } catch {
           /* gelöscht o. Ä. – überspringen */
         }

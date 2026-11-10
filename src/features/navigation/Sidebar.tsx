@@ -1,5 +1,6 @@
 import {
   BookText,
+  Repeat,
   ArrowUpDown,
   Check,
   Scale,
@@ -244,6 +245,7 @@ export function Sidebar() {
             />
           ))}
           <NavItem icon={<BookText size={15} />} label="Erklärungen" active={view.type === "explanations"} onClick={() => open({ type: "explanations" })} />
+          <NavItem icon={<Repeat size={15} />} label="Zum Wiederholen" active={view.type === "review"} onClick={() => open({ type: "review" })} />
         </div>
         {groups.map(({ area, items }) => (
           <section key={area?.id ?? "tree"} className="side-section">

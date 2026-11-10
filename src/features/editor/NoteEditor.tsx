@@ -36,7 +36,9 @@ import { SecondNoteButton, swapNotes, useSplitLayoutToggle } from "./SplitNotes"
 import { OUTLINE_JUMP_EVENT, type OutlineJumpDetail } from "./outlineJump";
 import { JumpTargetDialog } from "./JumpTargetDialog";
 import { findEntry, takeEntryJump } from "./erklaerungen";
-import { savedCursor, saveCursor, takeRequest } from "./pending";
+import { requestTextJump, savedCursor, saveCursor, takeRequest, takeTextJump } from "./pending";
+import { findTextBlock } from "./textJump";
+import { flashAt } from "./flash";
 import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
 import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
@@ -488,6 +490,31 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     return () => clearTimeout(t);
   }, [editor, note.node_id]);
 
+  // Aus „Zum Wiederholen“ geöffnet: zur Textstelle springen
+  useEffect(() => {
+    if (!editor) return;
+    const text = takeTextJump(note.node_id);
+    if (!text) return;
+    let done = false;
+    const t = setTimeout(() => {
+      done = true;
+      const at = findTextBlock(editor.state.doc, text);
+      if (at === null) return;
+      const node = editor.state.doc.nodeAt(at);
+      editor.chain().setTextSelection(at + (node?.nodeSize ?? 2) - 1).run();
+      const dom = editor.view.nodeDOM(at);
+      if (dom instanceof HTMLElement) {
+        dom.scrollIntoView({ block: "center", behavior: "smooth" });
+      }
+      flashAt(editor.view, at);
+    }, 150);
+    return () => {
+      clearTimeout(t);
+      // Editor wurde vorher ersetzt (z. B. neu angelegt): Auftrag für den nächsten aufheben
+      if (!done) requestTextJump(note.node_id, text);
+    };
+  }, [editor, note.node_id]);
+
   // Aus „Erklärungen“ geöffnet: zum Eintrag springen
   useEffect(() => {
     if (!editor) return;
@@ -501,9 +528,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       const dom = editor.view.nodeDOM(at);
       if (dom instanceof HTMLElement) {
         dom.scrollIntoView({ block: "center", behavior: "smooth" });
-        dom.classList.add("outline-flash");
-        setTimeout(() => dom.classList.remove("outline-flash"), 1600);
       }
+      flashAt(editor.view, at);
     }, 150);
     return () => clearTimeout(t);
   }, [editor, note.node_id]);

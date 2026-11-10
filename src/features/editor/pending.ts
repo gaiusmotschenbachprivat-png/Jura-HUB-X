@@ -15,6 +15,18 @@ export const requestResume = (noteId: string) => {
 export const requestStudy = (noteId: string, mode: StudyMode) => {
   pending = { noteId, kind: "study", mode };
 };
+/** aus einer Sammlung (z. B. „Zum Wiederholen“): Mitschrift an dieser Textstelle öffnen */
+let pendingText: { noteId: string; text: string } | null = null;
+export const requestTextJump = (noteId: string, text: string) => {
+  pendingText = { noteId, text };
+};
+export function takeTextJump(noteId: string): string | null {
+  if (pendingText?.noteId !== noteId) return null;
+  const t = pendingText.text;
+  pendingText = null;
+  return t;
+}
+
 export function takeRequest(noteId: string): Request | null {
   if (pending?.noteId !== noteId) return null;
   const r = pending;

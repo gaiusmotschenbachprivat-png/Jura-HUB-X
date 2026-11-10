@@ -317,3 +317,16 @@ textarea.mono { width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, m
 .calendar-connect { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
 .calendar-connect h3 { margin: 0; }
 .calendar-connect input[type="url"] { min-width: 220px; }
+
+/* Zum Wiederholen (Sammlung aus allen Mitschriften) */
+.review-filters { gap: 8px; margin-top: 8px; align-items: center; }
+.review-list { display: flex; flex-direction: column; gap: 18px; padding-bottom: 40px; }
+.review-course > h2 { margin: 0 0 6px; }
+.review-note { padding: 8px 12px 10px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--bg); margin-bottom: 8px; }
+.review-note-title { display: block; text-align: left; margin-bottom: 4px; color: var(--text); text-decoration: none; }
+.review-items { list-style: none; margin: 0; padding: 0; }
+.review-item-btn { display: flex; align-items: flex-start; gap: 8px; width: 100%; min-height: 34px; padding: 6px 6px; border: 0; border-radius: 6px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+@media (hover: hover) { .review-item-btn:hover { background: var(--bg-hover); } }
+.review-dot { flex: none; width: 6px; height: 6px; margin-top: 0.55em; border-radius: 50%; background: var(--accent); }
+.review-check { flex: none; margin-top: 0.25em; color: var(--text-3, var(--text-2)); }
+.review-item.is-done .review-item-btn { color: var(--text-2); text-decoration: line-through; text-decoration-color: var(--line-strong); }
