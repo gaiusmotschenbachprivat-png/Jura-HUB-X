@@ -1,15 +1,16 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
 import type { CaseData, Knowledge, KnowledgeType } from "../../api/types";
 import { formatRelative } from "../../lib/format";
 import { areaById, reportError, useApp } from "../../state/store";
-import { Button } from "../../ui/Button";
+import { Button, IconButton } from "../../ui/Button";
 import { AreaDot, EmptyState } from "../../ui/misc";
 import { KindIcon } from "../navigation/icons";
 import { CASE_STATUS, DIFFICULTY, TYPE_HINT, TYPE_LABEL, TYPE_LABEL_PLURAL, UNVERIFIED } from "./meta";
 import { SchemaLibrary } from "./SchemaLibrary";
+import { trashKnowledge } from "./trash";
 import { gebietOf } from "../../lib/schemaLibrary";
 
 export async function createKnowledge(type: KnowledgeType, opts: { title?: string; nodeId?: string | null; data?: Record<string, unknown> } = {}) {
@@ -121,7 +122,14 @@ export function KnowledgeList({ type }: { type: KnowledgeType }) {
             const area = areaById(k.area_id);
             const cd = k.data as unknown as CaseData;
             return (
-              <button key={k.id} className="list-row" onClick={() => open({ type: "knowledge", id: k.id }, { title: k.title })}>
+              <div
+                key={k.id}
+                className="list-row"
+                role="button"
+                tabIndex={0}
+                onClick={() => open({ type: "knowledge", id: k.id }, { title: k.title })}
+                onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && open({ type: "knowledge", id: k.id }, { title: k.title })}
+              >
                 <KindIcon kind={k.type} />
                 <span className="grow" style={{ minWidth: 0 }}>
                   <span className="ellipsis block">{k.title}</span>
@@ -136,7 +144,16 @@ export function KnowledgeList({ type }: { type: KnowledgeType }) {
                 {k.field && <span className="pill">{k.field}</span>}
                 {area && <AreaDot color={area.color} size={6} />}
                 <span className="xs muted doc-date">{formatRelative(k.updated_at)}</span>
-              </button>
+                <IconButton
+                  label={`„${k.title}“ löschen`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void trashKnowledge(k);
+                  }}
+                >
+                  <Trash2 size={14} />
+                </IconButton>
+              </div>
             );
           })}
         </div>

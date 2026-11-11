@@ -274,6 +274,8 @@ und Begriffe. Seitenleiste → **Karteikarten** mit den Reitern **Stapel · Durc
   Tageslimits. Stapel antippen → Stapelansicht mit **Jetzt lernen**, Unterstapeln und Kennzahlen
   (neu · jung · ausgereift · ausgesetzt · zurückgestellt). „…“ am Stapel: Lernen, Benutzerdefiniert
   lernen, Karten durchsuchen, Optionen, Unterstapel anlegen, Umbenennen/Verschieben, Löschen.
+  **Löschen** gibt es auch in der Stapelansicht; die Karten kommen in den Papierkorb (auch beim
+  Stapel „Standard“ mit den Karten ohne eigenen Stapel).
   Karten aus Mitschriften ohne Stapel lassen sich mit einem Tipp **nach Veranstaltung
   einsortieren**.
 - **Hinzufügen**: Kartentyp wählen – **Definition** (Begriff → Definition, mit Norm/Fundstelle,
@@ -322,6 +324,8 @@ und Begriffe. Seitenleiste → **Karteikarten** mit den Reitern **Stapel · Durc
   „**Anfechtung** ist …“) oder die mit „Definition:“ beginnen. Auswahl prüfen, Text anpassen,
   übernehmen – auf Wunsch zugleich als Karteikarte und mit Link vom Begriff ins Glossar. Schon
   vorhandene Begriffe werden angezeigt und nicht vorausgewählt.
+- **Schemata löschen**: Papierkorb-Symbol in der Liste „Prüfungsschemata“, bei „Schemata üben“ oder
+  oben im geöffneten Schema (wiederherstellbar über den Papierkorb).
 - **Schemata üben** (Karteikarten → „Schemata üben“ oder im Schema „Schema üben“):
   „Reihenfolge“ – gemischte Prüfungspunkte in der richtigen Reihenfolge antippen;
   „Abfragen“ – Punkt für Punkt aus dem Gedächtnis, eine Eingabe wird nachsichtig verglichen

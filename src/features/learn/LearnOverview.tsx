@@ -1,5 +1,5 @@
 /** Lernstand je Fach, Lernmodi und Schemata zum Üben (auf der Karteikarten-Seite). */
-import { BookOpen, GraduationCap, ListTree, Scale } from "lucide-react";
+import { BookOpen, GraduationCap, ListTree, Scale, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
@@ -7,7 +7,8 @@ import type { Card, Knowledge } from "../../api/types";
 import { formatRelative } from "../../lib/format";
 import { statsByFach } from "../../lib/learnStats";
 import { useApp } from "../../state/store";
-import { Button } from "../../ui/Button";
+import { Button, IconButton } from "../../ui/Button";
+import { trashKnowledge } from "../knowledge/trash";
 import type { SchemaResult } from "./SchemaTrainer";
 
 /**
@@ -96,18 +97,20 @@ export function SchemaPractice() {
   const [schemas, setSchemas] = useState<Knowledge[]>([]);
   const [results, setResults] = useState<Record<string, SchemaResult>>({});
   useEffect(() => {
-    api
-      .knowledgeList({ type: "schema", area_id: areaId === "all" ? null : areaId })
-      .then((l) => setSchemas(l.filter((k) => !k.deleted_at && ((k.data as { items?: unknown[] }).items?.length ?? 0) > 0)))
-      .catch(() => {});
-    api
-      .settingsAll()
-      .then((s) => {
+    let alive = true;
+    // gemeinsam laden, damit kein falsches „noch nicht geübt“ aufblitzt
+    void Promise.all([api.knowledgeList({ type: "schema", area_id: areaId === "all" ? null : areaId }), api.settingsAll()])
+      .then(([l, s]) => {
+        if (!alive) return;
         const out: Record<string, SchemaResult> = {};
         for (const [k, v] of Object.entries(s)) if (k.startsWith("learn.schema.") && v && typeof v === "object") out[k.slice("learn.schema.".length)] = v as SchemaResult;
         setResults(out);
+        setSchemas(l.filter((k) => !k.deleted_at && ((k.data as { items?: unknown[] }).items?.length ?? 0) > 0));
       })
       .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, [areaId, dataVersion]);
   if (!schemas.length) return null;
   // Nie geübte und schwache zuerst
@@ -119,12 +122,28 @@ export function SchemaPractice() {
         {sorted.map((k) => {
           const r = results[k.id];
           return (
-            <button key={k.id} className="list-row" onClick={() => open({ type: "schema-train", id: k.id }, { title: `${k.title} üben` })}>
+            <div
+              key={k.id}
+              className="list-row"
+              role="button"
+              tabIndex={0}
+              onClick={() => open({ type: "schema-train", id: k.id }, { title: `${k.title} üben` })}
+              onKeyDown={(e) => e.key === "Enter" && e.target === e.currentTarget && open({ type: "schema-train", id: k.id }, { title: `${k.title} üben` })}
+            >
               <ListTree size={15} />
               <span className="grow ellipsis">{k.title}</span>
               {k.field && <span className="pill">{k.field}</span>}
               <span className="xs muted tnum">{r ? `${Math.round((r.known / Math.max(1, r.total)) * 100)} % · ${formatRelative(r.at)}` : "noch nicht geübt"}</span>
-            </button>
+              <IconButton
+                label={`Schema „${k.title}“ löschen`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void trashKnowledge(k);
+                }}
+              >
+                <Trash2 size={14} />
+              </IconButton>
+            </div>
           );
         })}
       </div>

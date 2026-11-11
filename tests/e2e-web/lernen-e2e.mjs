@@ -186,6 +186,7 @@ try {
   const saved = await waitFor(async () => (await call("settingsAll"))[`learn.schema.${ids.schema}`]);
   check("Ergebnis je Schema gemerkt", saved?.known === 2 && saved?.total === 4 && saved?.mode === "abfragen", JSON.stringify(saved));
   await page.getByRole("button", { name: /^Karteikarten/ }).click();
+  await page.locator(".learn-section", { hasText: "50 %" }).waitFor({ timeout: 5000 }).catch(() => {});
   check("Übersicht zeigt letztes Ergebnis", (await page.locator(".learn-section", { hasText: "Schemata üben" }).innerText()).includes("50 %"));
 
   // 6. Schema-Seite: Knopf „Schema üben“

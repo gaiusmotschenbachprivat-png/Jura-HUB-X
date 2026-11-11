@@ -16,6 +16,7 @@ import { createNode } from "../navigation/actions";
 import { KindIcon } from "../navigation/icons";
 import { CASE_STATUS, DIFFICULTY, FIELD_SUGGESTIONS, SOURCE_LABEL, TYPE_LABEL, UNVERIFIED } from "./meta";
 import { SchemaEditor } from "./SchemaEditor";
+import { trashKnowledge } from "./trash";
 import { SchemaDiagram } from "./SchemaDiagram";
 import { gebietOf, RECHTSGEBIETE } from "../../lib/schemaLibrary";
 import { QuelleForm } from "./QuelleForm";
@@ -157,6 +158,12 @@ function Loaded({ initial }: { initial: Knowledge }) {
             {status === "saving" ? <Loader2 size={13} className="spin" /> : status === "saved" ? <Check size={13} /> : null}
             {status === "saved" ? "Gespeichert" : status === "saving" ? "Speichert …" : status === "dirty" ? "Änderungen …" : `Nicht gespeichert: ${err}`}
           </span>
+          <IconButton
+            label={`„${k.title}“ löschen`}
+            onClick={() => void trashKnowledge(k).then((done) => done && open({ type: "knowledge-list", kind: k.type }))}
+          >
+            <Trash2 size={16} />
+          </IconButton>
           <IconButton
             label="Aktionen"
             onClick={(e) =>

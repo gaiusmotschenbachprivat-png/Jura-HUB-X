@@ -238,6 +238,37 @@ try {
   await sleep(300);
   await shot("kk-6-statistik-dunkel");
   await page.emulateMedia({ colorScheme: "light" });
+
+  // 8. Löschen: Stapel „Standard“ (Karten ohne Stapel), Stapel aus der Stapelansicht, Prüfungsschema
+  await page.evaluate(async () => {
+    const api = window.__STUDIUM_API__;
+    await api.cardCreate({ front: "ohne Stapel", back: "x" });
+    await api.knowledgeCreate({ type: "schema", area_id: null, node_id: null, title: "Testschema Kaufpreis", field: "Zivilrecht", data: { items: [{ id: "a", text: "Anspruch entstanden", children: [] }] } });
+  });
+  await page.getByRole("button", { name: /^Karteikarten/ }).first().click();
+  const std = page.locator('.deck-row[aria-label="Standard"]');
+  await std.waitFor({ timeout: 5000 });
+  await std.getByRole("button", { name: /Optionen für/ }).click();
+  await page.getByRole("menuitem", { name: /Stapel löschen/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Löschen" }).click();
+  await waitFor(async () => (await std.count()) === 0);
+  check("Stapel „Standard“ gelöscht (Karten im Papierkorb)", (await std.count()) === 0 && !(await cardsNow()).some((c) => c.front === "ohne Stapel"));
+  await page.locator('.deck-row[aria-label="Zivilrecht::BGB AT"]').getByRole("button", { name: "BGB AT", exact: true }).click();
+  await page.getByRole("button", { name: "Stapel löschen" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Löschen" }).click();
+  await page.locator(".deck-table, .empty").first().waitFor({ timeout: 5000 });
+  await waitFor(async () => (await page.locator('.deck-row[aria-label="Zivilrecht::BGB AT"]').count()) === 0);
+  check("Stapel aus der Stapelansicht gelöscht", (await page.locator('.deck-row[aria-label="Zivilrecht::BGB AT"]').count()) === 0 && !(await cardsNow()).some((c) => c.deck === "Zivilrecht::BGB AT"));
+  await page.getByRole("button", { name: "Schema „Testschema Kaufpreis“ löschen", exact: true }).waitFor({ timeout: 5000 }).catch(() => {});
+  check("„Schemata üben“ zeigt das Schema mit Löschknopf", (await page.getByRole("button", { name: "Schema „Testschema Kaufpreis“ löschen", exact: true }).count()) === 1);
+  await page.getByRole("button", { name: "Prüfungsschemata" }).first().click();
+  const del = page.getByRole("button", { name: "„Testschema Kaufpreis“ löschen", exact: true });
+  await del.waitFor({ timeout: 5000 });
+  await del.click();
+  await page.getByRole("dialog").getByRole("button", { name: "In den Papierkorb" }).click();
+  await waitFor(async () => (await del.count()) === 0);
+  const ks = await call("knowledgeList", { type: "schema" });
+  check("Prüfungsschema aus der Liste gelöscht", (await del.count()) === 0 && !ks.some((k) => k.title === "Testschema Kaufpreis"), JSON.stringify(ks.map((k) => k.title)));
   check("Keine Skriptfehler", errors.length === 0, errors.join(" | "));
 } catch (e) {
   check("Testlauf ohne Abbruch", false, e.stack ?? e.message);

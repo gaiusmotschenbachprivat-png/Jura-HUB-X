@@ -3,7 +3,7 @@
  * Unterstapeln), Stapelansicht mit „Jetzt lernen“, Kartenbrowser und
  * Statistiken – aufgebaut wie ein klassisches Lernkartei-Programm.
  */
-import { BarChart3, ChevronDown, ChevronRight, FolderPlus, GraduationCap, Layers, MoreHorizontal, Plus, Search, Settings2 } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronRight, FolderPlus, GraduationCap, Layers, MoreHorizontal, Plus, Search, Settings2, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
@@ -40,9 +40,9 @@ type Tab = "stapel" | "browser" | "statistik";
 
 export function CardsView({ focusId, deck, tab: initialTab, q }: { focusId?: string; deck?: string; tab?: Tab; q?: string }) {
   const open = useApp((s) => s.open);
-  const [tab, setTab] = useState<Tab>(initialTab ?? (focusId ? "browser" : "stapel"));
+  // Reiter ist Teil der Ansicht (so wechseln Seitenleiste, Zurück und Verknüpfungen zuverlässig)
+  const tab: Tab = initialTab ?? (focusId ? "browser" : "stapel");
   const [add, setAdd] = useState<string | null>(null);
-  useEffect(() => setTab(initialTab ?? (focusId ? "browser" : "stapel")), [initialTab, focusId]);
   return (
     <div className={`page cards-page ${tab === "browser" ? "is-wide" : ""}`}>
       <header className="page-head">
@@ -61,11 +61,7 @@ export function CardsView({ focusId, deck, tab: initialTab, q }: { focusId?: str
               ["statistik", "Statistik", <BarChart3 key="t" size={14} />],
             ] as const
           ).map(([id, label, icon]) => (
-            <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "is-active" : ""} onClick={() => {
-                setTab(id);
-                // aus einer Suche bzw. Statistik-Verknüpfung zurück zur Stapelübersicht
-                if (id === "stapel" && (initialTab || focusId)) open({ type: "cards", deck });
-              }}
+            <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "is-active" : ""} onClick={() => open(id === "stapel" ? { type: "cards", deck } : { type: "cards", deck, tab: id })}
             >
               {icon} {label}
             </button>
@@ -245,7 +241,7 @@ async function rename(path: string, cards: Card[]) {
   useApp.getState().bump();
 }
 
-async function remove(n: DeckNode, cards: Card[]) {
+async function remove(n: DeckNode, cards: Card[]): Promise<boolean> {
   const count = cards.filter((c) => inDeck(deckOf(c), n.path)).length;
   const ok = await confirmDialog({
     title: `Stapel „${n.name}“ löschen?`,
@@ -253,9 +249,16 @@ async function remove(n: DeckNode, cards: Card[]) {
     confirm: "Löschen",
     danger: true,
   });
-  if (!ok) return;
-  await deleteDeck(n.path, cards).catch(reportError);
+  if (!ok) return false;
+  try {
+    await deleteDeck(n.path, cards);
+    useApp.getState().toast(`Stapel „${n.name}“ gelöscht${count ? ` – ${count} ${count === 1 ? "Karte" : "Karten"} im Papierkorb` : ""}.`, "info");
+  } catch (e) {
+    reportError(e);
+    return false;
+  }
   useApp.getState().bump();
+  return true;
 }
 
 // ---------- Stapelansicht ----------
@@ -338,6 +341,15 @@ function DeckScreen({ deck, onAdd }: { deck: string; onAdd: () => void }) {
         </Button>
         <Button icon={<Settings2 size={15} />} onClick={() => setOptions(true)}>
           Optionen
+        </Button>
+        <Button
+          variant="ghost"
+          icon={<Trash2 size={15} />}
+          onClick={() =>
+            void remove(node ?? { path: deck, name: parts.at(-1)!, depth: 0, children: [], counts }, cards).then((done) => done && open({ type: "cards" }))
+          }
+        >
+          Stapel löschen
         </Button>
       </div>
       {node && node.children.length > 0 && (

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 
 import { api } from "../../api";
 import type { Card, ReviewLogEntry, StudyNode } from "../../api/types";
-import { DECK_SETTING, inDeck, normDeck, parseDeckSettings, SEP, type DeckSettings } from "../../lib/decks";
+import { DECK_SETTING, deckOf, inDeck, normDeck, parseDeckSettings, SEP, type DeckSettings } from "../../lib/decks";
 import { startOfToday } from "../../lib/fsrs";
 import { courseOf } from "../../lib/learnStats";
 import { reportError, useApp } from "../../state/store";
@@ -85,7 +85,7 @@ export async function addDeck(path: string) {
 
 /** Stapel löschen: Karten in den Papierkorb, Einstellungen entfernen */
 export async function deleteDeck(path: string, cards: Card[]) {
-  for (const c of cards.filter((c) => inDeck(c.deck || "", path))) await api.cardTrash(c.id);
+  for (const c of cards.filter((c) => inDeck(deckOf(c), path))) await api.cardTrash(c.id);
   const s = await loadDeckSettings();
   const keep = (p: string) => !inDeck(p, path);
   await saveDeckSettings({
