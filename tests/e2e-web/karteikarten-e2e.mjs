@@ -34,6 +34,8 @@ for (let i = 0; i < 50; i++) {
 const browser = await pw.chromium.launch({ executablePath: process.env.CHROMIUM });
 const ctx = await browser.newContext({ viewport: { width: 1180, height: 820 }, deviceScaleFactor: 2, hasTouch: true, permissions: ["clipboard-read", "clipboard-write"] });
 const page = await ctx.newPage();
+// E2E_SLOW=4: langsameren Rechner nachbilden (wie in der Cloud)
+if (process.env.E2E_SLOW) await (await ctx.newCDPSession(page)).send("Emulation.setCPUThrottlingRate", { rate: Number(process.env.E2E_SLOW) });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 const shot = (name) => page.screenshot({ path: path.join(OUT, `${name}.png`) });
@@ -83,6 +85,9 @@ try {
   await lt.fill("Die Willenserklärung besteht aus Handlungswille und Erklärungsbewusstsein.");
   await lt.evaluate((el) => el.setSelectionRange(33, 47));
   await add.getByRole("button", { name: /^Lücke 1/ }).click();
+  // die App markiert die neue Lücke im nächsten Bild – danach erst weiter markieren
+  await waitFor(async () => (await lt.inputValue()).includes("{{c1::Handlungswille}}") && (await lt.evaluate((el) => el.selectionEnd - el.selectionStart)) === "Handlungswille".length);
+  await sleep(100);
   await lt.evaluate((el) => {
     const i = el.value.indexOf("Erklärungsbewusstsein");
     el.setSelectionRange(i, i + "Erklärungsbewusstsein".length);
