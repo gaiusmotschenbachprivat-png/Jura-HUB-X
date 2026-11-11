@@ -299,9 +299,9 @@ function ViewSwitch({ view }: { view: View }) {
     case "knowledge-list":
       return view.kind === "definition" ? <GlossaryView /> : <KnowledgeList type={view.kind} />;
     case "cards":
-      return <CardsView focusId={view.id} />;
+      return <CardsView focusId={view.id} deck={view.deck} tab={view.tab} q={view.q} />;
     case "learn":
-      return <LearnSession key={view.minutes ? "timed" : "free"} kind={view.kind} node={view.node} label={view.label} minutes={view.minutes} />;
+      return <LearnSession key={JSON.stringify([view.minutes, view.deck, view.custom, view.kind, view.node])} kind={view.kind} node={view.node} label={view.label} minutes={view.minutes} deck={view.deck} custom={view.custom} />;
     case "schema-train":
       return <SchemaTrainer id={view.id} />;
     case "planning":

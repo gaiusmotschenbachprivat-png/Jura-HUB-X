@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { api, errorMessage } from "../api";
+import type { CustomStudy } from "../lib/decks";
 import type { Area, CardKind, KnowledgeType, StudyNode } from "../api/types";
 import type { SortMode } from "../lib/noteTypes";
 
@@ -14,8 +15,8 @@ export type View =
   | { type: "trash" }
   | { type: "knowledge"; id: string }
   | { type: "knowledge-list"; kind: KnowledgeType }
-  | { type: "cards"; id?: string }
-  | { type: "learn"; kind?: CardKind; node?: string; label?: string; minutes?: number }
+  | { type: "cards"; id?: string; deck?: string; tab?: "stapel" | "browser" | "statistik"; q?: string }
+  | { type: "learn"; kind?: CardKind; node?: string; label?: string; minutes?: number; deck?: string; custom?: CustomStudy }
   | { type: "schema-train"; id: string }
   | { type: "planning" }
   | { type: "explanations" }

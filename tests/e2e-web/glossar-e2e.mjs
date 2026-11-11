@@ -129,7 +129,7 @@ try {
 
   // Karteikarte
   await anf.getByRole("button", { name: "Als Karteikarte lernen" }).click();
-  await page.getByRole("button", { name: /Speichern|Anlegen|Erstellen/ }).last().click();
+  await page.getByRole("button", { name: /^(Speichern|Anlegen|Erstellen|Hinzufügen)$/ }).last().click();
   await sleep(500);
   const cards = await page.evaluate(async () => (await window.__STUDIUM_API__.cardsList({})).map((c) => [c.front, c.source_type]));
   check("Karteikarte aus dem Glossar", cards.some((c) => c[0] === "Anfechtung" && c[1] === "knowledge"), JSON.stringify(cards));

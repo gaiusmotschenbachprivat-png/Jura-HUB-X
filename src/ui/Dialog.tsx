@@ -85,3 +85,49 @@ export function confirmDialog(opts: {
     );
   });
 }
+
+/** Eingabedialog als Promise (null = abgebrochen). */
+export function promptDialog(opts: { title: string; label: string; value?: string; confirm: string; hint?: ReactNode }): Promise<string | null> {
+  return new Promise((resolve) => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    let value = opts.value ?? "";
+    const done = (v: string | null) => {
+      root.unmount();
+      host.remove();
+      resolve(v);
+    };
+    root.render(
+      <Dialog
+        title={opts.title}
+        onClose={() => done(null)}
+        width={460}
+        footer={
+          <>
+            <Button onClick={() => done(null)}>Abbrechen</Button>
+            <Button variant="primary" onClick={() => done(value.trim() || null)}>
+              {opts.confirm}
+            </Button>
+          </>
+        }
+      >
+        <label className="field">
+          <span className="field-label">{opts.label}</span>
+          <input
+            defaultValue={value}
+            aria-label={opts.label}
+            onChange={(e) => (value = e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                done(value.trim() || null);
+              }
+            }}
+          />
+          {opts.hint && <span className="field-hint">{opts.hint}</span>}
+        </label>
+      </Dialog>,
+    );
+  });
+}

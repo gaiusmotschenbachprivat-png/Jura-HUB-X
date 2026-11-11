@@ -264,13 +264,56 @@ Wechsel in eine andere App), als Vektordaten relativ zur Seite – sie bleibt be
 scharf. Die PDF-Datei selbst wird nicht verändert. Seiten mit Handschrift stehen unter
 „Markierungen“ in der Seitenübersicht.
 
+## Karteikarten (Stapel, Lernen, Browser, Statistik)
+
+Aufgebaut wie ein klassisches Lernkartei-Programm, ausgerichtet auf Definitionen, Prüfungsschemata
+und Begriffe. Seitenleiste → **Karteikarten** mit den Reitern **Stapel · Durchsuchen · Statistik**.
+
+- **Stapel** mit Unterstapeln, z. B. „Zivilrecht::BGB AT::Willenserklärung“. Die Übersicht zeigt
+  je Stapel **Neu** (blau), **Lernen** (rot) und **Fällig** (grün) – bereits begrenzt durch die
+  Tageslimits. Stapel antippen → Stapelansicht mit **Jetzt lernen**, Unterstapeln und Kennzahlen
+  (neu · jung · ausgereift · ausgesetzt · zurückgestellt). „…“ am Stapel: Lernen, Benutzerdefiniert
+  lernen, Karten durchsuchen, Optionen, Unterstapel anlegen, Umbenennen/Verschieben, Löschen.
+  Karten aus Mitschriften ohne Stapel lassen sich mit einem Tipp **nach Veranstaltung
+  einsortieren**.
+- **Hinzufügen**: Kartentyp wählen – **Definition** (Begriff → Definition, mit Norm/Fundstelle,
+  Beispiel, Abgrenzung, Merke), **Prüfungsschema** (Prüfungspunkte, eine Zeile je Punkt, Einrückung
+  mit Leerzeichen), **Begriffserklärung**, **Frage – Antwort**, **Frage – Antwort + umgekehrt**
+  (zwei Karten), **Lückentext** (Text markieren → „Lücke“; jede Nummer ergibt eine Karte, Hinweis mit
+  {{c1::Text::Hinweis}}), **Antwort eintippen**. Der Dialog bleibt offen; Stapel, Typ und
+  Schlagwörter bleiben für die nächste Karte stehen (⌘/Strg+Enter = Hinzufügen).
+- **Lernen**: Leertaste = Antwort zeigen (danach „Gut“), **1–4** = Nochmal/Schwer/Gut/Einfach, über
+  den Tasten steht jeweils, wann die Karte wiederkommt. „Nochmal“ zeigt die Karte nach dem
+  Lernschritt (1 Min., 10 Min.) erneut. Schemata lassen sich **Punkt für Punkt** aufdecken. Oben:
+  Rückgängig (**Z**), Flagge (**⌘1–7**), Karteninfo (**I**), Bearbeiten (**E**), Zurückstellen
+  (**−**, bis morgen), Aussetzen (**@**). Zusammengehörige Karten (umgekehrt, andere Lücken) kommen
+  erst am nächsten Tag. Oft vergessene Karten werden zur **Problemkarte** (Schlagwort, auf Wunsch
+  ausgesetzt).
+- **Benutzerdefiniert lernen**: zusätzliche neue Karten, vergessene Karten der letzten Tage,
+  Vorlernen, schwierige Karten, nach Schlagwort oder Flagge, alle Karten des Stapels (vor der
+  Klausur).
+- **Optionen je Stapel** (Unterstapel erben): neue Karten pro Tag, höchstens Wiederholungen pro
+  Tag, Lernschritte, Schritte nach „Nochmal“, Zielbehaltensquote (FSRS, Standard 90 %), längstes
+  Intervall, Reihenfolge neuer Karten, Geschwister zurückstellen, Problemkarten.
+- **Durchsuchen** (Kartenbrowser): Filter links (Heute, Stand, Flaggen, Stapel, Kartentypen,
+  Schlagwörter), Spalten sortierbar, mehrere Karten auswählen → **Aktionen**: Stapel ändern,
+  Schlagwort hinzufügen/entfernen, Flagge, Aussetzen/Fortsetzen, Zurückstellen aufheben, Vergessen,
+  Löschen. Suche: Wörter, „Wortgruppe“, `deck:"Zivilrecht::BGB AT"`, `tag:Irrtum`, `tag:none`,
+  `is:new|learn|review|due|suspended|buried|difficult|leech`, `flag:1`, `typ:definition`,
+  `prop:ivl>=21`, `prop:lapses>3`, `added:7`, `rated:1`, `-` (nicht), `or`.
+- **Statistik** (gesamt oder je Stapel, 1 Monat / 3 Monate / 1 Jahr): Heute, Vorhersage,
+  Lernkalender mit Serie, Wiederholungen nach Art (Lernen, Neu lernen, Jung, Ausgereift),
+  Kartenzählung, Intervalle, Stabilität, Schwierigkeit, Abrufwahrscheinlichkeit, Tageszeiten,
+  Antworttasten, tatsächliche Behaltensquote, Problemkarten und der Lernstand je Veranstaltung.
+  Jede Grafik antippen für Werte; „Als Tabelle“ zeigt die Zahlen.
+
 ## Lernen: Lernstand, Lernmodi, Schemata üben
 
-- **Lernstand nach Fach** (Karteikarten): je Veranstaltung, wie viele Karten „sitzen“
+- **Lernstand nach Fach** (Karteikarten → Statistik): je Veranstaltung, wie viele Karten „sitzen“
   (voraussichtlich auch in drei Wochen noch gewusst, FSRS-Stabilität ab 21 Tagen), wie viele
   fällig und neu sind – mit „lernen“ nur für dieses Fach.
-- **Lernmodi**: „Nur Definitionen“, „Nur Normen“ oder „Fragen“; in der Sitzung umschaltbar.
-  „Auch nicht fällige (vorziehen)“ übt vor der Klausur auch Karten, die noch nicht dran sind.
+- **Lernmodi**: „Nur Definitionen“, „Nur Normen“ oder „Fragen“ (Karteikarten → Statistik).
+  Vor der Klausur: „Benutzerdefiniert lernen“ → Vorlernen oder alle Karten des Stapels.
 - **Fällige Karten** stehen als Zahl in der Seitenleiste; auf dem Home-Bildschirm zusätzlich am
   App-Symbol, sofern iPadOS das für Web-Apps erlaubt (setzt erteilte Mitteilungen voraus).
   Erinnerungen zu einer Uhrzeit gibt es nicht – dafür wäre ein fremder Server nötig.

@@ -109,6 +109,8 @@ jobs:
         run: node tests/e2e-web/zeitstrahl-e2e.mjs
       - name: Markerfarben (anpassen, dunkler Modus)
         run: node tests/e2e-web/markerfarben-e2e.mjs
+      - name: Karteikarten (Stapel, Lernen, Browser, Statistik)
+        run: node tests/e2e-web/karteikarten-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

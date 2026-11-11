@@ -120,8 +120,9 @@ try {
   const href = await page.locator(".ProseMirror a", { hasText: "Willenserklärung" }).getAttribute("href").catch(() => null);
   check("Begriff im Text mit dem Glossar verlinkt", href === `studium:knowledge/${defs[0]?.id}`, String(href));
 
-  // 2. Lernstand nach Fach
+  // 2. Lernstand nach Fach (Karteikarten → Statistik)
   await page.getByRole("button", { name: /^Karteikarten/ }).click();
+  await page.getByRole("tab", { name: /Statistik/ }).click();
   const fach = page.locator(".fach-row", { hasText: "BGB AT" });
   await fach.waitFor();
   check("Lernstand: BGB AT – 1 von 4 sitzen, 3 fällig", /1 von 4 sitzen · 3 fällig/.test(await fach.innerText()), await fach.innerText());
@@ -142,15 +143,13 @@ try {
     await page.locator(".fc-rate.r4").click();
     await page.waitForFunction((prev) => document.querySelector(".fc-front")?.textContent !== prev, f, { timeout: 3000 }).catch(() => {});
   }
-  check("Nur Definitionskarten (fällige)", fronts.length === 2 && fronts.every((f) => f.startsWith("Definiere:")) && !fronts.includes("Definiere: Rechtsgeschäft"), fronts.join(" | "));
+  check("Nur Definitionskarten (fällige), „Definiere:“ nicht doppelt", fronts.length === 2 && !fronts.includes("Rechtsgeschäft") && !fronts.some((f) => f.includes("Definiere:")) && (await page.locator(".fc-prompt").count()) <= 1, fronts.join(" | "));
   // Fach-Lernen
   await page.getByRole("button", { name: /^Karteikarten/ }).click();
+  await page.getByRole("tab", { name: /Statistik/ }).click();
   await page.locator(".fach-row", { hasText: "BGB AT" }).getByRole("button", { name: /lernen|Üben/ }).click();
   await page.locator(".flashcard, .empty").first().waitFor();
   check("Lernen · BGB AT zeigt nur Karten des Fachs", (await page.locator("h1").innerText()).includes("BGB AT") && /BGB|Trennungsprinzip/.test(await page.locator(".fc-front").innerText()), await page.locator(".fc-front").innerText());
-  await page.getByRole("tab", { name: "Normen" }).click();
-  await page.waitForFunction(() => document.querySelector(".fc-front")?.textContent?.includes("§ 119"), null, { timeout: 4000 }).catch(() => {});
-  check("Umschalten auf Normen im Fach", (await page.locator(".fc-front").innerText()).includes("§ 119"));
 
   // 4. Schema üben – Reihenfolge
   await page.getByRole("button", { name: /^Karteikarten/ }).click();

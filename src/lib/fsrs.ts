@@ -9,7 +9,35 @@ import type { Card, ReviewInput } from "../api/types";
 /** Zielwahrscheinlichkeit, eine Karte bei Fälligkeit noch zu wissen (90 %). */
 export const REQUEST_RETENTION = 0.9;
 
-const scheduler = fsrs(generatorParameters({ request_retention: REQUEST_RETENTION, enable_fuzz: true, maximum_interval: 3650 }));
+/** Planungsoptionen eines Stapels (siehe lib/decks) */
+export interface ScheduleOptions {
+  retention?: number;
+  maxInterval?: number;
+  /** z. B. „1m 10m“ */
+  learningSteps?: string;
+  relearningSteps?: string;
+}
+
+const stepList = (s: string | undefined, d: string[]) => (s === undefined ? d : s.split(/\s+/).filter(Boolean)) as `${number}${"m" | "h" | "d"}`[];
+
+const cache = new Map<string, ReturnType<typeof fsrs>>();
+function schedulerFor(o: ScheduleOptions = {}) {
+  const key = JSON.stringify(o);
+  let s = cache.get(key);
+  if (!s) {
+    s = fsrs(
+      generatorParameters({
+        request_retention: o.retention ?? REQUEST_RETENTION,
+        enable_fuzz: true,
+        maximum_interval: o.maxInterval ?? 3650,
+        learning_steps: stepList(o.learningSteps, ["1m", "10m"]),
+        relearning_steps: stepList(o.relearningSteps, ["10m"]),
+      }),
+    );
+    cache.set(key, s);
+  }
+  return s;
+}
 
 export const RATINGS: { rating: 1 | 2 | 3 | 4; label: string; key: string }[] = [
   { rating: 1, label: "Nochmal", key: "1" },
@@ -35,8 +63,8 @@ export function toFsrs(c: Card): FsrsCard {
 }
 
 /** Neuer Stand nach einer Bewertung. */
-export function schedule(c: Card, rating: 1 | 2 | 3 | 4, now = new Date()): ReviewInput {
-  const next = scheduler.next(toFsrs(c), now, rating as unknown as Grade).card;
+export function schedule(c: Card, rating: 1 | 2 | 3 | 4, now = new Date(), o?: ScheduleOptions): ReviewInput {
+  const next = schedulerFor(o).next(toFsrs(c), now, rating as unknown as Grade).card;
   return {
     rating,
     due: next.due.toISOString(),
@@ -52,8 +80,8 @@ export function schedule(c: Card, rating: 1 | 2 | 3 | 4, now = new Date()): Revi
 }
 
 /** Vorschau: wann wäre die Karte je nach Bewertung wieder dran? */
-export function previewIntervals(c: Card, now = new Date()): Record<1 | 2 | 3 | 4, string> {
-  const p = scheduler.repeat(toFsrs(c), now);
+export function previewIntervals(c: Card, now = new Date(), o?: ScheduleOptions): Record<1 | 2 | 3 | 4, string> {
+  const p = schedulerFor(o).repeat(toFsrs(c), now);
   const label = (d: Date) => formatInterval(d.getTime() - now.getTime());
   return {
     1: label(p[Rating.Again].card.due),
@@ -84,3 +112,9 @@ export function startOfToday(now = new Date()): string {
 }
 
 export const STATE_LABEL = ["Neu", "Lernen", "Wiederholen", "Neu lernen"];
+
+/** Abrufwahrscheinlichkeit jetzt (0–1) – für Statistik und Kartenbrowser */
+export function retrievability(c: Card, now = new Date()): number | null {
+  if (c.state === 0 || !c.last_review) return null;
+  return schedulerFor().get_retrievability(toFsrs(c), now, false);
+}
