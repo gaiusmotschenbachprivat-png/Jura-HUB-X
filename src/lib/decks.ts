@@ -232,7 +232,46 @@ export type CustomStudy =
   | { mode: "tag"; tag: string }
   | { mode: "flag"; flag: number }
   | { mode: "difficult" }
-  | { mode: "all" };
+  | { mode: "all" }
+  | ({ mode: "repeat" } & RepeatOptions);
+
+/** Stapel wiederholen – auch Karten, die noch nicht fällig sind */
+export interface RepeatOptions {
+  /** alle Karten, nur schon gelernte oder nur die in den nächsten Tagen fälligen */
+  which: "all" | "learned" | "soon";
+  days: number;
+  order: "random" | "due";
+  /** nur üben: Antworten ändern die Planung nicht */
+  practice: boolean;
+}
+
+export const DEFAULT_REPEAT: RepeatOptions = { which: "all", days: 7, order: "random", practice: true };
+
+/** Karten für „Stapel wiederholen“ (ohne Ausgesetzte und Zurückgestellte) */
+export function repeatList(cards: Card[], r: RepeatOptions, now: Date, rand: () => number = Math.random): Card[] {
+  const nowIso = now.toISOString();
+  const until = new Date(now.getTime() + r.days * 864e5).toISOString();
+  const list = cards.filter(
+    (c) => !c.deleted_at && !c.suspended && cardStatus(c, nowIso) !== "buried" && (r.which === "all" || (c.state !== 0 && (r.which === "learned" || c.due <= until))),
+  );
+  if (r.order === "random") return shuffle(list, rand);
+  // schon gelernte nach Fälligkeit, neue danach in Reihenfolge des Anlegens
+  return list.sort((a, b) => Number(a.state === 0) - Number(b.state === 0) || (a.state === 0 ? a.created_at.localeCompare(b.created_at) || a.ord - b.ord : a.due.localeCompare(b.due)));
+}
+
+/** Wie weit eine Karte in der Übungsrunde (ohne Planung) zurückwandert */
+export const PRACTICE_AGAIN_GAP = 3;
+
+/**
+ * Übungsrunde: „Nochmal“ bringt die Karte nach wenigen Karten wieder,
+ * „Schwer“ ans Ende der Runde, „Gut“/„Einfach“ nimmt sie heraus.
+ */
+export function practiceRequeue(main: Card[], card: Card, rating: 1 | 2 | 3 | 4): Card[] {
+  const rest = main.filter((c) => c.id !== card.id);
+  if (rating === 1) return [...rest.slice(0, PRACTICE_AGAIN_GAP), card, ...rest.slice(PRACTICE_AGAIN_GAP)];
+  if (rating === 2) return [...rest, card];
+  return rest;
+}
 
 /**
  * Neue Karten bzw. Wiederholungen innerhalb der Tageslimits: jede Karte

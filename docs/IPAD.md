@@ -307,6 +307,13 @@ und Begriffe. Seitenleiste → **Karteikarten** mit den Reitern **Stapel · Durc
   (**−**, bis morgen), Aussetzen (**@**). Zusammengehörige Karten (umgekehrt, andere Lücken) kommen
   erst am nächsten Tag. Oft vergessene Karten werden zur **Problemkarte** (Schlagwort, auf Wunsch
   ausgesetzt).
+- **Stapel wiederholen** (Knopf im Stapel oder „…“ am Stapel): den Stapel durchgehen, auch wenn
+  die Karten erst später fällig wären – alle Karten, nur schon gelernte oder nur bald fällige,
+  gemischt oder bald fällige zuerst. Standard ist **Nur üben**: die Planung und die Statistik
+  bleiben unverändert; „Nochmal“ bringt die Karte nach drei Karten wieder, „Schwer“ am Ende der
+  Runde, „Gut“/„Einfach“ nehmen sie heraus. Mit **Antworten zählen** werden die nächsten Termine
+  neu berechnet (FSRS berücksichtigt die frühere Wiederholung). Ist für heute alles geschafft,
+  bietet auch das Ende der Lernsitzung „Stapel trotzdem wiederholen“ an.
 - **Benutzerdefiniert lernen**: zusätzliche neue Karten, vergessene Karten der letzten Tage,
   Vorlernen, schwierige Karten, nach Schlagwort oder Flagge, alle Karten des Stapels (vor der
   Klausur).
@@ -331,7 +338,7 @@ und Begriffe. Seitenleiste → **Karteikarten** mit den Reitern **Stapel · Durc
   (voraussichtlich auch in drei Wochen noch gewusst, FSRS-Stabilität ab 21 Tagen), wie viele
   fällig und neu sind – mit „lernen“ nur für dieses Fach.
 - **Lernmodi**: „Nur Definitionen“, „Nur Normen“ oder „Fragen“ (Karteikarten → Statistik).
-  Vor der Klausur: „Benutzerdefiniert lernen“ → Vorlernen oder alle Karten des Stapels.
+  Vor der Klausur: „Stapel wiederholen“ oder „Benutzerdefiniert lernen“ → Vorlernen.
 - **Fällige Karten** stehen als Zahl in der Seitenleiste; auf dem Home-Bildschirm zusätzlich am
   App-Symbol, sofern iPadOS das für Web-Apps erlaubt (setzt erteilte Mitteilungen voraus).
   Erinnerungen zu einer Uhrzeit gibt es nicht – dafür wäre ein fremder Server nötig.

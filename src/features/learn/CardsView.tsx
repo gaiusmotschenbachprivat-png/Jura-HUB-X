@@ -3,7 +3,7 @@
  * Unterstapeln), Stapelansicht mit „Jetzt lernen“, Kartenbrowser und
  * Statistiken – aufgebaut wie ein klassisches Lernkartei-Programm.
  */
-import { BarChart3, ChevronDown, ChevronRight, FolderPlus, GraduationCap, Layers, MoreHorizontal, Plus, Search, Settings2, Trash2 } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronRight, FolderPlus, GraduationCap, Layers, MoreHorizontal, Plus, Repeat, Search, Settings2, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../../api";
@@ -21,6 +21,7 @@ import { addDeck, deckForNode, deleteDeck, renameDeck, saveDeckSettings, sortInt
 import { CardStatsView } from "./CardStatsView";
 import { DeckOptionsDialog } from "./DeckOptions";
 import { FLAGS } from "./flags";
+import { RepeatDialog } from "./RepeatDialog";
 import { BadgePermission, FachProgress, SchemaPractice } from "./LearnOverview";
 
 export function useCardStats() {
@@ -99,6 +100,7 @@ function DeckList() {
   const menu = useMenu();
   const [options, setOptions] = useState<string | null>(null);
   const [custom, setCustom] = useState<string | null>(null);
+  const [repeat, setRepeat] = useState<string | null>(null);
   const tree = useMemo(() => {
     if (!cards || !settings) return null;
     const map = new Map(cards.map((c) => [c.id, c]));
@@ -120,6 +122,7 @@ function DeckList() {
   const deckMenu = (el: HTMLElement, n: DeckNode) =>
     menu.openBelow(el, [
       { label: "Lernen", onSelect: () => open({ type: "learn", deck: n.path }) },
+      { label: "Stapel wiederholen (auch nicht fällige) …", onSelect: () => setRepeat(n.path) },
       { label: "Benutzerdefiniert lernen …", onSelect: () => setCustom(n.path) },
       { label: "Karten durchsuchen", onSelect: () => open({ type: "cards", tab: "browser", q: `deck:"${n.path}"` }) },
       { separator: true, label: "" },
@@ -230,6 +233,7 @@ function DeckList() {
       <SchemaPractice />
       {options && <DeckOptionsDialog deck={options} onClose={() => setOptions(null)} />}
       {custom && <CustomStudyDialog deck={custom} cards={cards} onClose={() => setCustom(null)} />}
+      {repeat && <RepeatDialog deck={repeat} cards={cards} onClose={() => setRepeat(null)} />}
       {menu.el}
     </>
   );
@@ -269,6 +273,7 @@ function DeckScreen({ deck, onAdd }: { deck: string; onAdd: () => void }) {
   const settings = useDeckSettings();
   const [options, setOptions] = useState(false);
   const [custom, setCustom] = useState(false);
+  const [repeat, setRepeat] = useState(false);
   const node = useMemo(() => {
     if (!cards || !settings) return null;
     const tree = buildDeckTree(cards, settings, new Date(), todayUsage(log, new Map(cards.map((c) => [c.id, c])), startOfToday()));
@@ -322,6 +327,9 @@ function DeckScreen({ deck, onAdd }: { deck: string; onAdd: () => void }) {
           <Button variant="primary" icon={<GraduationCap size={15} />} disabled={!any} onClick={() => open({ type: "learn", deck })}>
             {any ? "Jetzt lernen" : "Für heute geschafft"}
           </Button>
+          <Button icon={<Repeat size={15} />} disabled={!mine.length} onClick={() => setRepeat(true)}>
+            Stapel wiederholen
+          </Button>
           <Button onClick={() => setCustom(true)}>Benutzerdefiniert lernen</Button>
         </div>
         <p className="xs muted tnum" style={{ textAlign: "center" }}>
@@ -373,6 +381,7 @@ function DeckScreen({ deck, onAdd }: { deck: string; onAdd: () => void }) {
       )}
       {options && <DeckOptionsDialog deck={deck} onClose={() => setOptions(false)} />}
       {custom && <CustomStudyDialog deck={deck} cards={cards} onClose={() => setCustom(false)} />}
+      {repeat && <RepeatDialog deck={deck} cards={cards} onClose={() => setRepeat(false)} />}
     </section>
   );
 }
@@ -381,7 +390,7 @@ function DeckScreen({ deck, onAdd }: { deck: string; onAdd: () => void }) {
 
 function CustomStudyDialog({ deck, cards, onClose }: { deck: string; cards: Card[]; onClose: () => void }) {
   const open = useApp((s) => s.open);
-  const [mode, setMode] = useState<CustomStudy["mode"]>("new");
+  const [mode, setMode] = useState<Exclude<CustomStudy["mode"], "repeat">>("new");
   const [num, setNum] = useState(10);
   const mine = cards.filter((c) => inDeck(deckOf(c), deck));
   const tags = useMemo(() => [...new Set(mine.flatMap((c) => tagList(c.tags)))].sort((a, b) => a.localeCompare(b, "de")), [mine]);
@@ -393,7 +402,7 @@ function CustomStudyDialog({ deck, cards, onClose }: { deck: string; cards: Card
     onClose();
     open({ type: "learn", deck, custom: c });
   };
-  const OPTS: [CustomStudy["mode"], string][] = [
+  const OPTS: [Exclude<CustomStudy["mode"], "repeat">, string][] = [
     ["new", "Heute zusätzliche neue Karten lernen"],
     ["forgotten", "Vergessene Karten wiederholen"],
     ["ahead", "Vorlernen (bald fällige Karten)"],

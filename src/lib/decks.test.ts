@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Card, ReviewLogEntry } from "../api/types";
 import { cardQuestion, cardsForNote, clozeNumbers, clozeParts, clozePlain, noteProblem, schemaPoints } from "./cardModel";
-import { addTag, applyLimits, becameLeech, buildDeckTree, buildQueue, cardStatus, DEFAULT_OPTIONS, flattenTree, inDeck, nextCard, normDeck, optionsFor, parseDeckSettings, removeTag, staysToday, tagList, todayUsage } from "./decks";
+import { addTag, applyLimits, becameLeech, buildDeckTree, buildQueue, cardStatus, DEFAULT_OPTIONS, flattenTree, inDeck, nextCard, normDeck, optionsFor, parseDeckSettings, practiceRequeue, repeatList, removeTag, staysToday, tagList, todayUsage } from "./decks";
 import { schedule } from "./fsrs";
 
 const NOW = new Date(2026, 10, 11, 10, 0, 0);
@@ -142,5 +142,37 @@ describe("Lernsitzung", () => {
     // Unterstapel allein lernen: nur seine Limits (geerbt: 3), nicht die bereits verbrauchten Plätze des Oberstapels
     expect(applyLimits(b, "new", s, new Map([["Z", { newDone: 3, reviewsDone: 0 }]]), "Z::B")).toHaveLength(3);
     expect(applyLimits(a, "new", s, new Map([["Z::A", { newDone: 1, reviewsDone: 0 }]]), "Z::A")).toHaveLength(1);
+  });
+});
+
+describe("Stapel wiederholen", () => {
+  const now = new Date("2026-11-11T10:00:00Z");
+  const day = (d: number) => new Date(now.getTime() + d * 864e5).toISOString();
+  const list = [
+    card({ id: "neu", state: 0, due: day(0), created_at: "2026-01-01T00:00:00Z" }),
+    card({ id: "morgen", state: 2, due: day(1) }),
+    card({ id: "monat", state: 2, due: day(30) }),
+    card({ id: "heute", state: 2, due: day(-1) }),
+    card({ id: "aus", state: 2, due: day(2), suspended: true }),
+    card({ id: "zurück", state: 2, due: day(2), buried_until: day(1) }),
+  ];
+  const opts = { which: "all" as const, days: 7, order: "due" as const, practice: true };
+  it("nimmt auch nicht fällige Karten, ohne Ausgesetzte und Zurückgestellte", () => {
+    expect(repeatList(list, opts, now).map((c) => c.id)).toEqual(["heute", "morgen", "monat", "neu"]);
+    expect(repeatList(list, { ...opts, which: "learned" }, now).map((c) => c.id)).toEqual(["heute", "morgen", "monat"]);
+    expect(repeatList(list, { ...opts, which: "soon", days: 7 }, now).map((c) => c.id)).toEqual(["heute", "morgen"]);
+  });
+  it("mischt auf Wunsch", () => {
+    let i = 0;
+    const rand = () => [0.1, 0.9, 0.5, 0.3][i++ % 4]!;
+    const mixed = repeatList(list, { ...opts, order: "random" }, now, rand).map((c) => c.id);
+    expect([...mixed].sort()).toEqual(["heute", "monat", "morgen", "neu"]);
+  });
+  it("Übungsrunde: Nochmal kommt nach drei Karten wieder, Schwer ans Ende, Gut heraus", () => {
+    const m = ["a", "b", "c", "d", "e"].map((id) => card({ id }));
+    expect(practiceRequeue(m, m[0]!, 1).map((c) => c.id)).toEqual(["b", "c", "d", "a", "e"]);
+    expect(practiceRequeue(m, m[0]!, 2).map((c) => c.id)).toEqual(["b", "c", "d", "e", "a"]);
+    expect(practiceRequeue(m, m[0]!, 3).map((c) => c.id)).toEqual(["b", "c", "d", "e"]);
+    expect(practiceRequeue(m.slice(0, 2), m[0]!, 1).map((c) => c.id)).toEqual(["b", "a"]);
   });
 });

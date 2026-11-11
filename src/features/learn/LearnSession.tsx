@@ -22,6 +22,8 @@ import {
   LEECH_TAG,
   nextCard,
   optionsFor,
+  practiceRequeue,
+  repeatList,
   SEP,
   staysToday,
   todayUsage,
@@ -41,10 +43,12 @@ import { CardInfoDialog } from "./CardInfo";
 import { loadDeckSettings } from "./collection";
 import { DeckOptionsDialog } from "./DeckOptions";
 import { FLAGS } from "./flags";
+import { RepeatDialog } from "./RepeatDialog";
 
 type Step =
   | { type: "review"; before: Card; after: Card; buried: Card[]; leech: boolean }
-  | { type: "bury" | "suspend"; cards: Card[] };
+  | { type: "bury" | "suspend"; cards: Card[] }
+  | { type: "practice"; main: Card[] };
 
 const MAX_ANSWER_MS = 60_000;
 
@@ -75,6 +79,10 @@ export function LearnSession({
   const [info, setInfo] = useState<Card | null>(null);
   const [options, setOptions] = useState<string | null>(null);
   const [ahead, setAhead] = useState(false);
+  const [repeatOpen, setRepeatOpen] = useState(false);
+  const [allCards, setAllCards] = useState<Card[]>([]);
+  const repeat = custom?.mode === "repeat" ? custom : null;
+  const practice = !!repeat?.practice;
   const shownAt = useRef(Date.now());
   const scope = useMemo(() => (node ? descendantIds(nodes, node) : null), [nodes, node]);
 
@@ -87,6 +95,12 @@ export function LearnSession({
       const all = (await api.cardsList({ area_id: area, limit: 20000 })).filter(
         (c) => !c.suspended && (!deck || inDeck(deckOf(c), deck)) && (!kind || c.kind === kind) && (!scope || (c.node_id != null && scope.has(c.node_id))),
       );
+      setAllCards(all);
+      if (repeat) {
+        setLearning([]);
+        setMain(repeatList(all, repeat, now));
+        return;
+      }
       if (custom || ahead) {
         let list: Card[] = [];
         const nowIso = now.toISOString();
@@ -133,7 +147,7 @@ export function LearnSession({
     } catch (e) {
       reportError(e);
     }
-  }, [areaId, node, deck, kind, scope, custom, ahead]);
+  }, [areaId, node, deck, kind, scope, custom, ahead, repeat]);
   useEffect(() => {
     void load();
   }, [load]);
@@ -158,7 +172,10 @@ export function LearnSession({
   const current = useMemo(() => (learning && !timeUp ? nextCard(learning, main, new Date()) : null), [learning, main, timeUp, tick]); // eslint-disable-line react-hooks/exhaustive-deps
   const card = current?.card;
   const opts = useMemo(() => (settings && card ? optionsFor(settings, deckOf(card)) : null), [settings, card]);
-  const preview = useMemo(() => (card && opts ? previewIntervals(card, new Date(), opts) : null), [card, opts]);
+  const preview = useMemo(
+    () => (card && opts ? (practice ? { 1: "gleich nochmal", 2: "am Ende nochmal", 3: "geschafft", 4: "geschafft" } : previewIntervals(card, new Date(), opts)) : null),
+    [card, opts, practice],
+  );
   useEffect(() => {
     shownAt.current = Date.now();
     setRevealed(false);
@@ -177,9 +194,16 @@ export function LearnSession({
   const rate = useCallback(
     async (rating: 1 | 2 | 3 | 4) => {
       if (!card || busy || !opts) return;
+      const duration = Math.min(MAX_ANSWER_MS, Date.now() - shownAt.current);
+      if (practice) {
+        // Übungsrunde: nichts speichern, nur die Reihenfolge ändern
+        setHistory((h) => [...h, { type: "practice", main }]);
+        setMain((m) => practiceRequeue(m, card, rating));
+        setDone((d) => ({ n: d.n + 1, ok: d.ok + (rating > 1 ? 1 : 0), ms: d.ms + duration }));
+        return;
+      }
       setBusy(true);
       const now = new Date();
-      const duration = Math.min(MAX_ANSWER_MS, Date.now() - shownAt.current);
       try {
         let updated = await api.cardReview(card.id, { ...schedule(card, rating, now, opts), duration_ms: duration });
         // Problemkarte
@@ -210,12 +234,18 @@ export function LearnSession({
         setBusy(false);
       }
     },
-    [card, busy, opts, main, bump, toast],
+    [card, busy, opts, main, bump, toast, practice],
   );
 
   const undo = useCallback(async () => {
     const last = history.at(-1);
     if (!last || busy) return;
+    if (last.type === "practice") {
+      setMain(last.main);
+      setDone((d) => ({ n: Math.max(0, d.n - 1), ok: d.ok, ms: d.ms }));
+      setHistory((h) => h.slice(0, -1));
+      return;
+    }
     setBusy(true);
     try {
       if (last.type === "review") {
@@ -343,7 +373,9 @@ export function LearnSession({
       <header className="page-head learn-head">
         <div className="row">
           <div className="grow" style={{ minWidth: 0 }}>
-            <div className="small muted">Lernen{custom ? " · benutzerdefiniert" : ahead ? " · vorziehen" : ""}</div>
+            <div className="small muted">
+              {repeat ? `Stapel wiederholen · ${practice ? "nur üben" : "Antworten zählen"}` : `Lernen${custom ? " · benutzerdefiniert" : ahead ? " · vorziehen" : ""}`}
+            </div>
             <h1 className="page-title-static ellipsis">{title}</h1>
           </div>
           <IconButton label="Rückgängig (Z)" disabled={!history.length || busy} onClick={() => void undo()}>
@@ -365,8 +397,9 @@ export function LearnSession({
           </span>
           {left !== null && <span className="xs muted">noch {Math.floor(left / 60000)}:{String(Math.floor((left % 60000) / 1000)).padStart(2, "0")} Min.</span>}
           <span className="grow" />
-          <span className="xs muted">{done.n ? `${done.n} heute in dieser Sitzung` : ""}</span>
+          <span className="xs muted">{done.n ? `${done.n} ${repeat ? "in dieser Runde" : "heute in dieser Sitzung"}` : ""}</span>
         </div>
+        {practice && <p className="xs muted learn-practice">Übungsrunde: Deine Antworten ändern die Planung und die Statistik nicht.</p>}
         <div className="learn-progress">
           <div className="learn-bar" style={{ width: `${(done.n / Math.max(1, done.n + counts.new + counts.learn + counts.review)) * 100}%` }} />
         </div>
@@ -374,24 +407,58 @@ export function LearnSession({
 
       {!card ? (
         <EmptyState
-          title={timeUp ? `${minutes} Minuten geschafft` : done.n || history.length ? "Glückwunsch – für heute geschafft!" : "Gerade nichts zu lernen"}
+          title={
+            timeUp
+              ? `${minutes} Minuten geschafft`
+              : repeat
+                ? done.n
+                  ? "Stapel wiederholt"
+                  : "Keine Karten zum Wiederholen"
+                : done.n || history.length
+                  ? "Glückwunsch – für heute geschafft!"
+                  : "Gerade nichts zu lernen"
+          }
           action={
             <div className="row wrap" style={{ justifyContent: "center" }}>
               <Button variant="primary" onClick={() => open({ type: "cards", deck })}>
                 Zur Stapelübersicht
               </Button>
+              {repeat && (
+                <Button
+                  onClick={() => {
+                    setDone({ n: 0, ok: 0, ms: 0 });
+                    setHistory([]);
+                    void load();
+                  }}
+                >
+                  Noch eine Runde
+                </Button>
+              )}
+              {!custom && !ahead && deck && <Button onClick={() => setRepeatOpen(true)}>Stapel trotzdem wiederholen</Button>}
               {!custom && !ahead && (
                 <Button onClick={() => setAhead(true)}>Karten der nächsten 7 Tage vorziehen</Button>
               )}
             </div>
           }
         >
-          {done.n > 0 && (
+          {repeat ? (
+            done.n > 0 ? (
+              <>
+                {done.n} {done.n === 1 ? "Antwort" : "Antworten"} in {formatInterval(Math.max(60000, done.ms))} · {Math.round((done.ok / done.n) * 100)} % gewusst.{" "}
+                {practice ? "Die Planung ist unverändert." : "Die nächsten Termine sind neu berechnet."}
+              </>
+            ) : (
+              "Im Stapel gibt es keine passenden Karten."
+            )
+          ) : null}
+          {!repeat && done.n > 0 && (
             <>
               {done.n} {done.n === 1 ? "Karte" : "Karten"} in {formatInterval(Math.max(60000, done.ms))} · {Math.round((done.ok / done.n) * 100)} % gewusst.{" "}
             </>
           )}
-          {nextLearn
+          {repeat
+            ? null
+            : nextLearn
             ? `Lernkarten sind in ${formatInterval(Date.parse(nextLearn.due) - Date.now())} wieder dran – lass die App einfach offen oder komm später zurück.`
             : "Die nächsten Karten werden fällig, wenn es für das Behalten sinnvoll ist."}
         </EmptyState>
@@ -479,6 +546,7 @@ export function LearnSession({
           }}
         />
       )}
+      {repeatOpen && deck && <RepeatDialog deck={deck} cards={allCards} onClose={() => setRepeatOpen(false)} />}
       {info && <CardInfoDialog card={info} onClose={() => setInfo(null)} />}
       {options && <DeckOptionsDialog deck={options} onClose={() => setOptions(null)} onSaved={(s) => setSettings(s)} />}
       {menu.el}

@@ -510,3 +510,10 @@ rect.is-hover { stroke: var(--text); stroke-width: 1.5; }
 .viz-heat-legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; }
 .leech-list { list-style: none; margin: 4px 0 10px; padding: 0; }
 .leech-list li { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+
+/* Stapel wiederholen */
+.repeat-group { border: 0; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+.repeat-group legend { margin-bottom: 4px; }
+.repeat-group label { align-items: center; gap: 8px; min-height: 32px; }
+.repeat-days input { width: 5.5em; }
+.learn-practice { margin: 0 0 6px; padding: 4px 10px; border-radius: 8px; background: var(--accent-soft); }
