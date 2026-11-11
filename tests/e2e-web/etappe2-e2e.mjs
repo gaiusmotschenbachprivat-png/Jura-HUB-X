@@ -88,7 +88,17 @@ try {
     await page.getByRole("button", { name: "Übersicht" }).click();
     await nowCard.getByRole("button", { name: "Mitschrift öffnen" }).waitFor({ timeout: 5000 });
     check("Danach „Mitschrift öffnen“ statt neu anlegen", true);
-  } else console.log("HINWEIS  Uhrzeit nahe Mitternacht – „Jetzt“-Prüfung übersprungen");
+  } else {
+    console.log("HINWEIS  Uhrzeit nahe Mitternacht – „Jetzt“-Prüfung übersprungen");
+    // die folgenden Schritte erwarten die heutige Mitschrift trotzdem
+    await page.evaluate(async (today) => {
+      const api = window.__STUDIUM_API__;
+      const c = (await api.nodesList(null)).find((n) => n.title === "BGB AT");
+      await api.nodeCreate({ area_id: c.area_id, parent_id: c.id, kind: "note", title: "4. Vorlesung", meta: { noteType: "vorlesung", number: 4, date: today, lecturer: "Prof. Muster" } });
+    }, TODAY);
+    await page.reload();
+    await page.locator(".area-tab").first().waitFor({ timeout: 20000 });
+  }
   await shot("etappe2-uebersicht");
 
   // 2. Stundenplan
