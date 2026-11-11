@@ -135,14 +135,14 @@ fn definition_backlinks_from_notes_schemas_and_cases() {
 }
 
 fn review_state(due: &str, rating: i64) -> ReviewInput {
-    ReviewInput { rating, due: due.into(), stability: 3.2, difficulty: 5.1, elapsed_days: 0, scheduled_days: 3, learning_steps: 0, reps: 1, lapses: 0, state: 2 }
+    ReviewInput { rating, due: due.into(), stability: 3.2, difficulty: 5.1, elapsed_days: 0, scheduled_days: 3, learning_steps: 0, reps: 1, lapses: 0, state: 2, duration_ms: None }
 }
 
 #[test]
 fn flashcards_review_and_stats() {
     let f = setup();
-    let c = cards::create(&f.conn, NewCard { area_id: Some(f.jura.clone()), node_id: None, kind: "definition".into(), front: "Willenserklärung?".into(), back: "Äußerung …".into(), tags: "BGB AT".into(), source_type: None, source_id: None }).unwrap();
-    assert!(cards::create(&f.conn, NewCard { area_id: None, node_id: None, kind: "frage".into(), front: " ".into(), back: "x".into(), tags: String::new(), source_type: None, source_id: None }).is_err());
+    let c = cards::create(&f.conn, NewCard { area_id: Some(f.jura.clone()), node_id: None, kind: "definition".into(), front: "Willenserklärung?".into(), back: "Äußerung …".into(), tags: "BGB AT".into(), source_type: None, source_id: None, deck: None, template: None, fields: None, note_key: None, ord: None }).unwrap();
+    assert!(cards::create(&f.conn, NewCard { area_id: None, node_id: None, kind: "frage".into(), front: " ".into(), back: "x".into(), tags: String::new(), source_type: None, source_id: None, deck: None, template: None, fields: None, note_key: None, ord: None }).is_err());
     assert_eq!(c.state, 0);
     let due_now = cards::list(&f.conn, &CardFilter { due_only: true, ..Default::default() }).unwrap();
     assert_eq!(due_now.len(), 1, "neue Karten sind sofort fällig");
@@ -283,10 +283,81 @@ fn note_images_are_stored_backed_up_and_protected() {
 fn rebuild_index_covers_all_entities() {
     let f = setup();
     knowledge::create(&f.conn, new_k("definition", "Besitz", None, json!({"text": "tatsächliche Sachherrschaft"}))).unwrap();
-    cards::create(&f.conn, NewCard { area_id: None, node_id: None, kind: "frage".into(), front: "Eigentum vs. Besitz".into(), back: "rechtliche Herrschaft".into(), tags: String::new(), source_type: None, source_id: None }).unwrap();
+    cards::create(&f.conn, NewCard { area_id: None, node_id: None, kind: "frage".into(), front: "Eigentum vs. Besitz".into(), back: "rechtliche Herrschaft".into(), tags: String::new(), source_type: None, source_id: None, deck: None, template: None, fields: None, note_key: None, ord: None }).unwrap();
     planning::task_create(&f.conn, NewTask { area_id: None, node_id: None, kind: "aufgabe".into(), title: "Sachenrecht wiederholen".into(), notes: String::new(), due_date: None }).unwrap();
     search::rebuild(&f.conn).unwrap();
     assert_eq!(search::search(&f.conn, "Sachherrschaft", None, 5).unwrap().len(), 1);
     assert_eq!(search::search(&f.conn, "Eigentum", None, 5).unwrap().len(), 1);
     assert_eq!(search::search(&f.conn, "Sachenrecht", None, 5).unwrap().len(), 1);
+}
+
+fn card_in(f: &F, deck: &str, template: Option<&str>, fields: Option<&str>) -> studium_core::Result<cards::Card> {
+    cards::create(
+        &f.conn,
+        NewCard {
+            area_id: Some(f.jura.clone()),
+            node_id: None,
+            kind: "definition".into(),
+            front: "Willenserklärung".into(),
+            back: "Äußerung eines Rechtsfolgewillens".into(),
+            tags: String::new(),
+            source_type: None,
+            source_id: None,
+            deck: Some(deck.into()),
+            template: template.map(Into::into),
+            fields: fields.map(Into::into),
+            note_key: None,
+            ord: None,
+        },
+    )
+}
+
+#[test]
+fn flashcards_decks_templates_undo() {
+    let f = setup();
+    // Stapel, Typ und Felder werden geprüft und bereinigt (wie im TS-Kern)
+    let c = card_in(&f, "  Zivilrecht :: BGB AT ::: ::Rechtsgeschäft ", Some("definition"), Some(r#"{"norm":" §§ 116 ff. BGB ","beispiel":"Angebot","leer":""}"#)).unwrap();
+    assert_eq!(c.deck, "Zivilrecht::BGB AT::Rechtsgeschäft");
+    assert_eq!(c.template, "definition");
+    assert_eq!(serde_json::from_str::<serde_json::Value>(&c.fields).unwrap(), json!({"norm": "§§ 116 ff. BGB", "beispiel": "Angebot"}));
+    assert_eq!((c.flag, c.buried_until.clone(), c.ord), (0, None, 0));
+    assert!(card_in(&f, "", Some("quatsch"), None).is_err());
+    assert!(card_in(&f, "", None, Some("[1]")).is_err());
+    assert!(card_in(&f, "", None, Some(r#"{"Böse Taste":"x"}"#)).is_err());
+    assert_eq!(card_in(&f, "", None, None).unwrap().template, "definition");
+    let u = cards::update(&f.conn, &c.id, CardPatch { flag: Some(3), deck: Some("Zivilrecht::BGB AT".into()), template: Some("begriff".into()), ..Default::default() }).unwrap();
+    assert_eq!((u.flag, u.deck.as_str(), u.template.as_str()), (3, "Zivilrecht::BGB AT", "begriff"));
+    assert!(cards::update(&f.conn, &c.id, CardPatch { flag: Some(9), ..Default::default() }).is_err());
+
+    // Zurückstellen
+    let due = |f: &F| cards::list(&f.conn, &CardFilter { due_only: true, ..Default::default() }).unwrap().iter().any(|x| x.id == c.id);
+    assert!(due(&f));
+    cards::update(&f.conn, &c.id, CardPatch { buried_until: Some(Some("2999-01-01T00:00:00Z".into())), ..Default::default() }).unwrap();
+    assert!(!due(&f));
+    assert!(cards::update(&f.conn, &c.id, CardPatch { buried_until: Some(Some("morgen".into())), ..Default::default() }).is_err());
+    cards::update(&f.conn, &c.id, CardPatch { buried_until: Some(None), ..Default::default() }).unwrap();
+    assert!(due(&f));
+
+    // Rückgängig und Protokoll
+    let mut r1 = review_state("2030-01-05T10:00:00Z", 3);
+    r1.duration_ms = Some(8500);
+    let c1 = cards::review(&f.conn, &c.id, r1).unwrap();
+    let mut r2 = review_state("2030-01-05T10:10:00Z", 1);
+    r2.duration_ms = Some(99_999_999);
+    r2.state = 3;
+    r2.lapses = 1;
+    r2.reps = 2;
+    cards::review(&f.conn, &c.id, r2).unwrap();
+    let log = cards::review_log(&f.conn, None, "2000-01-01T00:00:00Z").unwrap();
+    assert_eq!(log.iter().map(|l| (l.rating, l.duration_ms, l.state_before)).collect::<Vec<_>>(), vec![(3, 8500, 0), (1, 3_600_000, 2)]);
+    let back = cards::undo_review(&f.conn, &c.id).unwrap();
+    assert_eq!((back.state, back.reps, back.lapses, back.due.clone(), back.difficult), (c1.state, c1.reps, c1.lapses, c1.due.clone(), c1.difficult));
+    assert_eq!(cards::review_log(&f.conn, None, "2000-01-01T00:00:00Z").unwrap().len(), 1);
+    let fresh = cards::undo_review(&f.conn, &c.id).unwrap();
+    assert_eq!((fresh.state, fresh.reps, fresh.last_review), (0, 0, None));
+    assert!(cards::undo_review(&f.conn, &c.id).is_err());
+    // „Vergessen“
+    cards::review(&f.conn, &c.id, review_state("2030-01-05T10:00:00Z", 3)).unwrap();
+    let r = cards::update(&f.conn, &c.id, CardPatch { reset: true, ..Default::default() }).unwrap();
+    assert_eq!((r.state, r.reps, r.stability, r.last_review), (0, 0, 0.0, None));
 }

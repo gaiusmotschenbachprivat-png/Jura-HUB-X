@@ -67,7 +67,7 @@ describe("Schemata üben", () => {
 });
 
 const node = (id: string, kind: StudyNode["kind"], parent: string | null, title = id) => ({ id, kind, parent_id: parent, title }) as StudyNode;
-const card = (over: Partial<Card>): Card => ({ id: Math.random().toString(), area_id: null, node_id: null, kind: "frage", front: "", back: "", tags: "", source_type: null, source_id: null, difficult: false, suspended: false, due: "2026-01-01T00:00:00Z", stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, learning_steps: 0, reps: 0, lapses: 0, state: 0, last_review: null, created_at: "", updated_at: "", deleted_at: null, ...over });
+const card = (over: Partial<Card>): Card => ({ id: Math.random().toString(), area_id: null, node_id: null, kind: "frage", front: "", back: "", tags: "", source_type: null, source_id: null, difficult: false, suspended: false, due: "2026-01-01T00:00:00Z", stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, learning_steps: 0, reps: 0, lapses: 0, state: 0, last_review: null, created_at: "", updated_at: "", deleted_at: null, deck: "", template: "basis", fields: "{}", flag: 0, buried_until: null, note_key: null, ord: 0, ...over });
 
 describe("Lernstand nach Fach", () => {
   const nodes = [node("sem", "semester", null), node("bgb", "course", "sem", "BGB AT"), node("vl1", "note", "bgb"), node("str", "course", "sem", "Strafrecht")];

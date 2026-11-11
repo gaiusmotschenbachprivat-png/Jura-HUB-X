@@ -53,6 +53,7 @@ import type {
   TrashItem,
   VerifyReport,
   VersionMeta,
+  ReviewLogEntry,
 } from "./types";
 
 /**
@@ -146,6 +147,10 @@ export interface Backend {
   cardReview(id: string, review: ReviewInput): Promise<Card>;
   cardTrash(id: string): Promise<void>;
   cardStats(areaId: string | null, dayStart: string): Promise<CardStats>;
+  /** letzte Bewertung einer Karte zurücknehmen (Stand davor wiederherstellen) */
+  cardUndoReview(id: string): Promise<Card>;
+  /** Lernprotokoll ab `since` (für Statistiken) */
+  cardReviewLog(areaId: string | null, since: string): Promise<ReviewLogEntry[]>;
 
   tasksList(filter: TaskFilter): Promise<Task[]>;
   taskCreate(input: NewTask): Promise<Task>;

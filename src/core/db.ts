@@ -10,11 +10,12 @@ import m3 from "../../crates/studium-core/src/db/migrations/0003_rechtsquellen.s
 import m4 from "../../crates/studium-core/src/db/migrations/0004_quellen.sql?raw";
 import m5 from "../../crates/studium-core/src/db/migrations/0005_handschrift.sql?raw";
 import m6 from "../../crates/studium-core/src/db/migrations/0006_ki_verlauf.sql?raw";
+import m7 from "../../crates/studium-core/src/db/migrations/0007_karteikarten_stapel.sql?raw";
 
 import { CoreError } from "./errors";
 
 /** Alle Migrationen in Reihenfolge – dieselben Dateien wie in der Desktop-App. */
-export const MIGRATIONS: readonly string[] = [m1, m2, m3, m4, m5, m6];
+export const MIGRATIONS: readonly string[] = [m1, m2, m3, m4, m5, m6, m7];
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
 export type SqlValue = string | number | bigint | null | Uint8Array;

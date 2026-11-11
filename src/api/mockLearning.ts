@@ -35,6 +35,8 @@ type LearningPart = Pick<
   | "cardReview"
   | "cardTrash"
   | "cardStats"
+  | "cardUndoReview"
+  | "cardReviewLog"
   | "tasksList"
   | "taskCreate"
   | "taskUpdate"
@@ -57,7 +59,7 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
   const exams = new Map<string, Exam>();
   const annotations = new Map<string, Annotation>();
   const images = new Map<string, Uint8Array>();
-  const reviews: { card: string; rating: number; at: string }[] = [];
+  const reviews: { id: string; card: string; rating: number; at: string; state_before: number; scheduled_days: number; stability: number; difficulty: number; duration_ms: number; before: Card }[] = [];
 
   const inArea = (a: string | null, area?: string | null) => !area || !a || a === area;
 
@@ -123,7 +125,7 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
     async cardsList(f) {
       const t = now();
       return [...cards.values()]
-        .filter((c) => !c.deleted_at && inArea(c.area_id, f.area_id) && (!f.node_id || c.node_id === f.node_id) && (!f.due_only || (!c.suspended && c.due <= t)) && (!f.difficult_only || c.difficult) && (!f.source_id || c.source_id === f.source_id))
+        .filter((c) => !c.deleted_at && inArea(c.area_id, f.area_id) && (!f.node_id || c.node_id === f.node_id) && (!f.due_only || (!c.suspended && c.due <= t && (!c.buried_until || c.buried_until <= t))) && (!f.difficult_only || c.difficult) && (!f.source_id || c.source_id === f.source_id))
         .sort((a, b) => (f.due_only ? a.due.localeCompare(b.due) : b.created_at.localeCompare(a.created_at)))
         .slice(0, f.limit ?? 5000);
     },
@@ -154,6 +156,13 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
         created_at: now(),
         updated_at: now(),
         deleted_at: null,
+        deck: (input.deck ?? "").split(/:{2,}/).map((p) => p.trim()).filter(Boolean).join("::"),
+        template: input.template ?? (input.kind === "definition" ? "definition" : "basis"),
+        fields: input.fields ?? "{}",
+        flag: 0,
+        buried_until: null,
+        note_key: input.note_key ?? null,
+        ord: input.ord ?? 0,
       };
       cards.set(c.id, c);
       return c;
@@ -161,15 +170,36 @@ export function createLearningMock(areaOf: (nodeId: string) => string | undefine
     async cardUpdate(id, patch) {
       const c = cards.get(id);
       if (!c) throw err("Karteikarte nicht gefunden.");
-      Object.assign(c, patch, { updated_at: now() });
+      const { reset, ...rest } = patch;
+      Object.assign(c, rest, { updated_at: now() });
+      if (rest.deck != null) c.deck = rest.deck.split(/:{2,}/).map((p) => p.trim()).filter(Boolean).join("::");
+      if (reset) Object.assign(c, { due: now(), stability: 0, difficulty: 0, elapsed_days: 0, scheduled_days: 0, learning_steps: 0, reps: 0, lapses: 0, state: 0, last_review: null, difficult: false });
       return c;
     },
     async cardReview(id, r) {
       const c = cards.get(id);
       if (!c) throw err("Karteikarte nicht gefunden.");
-      reviews.push({ card: id, rating: r.rating, at: now() });
-      Object.assign(c, { ...r, last_review: now(), difficult: r.rating <= 2 ? true : r.rating === 4 ? false : c.difficult });
+      reviews.push({ id: uuid(), card: id, rating: r.rating, at: now(), state_before: c.state, scheduled_days: r.scheduled_days, stability: r.stability, difficulty: r.difficulty, duration_ms: r.duration_ms ?? 0, before: { ...c } });
+      const { rating, duration_ms, ...state } = r;
+      void duration_ms;
+      Object.assign(c, { ...state, last_review: now(), buried_until: null, difficult: rating <= 2 ? true : rating === 4 ? false : c.difficult });
       return c;
+    },
+    async cardUndoReview(id) {
+      const c = cards.get(id);
+      if (!c) throw err("Karteikarte nicht gefunden.");
+      const i = reviews.map((r) => r.card).lastIndexOf(id);
+      if (i < 0) throw err("Diese Bewertung lässt sich nicht rückgängig machen.");
+      const b = reviews[i]!.before;
+      reviews.splice(i, 1);
+      const keep = { deck: c.deck, template: c.template, fields: c.fields, flag: c.flag, front: c.front, back: c.back, tags: c.tags, suspended: c.suspended };
+      Object.assign(c, b, keep, { updated_at: now() });
+      return c;
+    },
+    async cardReviewLog(areaId, since) {
+      return reviews
+        .filter((r) => r.at >= since && inArea(cards.get(r.card)?.area_id ?? null, areaId))
+        .map((r) => ({ id: r.id, card_id: r.card, rating: r.rating, state_before: r.state_before, scheduled_days: r.scheduled_days, stability: r.stability, difficulty: r.difficulty, duration_ms: r.duration_ms, reviewed_at: r.at }));
     },
     async cardTrash(id) {
       const c = cards.get(id);

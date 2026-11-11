@@ -18,6 +18,7 @@ const MIGRATIONS: &[&str] = &[
     include_str!("migrations/0004_quellen.sql"),
     include_str!("migrations/0005_handschrift.sql"),
     include_str!("migrations/0006_ki_verlauf.sql"),
+    include_str!("migrations/0007_karteikarten_stapel.sql"),
 ];
 
 /// Höchste Schemaversion, die diese App-Version versteht.

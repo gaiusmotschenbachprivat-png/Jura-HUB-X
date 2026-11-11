@@ -103,6 +103,8 @@ pub fn run() {
             learning::card_review,
             learning::card_trash,
             learning::card_stats,
+            learning::card_undo_review,
+            learning::card_review_log,
             learning::tasks_list,
             learning::task_create,
             learning::task_update,

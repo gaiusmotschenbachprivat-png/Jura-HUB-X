@@ -14,6 +14,7 @@ use crate::util::{new_id, now, parse_ts, require_id};
 use crate::{Error, Result};
 
 pub const KINDS: &[&str] = &["frage", "definition", "norm"];
+pub const TEMPLATES: &[&str] = &["basis", "umgekehrt", "definition", "begriff", "schema", "luecke", "eingabe"];
 
 #[derive(Debug, Serialize, Clone)]
 pub struct Card {
@@ -41,6 +42,16 @@ pub struct Card {
     pub created_at: String,
     pub updated_at: String,
     pub deleted_at: Option<String>,
+    /// Stapel mit Unterstapeln, getrennt durch „::“
+    pub deck: String,
+    /// Kartentyp (siehe `TEMPLATES`)
+    pub template: String,
+    /// weitere Felder des Kartentyps als JSON-Objekt
+    pub fields: String,
+    pub flag: i64,
+    pub buried_until: Option<String>,
+    pub note_key: Option<String>,
+    pub ord: i64,
 }
 
 fn from_row(r: &Row) -> rusqlite::Result<Card> {
@@ -69,7 +80,78 @@ fn from_row(r: &Row) -> rusqlite::Result<Card> {
         created_at: r.get("created_at")?,
         updated_at: r.get("updated_at")?,
         deleted_at: r.get("deleted_at")?,
+        deck: r.get("deck")?,
+        template: r.get("template")?,
+        fields: r.get("fields")?,
+        flag: r.get("flag")?,
+        buried_until: r.get("buried_until")?,
+        note_key: r.get("note_key")?,
+        ord: r.get("ord")?,
     })
+}
+
+/// Stapelpfad: Teile an „::“ (auch „:::“) getrennt, ohne Rand-Leerzeichen, leere Teile entfallen (höchstens 200 Zeichen).
+pub fn clean_deck(s: &str) -> String {
+    let flat: String = s.chars().filter(|c| !c.is_control() || *c == '\n').map(|c| if c == '\n' { ' ' } else { c }).collect();
+    let mut parts: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let chars: Vec<char> = flat.chars().collect();
+    let mut i = 0;
+    while i < chars.len() {
+        if chars[i] == ':' && i + 1 < chars.len() && chars[i + 1] == ':' {
+            while i < chars.len() && chars[i] == ':' {
+                i += 1;
+            }
+            parts.push(std::mem::take(&mut cur));
+            continue;
+        }
+        cur.push(chars[i]);
+        i += 1;
+    }
+    parts.push(cur);
+    let joined = parts.iter().map(|p| p.trim()).filter(|p| !p.is_empty()).collect::<Vec<_>>().join("::");
+    joined.chars().take(200).collect()
+}
+
+/// Zusatzfelder: JSON-Objekt mit Text je Feld (höchstens 20 Felder, 20 000 Zeichen insgesamt).
+pub fn clean_fields(s: &str) -> Result<String> {
+    let src = if s.is_empty() { "{}" } else { s };
+    let v: serde_json::Value = serde_json::from_str(src).map_err(|_| Error::invalid("Ungültige Kartenfelder."))?;
+    let obj = v.as_object().ok_or_else(|| Error::invalid("Ungültige Kartenfelder."))?;
+    let mut out = serde_json::Map::new();
+    for (k, val) in obj.iter().take(20) {
+        let valid_key = {
+            let mut cs = k.chars();
+            matches!(cs.next(), Some('a'..='z')) && k.chars().count() <= 32 && cs.all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+        };
+        let text = val.as_str().ok_or_else(|| Error::invalid("Ungültige Kartenfelder."))?;
+        if !valid_key {
+            return Err(Error::invalid("Ungültige Kartenfelder."));
+        }
+        let t = clean_text(text, 20000);
+        if !t.is_empty() {
+            out.insert(k.clone(), serde_json::Value::String(t));
+        }
+    }
+    let json = serde_json::to_string(&serde_json::Value::Object(out)).unwrap_or_else(|_| "{}".into());
+    if json.chars().count() > 20000 {
+        return Err(Error::invalid("Die Kartenfelder sind zu lang."));
+    }
+    Ok(json)
+}
+
+fn check_template(t: &str) -> Result<()> {
+    if TEMPLATES.contains(&t) {
+        Ok(())
+    } else {
+        Err(Error::invalid("Unbekannter Kartentyp."))
+    }
+}
+
+fn norm_ts(s: &str) -> Option<String> {
+    time::OffsetDateTime::parse(s, &time::format_description::well_known::Rfc3339)
+        .ok()
+        .and_then(|t| t.format(&time::format_description::well_known::Rfc3339).ok())
 }
 
 fn clean_text(s: &str, max: usize) -> String {
@@ -92,6 +174,16 @@ pub struct NewCard {
     pub source_type: Option<String>,
     #[serde(default)]
     pub source_id: Option<String>,
+    #[serde(default)]
+    pub deck: Option<String>,
+    #[serde(default)]
+    pub template: Option<String>,
+    #[serde(default)]
+    pub fields: Option<String>,
+    #[serde(default)]
+    pub note_key: Option<String>,
+    #[serde(default)]
+    pub ord: Option<i64>,
 }
 
 fn default_kind() -> String {
@@ -136,14 +228,40 @@ pub fn create(conn: &Connection, input: NewCard) -> Result<Card> {
         }
         require_id(input.source_id.as_deref().unwrap_or(""))?;
     }
+    let template = input.template.clone().unwrap_or_else(|| if input.kind == "definition" { "definition".into() } else { "basis".into() });
+    check_template(&template)?;
+    let fields = clean_fields(input.fields.as_deref().unwrap_or("{}"))?;
+    if let Some(k) = &input.note_key {
+        require_id(k)?;
+    }
+    let ord = input.ord.unwrap_or(0);
+    if !(0..=99).contains(&ord) {
+        return Err(Error::invalid("Ungültige Kartennummer."));
+    }
     let tx = conn.unchecked_transaction()?;
     check_refs(&tx, input.area_id.as_deref(), input.node_id.as_deref())?;
     let id = new_id();
     let ts = now();
     tx.execute(
-        "INSERT INTO flashcards (id, area_id, node_id, kind, front, back, tags, source_type, source_id, due, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10, ?10)",
-        params![id, input.area_id, input.node_id, input.kind, front, back, clean_text(&input.tags, 300), input.source_type, input.source_id, ts],
+        "INSERT INTO flashcards (id, area_id, node_id, kind, front, back, tags, source_type, source_id, due, created_at, updated_at, deck, template, fields, note_key, ord)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10, ?10, ?11, ?12, ?13, ?14, ?15)",
+        params![
+            id,
+            input.area_id,
+            input.node_id,
+            input.kind,
+            front,
+            back,
+            clean_text(&input.tags, 300),
+            input.source_type,
+            input.source_id,
+            ts,
+            clean_deck(input.deck.as_deref().unwrap_or("")),
+            template,
+            fields,
+            input.note_key,
+            ord
+        ],
     )?;
     let c = get(&tx, &id)?;
     index(&tx, &c)?;
@@ -163,6 +281,15 @@ pub struct CardPatch {
     pub area_id: Option<Option<String>>,
     #[serde(default, deserialize_with = "double_option")]
     pub node_id: Option<Option<String>>,
+    pub deck: Option<String>,
+    pub template: Option<String>,
+    pub fields: Option<String>,
+    pub flag: Option<i64>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub buried_until: Option<Option<String>>,
+    /// Lernstand zurücksetzen („Vergessen“)
+    #[serde(default)]
+    pub reset: bool,
 }
 
 pub fn update(conn: &Connection, id: &str, p: CardPatch) -> Result<Card> {
@@ -198,12 +325,63 @@ pub fn update(conn: &Connection, id: &str, p: CardPatch) -> Result<Card> {
     if let Some(v) = p.node_id {
         c.node_id = v;
     }
+    if let Some(v) = p.deck {
+        c.deck = clean_deck(&v);
+    }
+    if let Some(v) = p.template {
+        check_template(&v)?;
+        c.template = v;
+    }
+    if let Some(v) = p.fields {
+        c.fields = clean_fields(&v)?;
+    }
+    if let Some(v) = p.flag {
+        if !(0..=7).contains(&v) {
+            return Err(Error::invalid("Ungültige Flagge."));
+        }
+        c.flag = v;
+    }
+    if let Some(v) = p.buried_until {
+        c.buried_until = match v {
+            None => None,
+            Some(s) => Some(norm_ts(&s).ok_or_else(|| Error::invalid("Ungültiger Zeitpunkt."))?),
+        };
+    }
     check_refs(&tx, c.area_id.as_deref(), c.node_id.as_deref())?;
     c.updated_at = now();
     tx.execute(
-        "UPDATE flashcards SET front=?2, back=?3, kind=?4, tags=?5, difficult=?6, suspended=?7, area_id=?8, node_id=?9, updated_at=?10 WHERE id=?1",
-        params![id, c.front, c.back, c.kind, c.tags, c.difficult as i64, c.suspended as i64, c.area_id, c.node_id, c.updated_at],
+        "UPDATE flashcards SET front=?2, back=?3, kind=?4, tags=?5, difficult=?6, suspended=?7, area_id=?8, node_id=?9, updated_at=?10,
+                deck=?11, template=?12, fields=?13, flag=?14, buried_until=?15 WHERE id=?1",
+        params![
+            id,
+            c.front,
+            c.back,
+            c.kind,
+            c.tags,
+            c.difficult as i64,
+            c.suspended as i64,
+            c.area_id,
+            c.node_id,
+            c.updated_at,
+            c.deck,
+            c.template,
+            c.fields,
+            c.flag,
+            c.buried_until
+        ],
     )?;
+    if p.reset {
+        // „Vergessen“: wieder als neue Karte (Protokoll bleibt erhalten)
+        tx.execute(
+            "UPDATE flashcards SET due=?2, stability=0, difficulty=0, elapsed_days=0, scheduled_days=0, learning_steps=0, reps=0, lapses=0,
+                    state=0, last_review=NULL, difficult=0 WHERE id=?1",
+            params![id, c.updated_at],
+        )?;
+        let c = get(&tx, id)?;
+        index(&tx, &c)?;
+        tx.commit()?;
+        return Ok(c);
+    }
     index(&tx, &c)?;
     tx.commit()?;
     Ok(c)
@@ -223,6 +401,27 @@ pub struct ReviewInput {
     pub reps: i64,
     pub lapses: i64,
     pub state: i64,
+    /// Antwortzeit in Millisekunden
+    #[serde(default)]
+    pub duration_ms: Option<i64>,
+}
+
+/// Planungsstand vor einer Bewertung (für „Rückgängig“), als JSON
+fn snapshot_of(c: &Card) -> String {
+    serde_json::json!({
+        "due": c.due,
+        "stability": c.stability,
+        "difficulty": c.difficulty,
+        "elapsed_days": c.elapsed_days,
+        "scheduled_days": c.scheduled_days,
+        "learning_steps": c.learning_steps,
+        "reps": c.reps,
+        "lapses": c.lapses,
+        "state": c.state,
+        "last_review": c.last_review,
+        "difficult": c.difficult,
+    })
+    .to_string()
 }
 
 pub fn review(conn: &Connection, id: &str, r: ReviewInput) -> Result<Card> {
@@ -239,6 +438,7 @@ pub fn review(conn: &Connection, id: &str, r: ReviewInput) -> Result<Card> {
         && r.scheduled_days >= 0
         && r.learning_steps >= 0
         && r.elapsed_days >= 0
+        && r.duration_ms.map_or(true, |d| d >= 0)
         && parse_ts(&r.due) != time::OffsetDateTime::UNIX_EPOCH;
     if !valid {
         return Err(Error::invalid("Ungültiger Wiederholungsstand."));
@@ -250,9 +450,21 @@ pub fn review(conn: &Connection, id: &str, r: ReviewInput) -> Result<Card> {
     }
     let ts = now();
     tx.execute(
-        "INSERT INTO review_log (id, card_id, rating, state_before, due_before, stability, difficulty, scheduled_days, reviewed_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-        params![new_id(), id, r.rating, before.state, before.due, r.stability, r.difficulty, r.scheduled_days, ts],
+        "INSERT INTO review_log (id, card_id, rating, state_before, due_before, stability, difficulty, scheduled_days, reviewed_at, duration_ms, before)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+        params![
+            new_id(),
+            id,
+            r.rating,
+            before.state,
+            before.due,
+            r.stability,
+            r.difficulty,
+            r.scheduled_days,
+            ts,
+            r.duration_ms.unwrap_or(0).min(3_600_000),
+            snapshot_of(&before)
+        ],
     )?;
     // „Schwer“ oder „Nochmal“ markiert die Karte als schwierig; „Einfach“ hebt das auf.
     let difficult = match r.rating {
@@ -262,12 +474,105 @@ pub fn review(conn: &Connection, id: &str, r: ReviewInput) -> Result<Card> {
     };
     tx.execute(
         "UPDATE flashcards SET due=?2, stability=?3, difficulty=?4, elapsed_days=?5, scheduled_days=?6, reps=?7, lapses=?8,
-                state=?9, last_review=?10, difficult=?11, learning_steps=?12, updated_at=?10 WHERE id=?1",
+                state=?9, last_review=?10, difficult=?11, learning_steps=?12, updated_at=?10, buried_until=NULL WHERE id=?1",
         params![id, r.due, r.stability, r.difficulty, r.elapsed_days, r.scheduled_days, r.reps, r.lapses, r.state, ts, difficult as i64, r.learning_steps],
     )?;
     let c = get(&tx, id)?;
     tx.commit()?;
     Ok(c)
+}
+
+/// Letzte Bewertung zurücknehmen: Stand davor wiederherstellen, Eintrag im Protokoll entfernen.
+pub fn undo_review(conn: &Connection, id: &str) -> Result<Card> {
+    let tx = conn.unchecked_transaction()?;
+    get(&tx, id)?;
+    let fail = || Error::invalid("Diese Bewertung lässt sich nicht rückgängig machen.");
+    let log: Option<(String, String)> = tx
+        .query_row(
+            "SELECT id, before FROM review_log WHERE card_id = ?1 ORDER BY reviewed_at DESC, rowid DESC LIMIT 1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?;
+    let (log_id, before) = log.ok_or_else(fail)?;
+    let b: serde_json::Value = serde_json::from_str(&before).map_err(|_| fail())?;
+    let due = b.get("due").and_then(|v| v.as_str()).and_then(norm_ts).ok_or_else(fail)?;
+    let last_review = match b.get("last_review") {
+        None | Some(serde_json::Value::Null) => None,
+        Some(v) => Some(v.as_str().and_then(norm_ts).ok_or_else(fail)?),
+    };
+    let num = |k: &str| -> Result<f64> {
+        let v = b.get(k).and_then(|v| v.as_f64()).ok_or_else(fail)?;
+        if v.is_finite() && v >= 0.0 {
+            Ok(v)
+        } else {
+            Err(fail())
+        }
+    };
+    let difficult = b.get("difficult").and_then(|v| v.as_bool()).unwrap_or(false);
+    tx.execute(
+        "UPDATE flashcards SET due=?2, stability=?3, difficulty=?4, elapsed_days=?5, scheduled_days=?6, learning_steps=?7, reps=?8, lapses=?9,
+                state=?10, last_review=?11, difficult=?12, updated_at=?13 WHERE id=?1",
+        params![
+            id,
+            due,
+            num("stability")?,
+            num("difficulty")?,
+            num("elapsed_days")? as i64,
+            num("scheduled_days")? as i64,
+            num("learning_steps")? as i64,
+            num("reps")? as i64,
+            num("lapses")? as i64,
+            num("state")? as i64,
+            last_review,
+            difficult as i64,
+            now()
+        ],
+    )?;
+    tx.execute("DELETE FROM review_log WHERE id = ?1", [&log_id])?;
+    let c = get(&tx, id)?;
+    tx.commit()?;
+    Ok(c)
+}
+
+/// Eintrag im Lernprotokoll (für Statistiken)
+#[derive(Debug, Serialize, Clone)]
+pub struct ReviewLogEntry {
+    pub id: String,
+    pub card_id: String,
+    pub rating: i64,
+    pub state_before: i64,
+    pub scheduled_days: i64,
+    pub stability: f64,
+    pub difficulty: f64,
+    pub duration_ms: i64,
+    pub reviewed_at: String,
+}
+
+/// Lernprotokoll ab `since`, älteste zuerst.
+pub fn review_log(conn: &Connection, area_id: Option<&str>, since: &str) -> Result<Vec<ReviewLogEntry>> {
+    let from = norm_ts(since).unwrap_or_else(|| "1970-01-01T00:00:00Z".into());
+    let mut stmt = conn.prepare(
+        "SELECT l.id, l.card_id, l.rating, l.state_before, l.scheduled_days, l.stability, l.difficulty, l.duration_ms, l.reviewed_at
+         FROM review_log l JOIN flashcards c ON c.id = l.card_id
+         WHERE l.reviewed_at >= ?2 AND (?1 IS NULL OR c.area_id = ?1 OR c.area_id IS NULL)
+         ORDER BY l.reviewed_at
+         LIMIT 200000",
+    )?;
+    let rows = stmt.query_map(params![area_id, from], |r| {
+        Ok(ReviewLogEntry {
+            id: r.get(0)?,
+            card_id: r.get(1)?,
+            rating: r.get(2)?,
+            state_before: r.get(3)?,
+            scheduled_days: r.get(4)?,
+            stability: r.get(5)?,
+            difficulty: r.get(6)?,
+            duration_ms: r.get(7)?,
+            reviewed_at: r.get(8)?,
+        })
+    })?;
+    Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
@@ -291,14 +596,14 @@ pub fn list(conn: &Connection, f: &CardFilter) -> Result<Vec<Card>> {
          WHERE deleted_at IS NULL
            AND (?1 IS NULL OR area_id = ?1 OR area_id IS NULL)
            AND (?2 IS NULL OR node_id = ?2)
-           AND (?3 = 0 OR (suspended = 0 AND due <= ?4))
+           AND (?3 = 0 OR (suspended = 0 AND due <= ?4 AND (buried_until IS NULL OR buried_until <= ?4)))
            AND (?5 = 0 OR difficult = 1)
            AND (?6 IS NULL OR (source_type = ?6 AND source_id = ?7))
          ORDER BY CASE WHEN ?3 = 1 THEN due END, created_at DESC
          LIMIT ?8",
     )?;
     let rows = stmt.query_map(
-        params![f.area_id, f.node_id, f.due_only as i64, ts, f.difficult_only as i64, f.source_type, f.source_id, f.limit.unwrap_or(5000).clamp(1, 5000)],
+        params![f.area_id, f.node_id, f.due_only as i64, ts, f.difficult_only as i64, f.source_type, f.source_id, f.limit.unwrap_or(20000).clamp(1, 20000)],
         from_row,
     )?;
     Ok(rows.collect::<rusqlite::Result<_>>()?)
@@ -348,7 +653,7 @@ pub fn stats(conn: &Connection, area_id: Option<&str>, day_start: &str) -> Resul
     };
     let mut s = CardStats {
         total: q("?2 = ?2", "")?,
-        due_now: q("suspended = 0 AND due <= ?2", &ts)?,
+        due_now: q("suspended = 0 AND due <= ?2 AND (buried_until IS NULL OR buried_until <= ?2)", &ts)?,
         new_cards: q("state = 0 AND ?2 = ?2", "")?,
         learning: q("state IN (1, 3) AND ?2 = ?2", "")?,
         review: q("state = 2 AND ?2 = ?2", "")?,

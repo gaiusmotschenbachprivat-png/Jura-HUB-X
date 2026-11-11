@@ -264,3 +264,95 @@ describe("Karteikarten (phase3.rs)", () => {
     expect(search(db, "Sachenrecht", null, 5)).toHaveLength(1);
   });
 });
+
+describe("Karteikarten: Stapel, Kartentypen, Rückgängig (Schema 7)", () => {
+  const rev = (over: Partial<ReviewInput> = {}): ReviewInput => ({
+    rating: 3,
+    due: "2030-01-05T10:00:00Z",
+    stability: 3.2,
+    difficulty: 5.1,
+    elapsed_days: 0,
+    scheduled_days: 4,
+    learning_steps: 0,
+    reps: 1,
+    lapses: 0,
+    state: 2,
+    ...over,
+  });
+  it("Stapel, Typ und Felder werden geprüft und bereinigt", async () => {
+    const { db, jura } = await setup();
+    const c = cards.create(db, {
+      area_id: jura,
+      kind: "definition",
+      front: "Willenserklärung",
+      back: "Äußerung eines Rechtsfolgewillens",
+      deck: "  Zivilrecht :: BGB AT ::: ::Rechtsgeschäft ",
+      template: "definition",
+      fields: JSON.stringify({ norm: " §§ 116 ff. BGB ", beispiel: "Angebot", leer: "" }),
+    });
+    expect(c.deck).toBe("Zivilrecht::BGB AT::Rechtsgeschäft");
+    expect(c.template).toBe("definition");
+    expect(JSON.parse(c.fields)).toEqual({ norm: "§§ 116 ff. BGB", beispiel: "Angebot" });
+    expect([c.flag, c.buried_until, c.note_key, c.ord]).toEqual([0, null, null, 0]);
+    expect(() => cards.create(db, { front: "a", back: "b", template: "quatsch" as never })).toThrow(CoreError);
+    expect(() => cards.create(db, { front: "a", back: "b", fields: "[1]" })).toThrow(CoreError);
+    expect(() => cards.create(db, { front: "a", back: "b", fields: JSON.stringify({ "Böse Taste": "x" }) })).toThrow(CoreError);
+    // ohne Angaben: Standardstapel, Kartentyp nach Kartenart
+    expect(cards.create(db, { front: "a", back: "b" }).template).toBe("basis");
+    expect(cards.create(db, { front: "a", back: "b", kind: "definition" }).template).toBe("definition");
+    const u = cards.update(db, c.id, { flag: 3, deck: "Zivilrecht::BGB AT", template: "begriff" });
+    expect([u.flag, u.deck, u.template]).toEqual([3, "Zivilrecht::BGB AT", "begriff"]);
+    expect(() => cards.update(db, c.id, { flag: 9 })).toThrow(CoreError);
+  });
+
+  it("Zurückstellen blendet fällige Karten bis morgen aus; Bewertung hebt es auf", async () => {
+    const { db } = await setup();
+    const c = cards.create(db, { front: "a", back: "b" });
+    expect(cards.list(db, { due_only: true }).map((x) => x.id)).toContain(c.id);
+    cards.update(db, c.id, { buried_until: "2999-01-01T00:00:00Z" });
+    expect(cards.list(db, { due_only: true }).map((x) => x.id)).not.toContain(c.id);
+    expect(cards.stats(db, null, "2000-01-01T00:00:00Z").due_now).toBe(0);
+    expect(() => cards.update(db, c.id, { buried_until: "morgen" })).toThrow(CoreError);
+    cards.update(db, c.id, { buried_until: null });
+    expect(cards.list(db, { due_only: true }).map((x) => x.id)).toContain(c.id);
+    cards.update(db, c.id, { buried_until: "2999-01-01T00:00:00Z" });
+    expect(cards.review(db, c.id, rev()).buried_until).toBeNull();
+  });
+
+  it("Rückgängig stellt den Stand vor der Bewertung wieder her; Protokoll mit Antwortzeit", async () => {
+    const { db } = await setup();
+    const c0 = cards.create(db, { front: "a", back: "b" });
+    const c1 = cards.review(db, c0.id, rev({ duration_ms: 8500 }));
+    const c2 = cards.review(db, c0.id, rev({ rating: 1, state: 3, lapses: 1, reps: 2, due: "2030-01-05T10:10:00Z", duration_ms: 99_999_999 }));
+    expect(c2.difficult).toBe(true);
+    const log = cards.reviewLog(db, null, "2000-01-01T00:00:00Z");
+    expect(log.map((l) => [l.rating, l.duration_ms, l.state_before])).toEqual([
+      [3, 8500, 0],
+      [1, 3_600_000, 2],
+    ]);
+    const back = cards.undoReview(db, c0.id);
+    expect([back.state, back.reps, back.lapses, back.due, back.difficult, back.stability]).toEqual([c1.state, c1.reps, c1.lapses, c1.due, c1.difficult, c1.stability]);
+    expect(cards.reviewLog(db, null, "2000-01-01T00:00:00Z")).toHaveLength(1);
+    const fresh = cards.undoReview(db, c0.id);
+    expect([fresh.state, fresh.reps, fresh.last_review]).toEqual([0, 0, null]);
+    expect(() => cards.undoReview(db, c0.id)).toThrow(CoreError);
+    // „Vergessen“
+    cards.review(db, c0.id, rev());
+    const r = cards.update(db, c0.id, { reset: true });
+    expect([r.state, r.reps, r.stability, r.last_review]).toEqual([0, 0, 0, null]);
+  });
+
+  it("Migration: bisherige Definitionskarten erhalten den Kartentyp „Definition“", async () => {
+    const { migrate, MIGRATIONS } = await import("./db");
+    const { db } = await setup();
+    // Stand vor Schema 7 nachbilden
+    db.exec("DROP INDEX flashcards_deck; DROP INDEX flashcards_note;");
+    for (const col of ["deck", "template", "fields", "flag", "buried_until", "note_key", "ord"]) db.exec(`ALTER TABLE flashcards DROP COLUMN ${col};`);
+    for (const col of ["duration_ms", "before"]) db.exec(`ALTER TABLE review_log DROP COLUMN ${col};`);
+    db.exec("PRAGMA user_version = 6;");
+    db.run("INSERT INTO flashcards (id, kind, front, back, due, created_at, updated_at) VALUES ('01890000-0000-7000-8000-000000000001', 'definition', 'a', 'b', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')");
+    migrate(db, MIGRATIONS);
+    const c = cards.get(db, "01890000-0000-7000-8000-000000000001");
+    expect([c.template, c.deck, c.fields, c.flag]).toEqual(["definition", "", "{}", 0]);
+  });
+});

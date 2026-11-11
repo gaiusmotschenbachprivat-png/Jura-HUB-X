@@ -388,6 +388,34 @@ export interface Card {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  /** Stapel mit Unterstapeln, getrennt durch „::“ ("" = Standard) */
+  deck: string;
+  /** Kartentyp (siehe CARD_TEMPLATES) */
+  template: CardTemplate;
+  /** weitere Felder des Kartentyps als JSON-Objekt (Text je Feld) */
+  fields: string;
+  /** Flagge 0 (keine) bis 7 */
+  flag: number;
+  /** zurückgestellt bis (Zeitpunkt) */
+  buried_until: string | null;
+  /** zusammengehörige Karten (umgekehrt, Lücken) */
+  note_key: string | null;
+  ord: number;
+}
+
+export type CardTemplate = "basis" | "umgekehrt" | "definition" | "begriff" | "schema" | "luecke" | "eingabe";
+
+/** Eintrag im Lernprotokoll (für Statistiken) */
+export interface ReviewLogEntry {
+  id: string;
+  card_id: string;
+  rating: number;
+  state_before: number;
+  scheduled_days: number;
+  stability: number;
+  difficulty: number;
+  duration_ms: number;
+  reviewed_at: string;
 }
 
 export interface NewCard {
@@ -399,6 +427,11 @@ export interface NewCard {
   tags?: string;
   source_type?: "knowledge" | "node" | "document" | null;
   source_id?: string | null;
+  deck?: string;
+  template?: CardTemplate;
+  fields?: string;
+  note_key?: string | null;
+  ord?: number;
 }
 
 export interface CardPatch {
@@ -410,6 +443,14 @@ export interface CardPatch {
   suspended?: boolean;
   area_id?: string | null;
   node_id?: string | null;
+  deck?: string;
+  template?: CardTemplate;
+  fields?: string;
+  flag?: number;
+  /** Zeitpunkt oder null (nicht mehr zurückgestellt) */
+  buried_until?: string | null;
+  /** Lernstand zurücksetzen („Vergessen“: wieder neu) */
+  reset?: boolean;
 }
 
 export interface CardFilter {
@@ -433,6 +474,8 @@ export interface ReviewInput {
   reps: number;
   lapses: number;
   state: number;
+  /** Antwortzeit in Millisekunden */
+  duration_ms?: number;
 }
 
 export interface CardStats {

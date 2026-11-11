@@ -276,6 +276,8 @@ export function createService(env: Env) {
     cardReview: async (id: string, review: Parameters<typeof cards.review>[2]) => cards.review(db(), id, review),
     cardTrash: async (id: string) => cards.trash(db(), id),
     cardStats: async (areaId: string | null, dayStart: string) => cards.stats(db(), areaId ?? null, dayStart),
+    cardUndoReview: async (id: string) => cards.undoReview(db(), id),
+    cardReviewLog: async (areaId: string | null, since: string) => cards.reviewLog(db(), areaId ?? null, since),
 
     tasksList: async (filter: Parameters<typeof planning.taskList>[1]) => planning.taskList(db(), filter ?? {}),
     taskCreate: async (input: Parameters<typeof planning.taskCreate>[1]) => planning.taskCreate(db(), input),

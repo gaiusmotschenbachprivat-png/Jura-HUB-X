@@ -29,6 +29,13 @@ const newCard = (): Card => ({
   created_at: "",
   updated_at: "",
   deleted_at: null,
+  deck: "",
+  template: "basis",
+  fields: "{}",
+  flag: 0,
+  buried_until: null,
+  note_key: null,
+  ord: 0,
 });
 
 describe("Wiederholungsplanung (FSRS)", () => {

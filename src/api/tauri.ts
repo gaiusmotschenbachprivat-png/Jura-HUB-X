@@ -88,6 +88,8 @@ export function createTauriBackend(): Backend {
     cardReview: (id, review) => c("card_review", { id, review }),
     cardTrash: (id) => c("card_trash", { id }),
     cardStats: (areaId, dayStart) => c("card_stats", { areaId, dayStart }),
+    cardUndoReview: (id) => c("card_undo_review", { id }),
+    cardReviewLog: (areaId, since) => c("card_review_log", { areaId, since }),
 
     tasksList: (filter) => c("tasks_list", { filter }),
     taskCreate: (input) => c("task_create", { input }),

@@ -1,7 +1,7 @@
 //! Befehle für Wissensobjekte, Karteikarten, Planung, PDF-Markierungen und Bilder.
 
 use studium_core::repo::annotations::{self, Annotation, AnnotationPatch, NewAnnotation};
-use studium_core::repo::cards::{self, Card, CardFilter, CardPatch, CardStats, NewCard, ReviewInput};
+use studium_core::repo::cards::{self, Card, CardFilter, CardPatch, CardStats, NewCard, ReviewInput, ReviewLogEntry};
 use studium_core::repo::documents;
 use studium_core::repo::knowledge::{self, CitationData, Knowledge, KnowledgeFilter, KnowledgePatch, NewKnowledge};
 use studium_core::repo::planning::{self, Exam, ExamInput, NewTask, Task, TaskFilter, TaskPatch};
@@ -77,6 +77,16 @@ pub async fn card_trash(state: St<'_>, id: String) -> CmdResult<()> {
 #[tauri::command]
 pub async fn card_stats(state: St<'_>, area_id: Option<String>, day_start: String) -> CmdResult<CardStats> {
     state.with(|c| cards::stats(c, area_id.as_deref(), &day_start))
+}
+
+#[tauri::command]
+pub async fn card_undo_review(state: St<'_>, id: String) -> CmdResult<Card> {
+    state.with(|c| cards::undo_review(c, &id))
+}
+
+#[tauri::command]
+pub async fn card_review_log(state: St<'_>, area_id: Option<String>, since: String) -> CmdResult<Vec<ReviewLogEntry>> {
+    state.with(|c| cards::review_log(c, area_id.as_deref(), &since))
 }
 
 // ---- Aufgaben und Prüfungen ----
