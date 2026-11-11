@@ -2,6 +2,7 @@
  * Hilfen für das ProseMirror-JSON-Format, in dem Notizen gespeichert werden.
  * Unabhängig vom Editor, daher in Tests und Exporten nutzbar.
  */
+import { parseSketch, sketchText } from "./personenskizze";
 
 export interface PMMark {
   type: string;
@@ -48,6 +49,10 @@ export function plainText(doc: PMNode): string {
   const out: string[] = [];
   const notes: string[] = [];
   const walk = (n: PMNode) => {
+    if (n.type === "personSketch") {
+      out.push(`Personenskizze: ${sketchText(parseSketch(n.attrs?.data)).join("; ")}\n`);
+      return;
+    }
     if (n.type === "footnote") {
       notes.push(String(n.attrs?.text ?? ""));
       out.push(`[${notes.length}]`);

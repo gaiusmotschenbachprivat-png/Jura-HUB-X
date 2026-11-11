@@ -185,6 +185,22 @@ angelegt wird dort nichts.
   Studienbereich oben links beachten). „aus „…““ öffnet die Mitschrift am Eintrag;
   **Ins Glossar** übernimmt einen Begriff als Definition ins Glossar.
 
+## Personenskizze
+
+Werkzeugleiste → **Personenskizze** (Personen-Symbol):
+
+- **Aus markiertem Text**: Zeilen in der üblichen Kurzschreibweise markieren, z. B.
+  `A —§ 433 I BGB→ G`, `A ←§ 433 II BGB— G`, `A —Kaufvertrag— G`, `V —übereignet→ K`, `A → B`.
+  Daraus entsteht die Skizze; „$ 433“ wird zu „§ 433“.
+- **Neue Personenskizze** oder eine **Vorlage** (Käufer – Verkäufer; Eigentümer – Veräußerer – Dritter).
+- Skizze **antippen** → Editor: **Person** hinzufügen (Kürzel, Rolle), Personen mit dem Finger
+  verschieben, **Beziehung** (dann nacheinander zwei Personen antippen). Für jede Beziehung: Art
+  (Anspruch = Pfeil, Vertrag = Linie, Handlung/Leistung = gestrichelt, sonstige Beziehung =
+  gepunktet), Pfeilrichtung und Beschriftung (z. B. die Norm). **Anordnen** verteilt die Personen
+  neu, **Als Text** zeigt/bearbeitet die Skizze in Kurzschreibweise.
+- Druck/PDF zeigt die Skizze als Grafik, Word und Markdown als Text („A — § 433 I BGB → G“);
+  die Suche findet Personen und Normen.
+
 ## Zeitstrahl zum Sachverhalt
 
 Werkzeugleiste → **Zeitstrahl** (senkrechter Strich mit Punkt):

@@ -42,6 +42,7 @@ import {
   Waypoints,
   PanelTop,
   GitCommitHorizontal,
+  Users,
 } from "lucide-react";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
@@ -52,6 +53,7 @@ import { IconButton } from "../../ui/Button";
 import { useMenu } from "../../ui/Menu";
 import { MOD } from "../../ui/misc";
 import { useApp } from "../../state/store";
+import { preset } from "../../lib/personenskizze";
 import { BAUSTEIN_GRUPPEN, BAUSTEINE } from "../../lib/gutachten";
 import { GUTACHTEN_SCHRITTE, legendeNode } from "../../lib/gutachtenstil";
 import { calloutKinds } from "../../lib/callouts";
@@ -467,6 +469,29 @@ export function Toolbar({
           }
         >
           <GitCommitHorizontal size={16} style={{ transform: "rotate(90deg)" }} />
+        </IconButton>
+        <IconButton
+          label="Personenskizze (Personen und Ansprüche)"
+          onClick={(e) =>
+            menu.openBelow(e.currentTarget, [
+              ...(s.hasSelection
+                ? [
+                    {
+                      label: "Aus markiertem Text (A —§ 433 I BGB→ G)",
+                      onSelect: () => {
+                        if (!c().personSketchFromSelection().run())
+                          toast("Im markierten Text keine Zeilen wie „A —§ 433 I BGB→ G“ gefunden. Eine leere Skizze lässt sich über „Neue Personenskizze“ anlegen.", "info");
+                      },
+                    },
+                  ]
+                : []),
+              { label: "Neue Personenskizze", onSelect: () => c().insertPersonSketch().run() },
+              { label: "Vorlage: Käufer – Verkäufer", onSelect: () => c().insertPersonSketch(preset("zwei")).run() },
+              { label: "Vorlage: Eigentümer – Veräußerer – Dritter", onSelect: () => c().insertPersonSketch(preset("kette")).run() },
+            ])
+          }
+        >
+          <Users size={16} />
         </IconButton>
         <IconButton label="Tabelle" active={s.table} onClick={(e) => tableMenu(e.currentTarget)}>
           <TableIcon size={16} />

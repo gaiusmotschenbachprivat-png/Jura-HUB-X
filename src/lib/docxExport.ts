@@ -31,6 +31,7 @@ import {
 
 import { calloutInfo, calloutLabel } from "./callouts";
 import { highlightColor } from "./highlights";
+import { parseSketch, sketchText } from "./personenskizze";
 import { SECTION_LABEL } from "./erklaerungen";
 import { GUTACHTEN_SCHRITTE } from "./gutachtenstil";
 import type { PMMark, PMNode } from "./pm";
@@ -289,6 +290,16 @@ function blocks(nodes: PMNode[] | undefined, ctx: Ctx, depth = -1): Block[] {
             }),
         );
         out.push(new Table({ rows, width: { size: 100, type: WidthType.PERCENTAGE } }));
+        out.push(new Paragraph({ children: [] }));
+        break;
+      }
+      case "personSketch": {
+        // Personenskizze als Text (Word hat kein passendes Zeichenformat): Rollen, dann je Beziehung eine Zeile
+        const sk = parseSketch(n.attrs?.data);
+        out.push(new Paragraph({ children: [new TextRun({ text: "PERSONENSKIZZE", bold: true, size: 16, color: "2F5FB3" })] }));
+        const roles = sk.persons.filter((p) => p.role).map((p) => `${p.name} = ${p.role}`);
+        if (roles.length) out.push(new Paragraph({ children: [new TextRun({ text: roles.join(", "), italics: true })] }));
+        for (const l of sketchText(sk)) out.push(new Paragraph({ indent: { left: 360 }, children: [new TextRun({ text: l })] }));
         out.push(new Paragraph({ children: [] }));
         break;
       }

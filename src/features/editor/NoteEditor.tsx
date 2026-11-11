@@ -40,6 +40,9 @@ import { requestTextJump, savedCursor, saveCursor, takeRequest, takeTextJump } f
 import { findTextBlock } from "./textJump";
 import { flashAt } from "./flash";
 import { CALLOUT_EDIT_EVENT, type CalloutEditDetail } from "./callout";
+import { SKETCH_EDIT_EVENT, type SketchEditDetail } from "./personSketch";
+import { PersonSketchDialog } from "./PersonSketchDialog";
+import { parseSketch, type Sketch } from "../../lib/personenskizze";
 import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
 import { PrintView } from "./PrintView";
@@ -139,6 +142,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const [harvest, setHarvest] = useState(false);
   const [reading, setReading] = useState(false);
   const [backTo, setBackTo] = useState<OutlineJumpDetail | null>(null);
+  const [sketch, setSketch] = useState<{ pos: number; sketch: Sketch } | null>(null);
   const [calloutTitle, setCalloutTitle] = useState<{ pos: number; title: string; label: string } | null>(null);
   const focusBefore = useRef(false);
   const [normPop, setNormPop] = useState<{ ref: NormRef; rect: DOMRect } | null>(null);
@@ -466,7 +470,15 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       ]);
     };
     dom.addEventListener(CALLOUT_EDIT_EVENT, onCallout);
+    // Personenskizze angetippt: Skizzen-Editor öffnen
+    const onSketch = (e: Event) => {
+      const d = (e as CustomEvent<SketchEditDetail>).detail;
+      const node = editor.state.doc.nodeAt(d.pos);
+      if (node?.type.name === "personSketch" && editor.isEditable) setSketch({ pos: d.pos, sketch: parseSketch(node.attrs.data) });
+    };
+    dom.addEventListener(SKETCH_EDIT_EVENT, onSketch);
     return () => {
+      dom.removeEventListener(SKETCH_EDIT_EVENT, onSketch);
       clearTimeout(timer);
       dom.removeEventListener(OUTLINE_JUMP_EVENT, onJump);
       dom.removeEventListener("studium:jump-missing", onMissing);
@@ -781,6 +793,36 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           <FootnoteList editor={editor} onEdit={setFootnote} />
         </div>
       </div>
+      {sketch && (
+        <PersonSketchDialog
+          sketch={sketch.sketch}
+          onClose={() => setSketch(null)}
+          onSave={(s) => {
+            const node = editor?.state.doc.nodeAt(sketch.pos);
+            if (editor && node?.type.name === "personSketch")
+              editor
+                .chain()
+                .command(({ tr }) => {
+                  tr.setNodeMarkup(sketch.pos, undefined, { data: JSON.stringify(s) });
+                  return true;
+                })
+                .run();
+            setSketch(null);
+          }}
+          onDelete={() => {
+            const node = editor?.state.doc.nodeAt(sketch.pos);
+            if (editor && node?.type.name === "personSketch")
+              editor
+                .chain()
+                .command(({ tr }) => {
+                  tr.delete(sketch.pos, sketch.pos + node.nodeSize);
+                  return true;
+                })
+                .run();
+            setSketch(null);
+          }}
+        />
+      )}
       {calloutTitle && (
         <CalloutTitleDialog
           initial={calloutTitle.title}

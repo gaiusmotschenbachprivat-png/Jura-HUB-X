@@ -131,6 +131,15 @@ hr { border: 0; border-top: 0.5pt solid #777; }
 .tl-entry { position: relative; display: grid; grid-template-columns: 8em 1fr; gap: 0 10pt; padding: 1pt 0 4pt 14pt; border-left: 1.5pt solid #b9c7e3; margin-left: 4pt; }
 .tl-entry::after { content: ""; position: absolute; left: -4.5pt; top: 3pt; width: 6pt; height: 6pt; border-radius: 50%; background: #fff; border: 1.5pt solid #2f5fb3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .tl-time { font-weight: bold; color: #2f5fb3; }
+.person-sketch { margin: 8pt 0; break-inside: avoid; border: 0.5pt solid #bbb; border-radius: 4pt; padding: 4pt 6pt; --ps-ink: #485062; --ps-accent: #2f4a8a; --ps-bg: #fff; }
+.person-sketch::before { content: attr(data-label); display: block; font: bold 8pt sans-serif; letter-spacing: 0.04em; text-transform: uppercase; color: #2f4a8a; margin-bottom: 2pt; }
+.person-sketch svg { width: 100%; max-height: 7cm; }
+.ps-edge { fill: none; stroke: #485062; stroke-width: 2; }
+.ps-vertrag { stroke-width: 3; } .ps-handlung { stroke-dasharray: 7 5; } .ps-beziehung { stroke-dasharray: 2 5; }
+.ps-head { fill: #485062; }
+.ps-label { font: 600 12px sans-serif; fill: #111; paint-order: stroke; stroke: #fff; stroke-width: 5px; }
+.ps-person rect { fill: #fff; stroke: #2f4a8a; stroke-width: 1.8; }
+.ps-name { font: bold 15px sans-serif; fill: #111; } .ps-role { font: 11px sans-serif; fill: #485062; }
 .tl-entry::before { content: none; }
 .timeline { border: 0; padding: 0; }
 .callout:has(+ .callout.is-joined) { margin-bottom: 0; }

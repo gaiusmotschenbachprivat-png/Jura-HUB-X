@@ -1,5 +1,6 @@
 /** Export einer Notiz als Markdown (CommonMark + GFM-Tabellen und -Checklisten). */
 import { calloutLabel } from "./callouts";
+import { parseSketch, sketchText } from "./personenskizze";
 import { SECTION_LABEL } from "./erklaerungen";
 import type { PMMark, PMNode } from "./pm";
 
@@ -45,6 +46,11 @@ function block(n: PMNode, indent = ""): string {
       return (n.content ?? []).map((c) => block(c).split("\n").map((l) => "> " + l).join("\n")).join("\n>\n");
     case "erklaerungen":
       return ["---", `**${SECTION_LABEL}**`, ...(n.content ?? []).map((c) => block(c, indent))].join("\n\n");
+    case "personSketch": {
+      const sk = parseSketch(n.attrs?.data);
+      const roles = sk.persons.filter((p) => p.role).map((p) => `${p.name} = ${p.role}`);
+      return ["**Personenskizze**", [...(roles.length ? [`*${roles.join(", ")}*`] : []), ...sketchText(sk).map((l) => `- ${l}`)].join("\n")].join("\n\n");
+    }
     case "timeline":
       return ["**Zeitstrahl**", (n.content ?? []).map((e) => `- **${inline(e.content?.[0]?.content) || "–"}** – ${inline(e.content?.[1]?.content)}`).join("\n")].join("\n\n");
     case "callout":
