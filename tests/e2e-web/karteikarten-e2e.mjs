@@ -205,6 +205,25 @@ try {
   check("Volltextsuche über die Rückseite", (await page.locator(".browser-table tbody tr").first().innerText()).includes("Sache"));
   await shot("kk-4-browser");
 
+  // Reiter: Durchsuchen → Stapel → Durchsuchen → Statistik → Stapel
+  await page.getByRole("tab", { name: /Stapel/ }).click();
+  await page.locator(".deck-hero, .deck-table").first().waitFor({ timeout: 4000 });
+  check("Reiter „Stapel“ aus dem Browser", (await page.locator(".browser").count()) === 0);
+  await page.getByRole("tab", { name: /Durchsuchen/ }).click();
+  await page.locator(".browser").waitFor({ timeout: 4000 });
+  await page.getByRole("tab", { name: /Statistik/ }).click();
+  await page.locator(".card-stats").waitFor({ timeout: 4000 });
+  await page.getByRole("tab", { name: /Stapel/ }).click();
+  await page.locator(".deck-hero, .deck-table").first().waitFor({ timeout: 4000 });
+  check("Reiter „Stapel“ aus der Statistik", (await page.locator(".card-stats").count()) === 0);
+  await page.getByRole("button", { name: /^Karteikarten/ }).first().click();
+  await page.locator(".deck-table").first().waitFor({ timeout: 4000 });
+  await page.getByRole("tab", { name: /Durchsuchen/ }).click();
+  await page.locator(".browser").waitFor({ timeout: 4000 });
+  await page.getByRole("tab", { name: /Stapel/ }).click();
+  await page.locator(".deck-table").first().waitFor({ timeout: 4000 });
+  check("Reiter „Stapel“ nach Wechsel über die Reiter", (await page.locator(".browser").count()) === 0);
+
   // 7. Statistik
   await page.getByRole("tab", { name: /Statistik/ }).click();
   const heute = page.locator('section[aria-label="Heute"]');

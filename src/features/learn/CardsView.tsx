@@ -61,7 +61,12 @@ export function CardsView({ focusId, deck, tab: initialTab, q }: { focusId?: str
               ["statistik", "Statistik", <BarChart3 key="t" size={14} />],
             ] as const
           ).map(([id, label, icon]) => (
-            <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "is-active" : ""} onClick={() => (id === "stapel" ? open({ type: "cards", deck }) : setTab(id))}>
+            <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? "is-active" : ""} onClick={() => {
+                setTab(id);
+                // aus einer Suche bzw. Statistik-Verknüpfung zurück zur Stapelübersicht
+                if (id === "stapel" && (initialTab || focusId)) open({ type: "cards", deck });
+              }}
+            >
               {icon} {label}
             </button>
           ))}
