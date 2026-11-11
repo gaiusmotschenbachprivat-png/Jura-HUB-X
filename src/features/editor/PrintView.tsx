@@ -12,8 +12,8 @@ import { buildPrintHtml, printCss, type PrintOptions } from "./print";
  * Druckansicht mit echten Seiten. „Drucken / PDF“ öffnet den Druckdialog des
  * Systems; auf dem iPad lässt sich dort über „Teilen → In Dateien sichern“ ein PDF ablegen.
  */
-export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string; onClose: () => void }) {
-  const [opts, setOpts] = useState<PrintOptions>({ title, toc: false, margins: "normal", style: "notiz", pageNumbers: true });
+export function PrintView({ doc, title, onClose, initial }: { doc: PMNode; title: string; onClose: () => void; /** z. B. Seiteneinstellungen eines Dokuments */ initial?: Partial<PrintOptions> }) {
+  const [opts, setOpts] = useState<PrintOptions>({ title, toc: false, margins: "normal", style: "notiz", pageNumbers: true, ...initial });
   const [bib, setBib] = useState<string[]>([]);
   const [withBib, setWithBib] = useState(true);
   useEffect(() => {
@@ -21,6 +21,7 @@ export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string;
   }, [doc]);
   const [state, setState] = useState<{ busy: boolean; pages: number; error: string | null }>({ busy: true, pages: 0, error: null });
   const target = useRef<HTMLDivElement>(null);
+  const renderQueue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     document.body.classList.add("is-printing");
@@ -47,12 +48,29 @@ export function PrintView({ doc, title, onClose }: { doc: PMNode; title: string;
         }
         const html = buildPrintHtml(doc, { ...opts, bibliography: withBib ? bib : [] }, (s) => images.get(s));
         const { Previewer } = await import("pagedjs");
-        if (cancelled || !target.current) return;
-        target.current.innerHTML = "";
-        const previewer = new Previewer();
-        const flow = await previewer.preview(html, [{ "studium-print.css": printCss(opts) }], target.current);
-        cleanup = () => previewer.polisher?.destroy?.();
-        if (!cancelled) setState({ busy: false, pages: flow.total ?? flow.pages?.length ?? 0, error: null });
+        // ein Durchlauf nach dem anderen: sonst schreiben zwei Seitenaufbauten
+        // (z. B. nach schnellem Umstellen) ineinander
+        const before = renderQueue.current;
+        let done!: () => void;
+        renderQueue.current = new Promise<void>((r) => (done = r));
+        await before;
+        try {
+          if (cancelled || !target.current) return;
+          await document.fonts?.ready;
+          if (cancelled || !target.current) return;
+          target.current.innerHTML = "";
+          const box = document.createElement("div");
+          target.current.appendChild(box);
+          const previewer = new Previewer();
+          cleanup = () => {
+            previewer.polisher?.destroy?.();
+            box.remove();
+          };
+          const flow = await previewer.preview(html, [{ "studium-print.css": printCss(opts) }], box);
+          if (!cancelled) setState({ busy: false, pages: flow.total ?? flow.pages?.length ?? 0, error: null });
+        } finally {
+          done();
+        }
       } catch (e) {
         if (!cancelled) setState({ busy: false, pages: 0, error: errorMessage(e) });
       }

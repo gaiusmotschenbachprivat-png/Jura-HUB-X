@@ -17,6 +17,8 @@ export interface PrintOptions {
   /** „notiz“: wie im Editor; „hausarbeit“: Times New Roman 12 pt, 1,5-zeilig, Blocksatz. */
   style: "notiz" | "hausarbeit";
   pageNumbers: boolean;
+  /** Titel oben einfügen (Dokumente A4: nein – gedruckt wird nur der Inhalt) */
+  titleHeader?: boolean;
   /** Literaturverzeichnis (Einträge, schon sortiert); leer = keins */
   bibliography?: string[];
 }
@@ -71,7 +73,8 @@ export function buildPrintHtml(doc: PMNode, o: PrintOptions, imageUrl: (src: str
   const bib = o.bibliography?.length
     ? `<section class="bib"><h2 class="bib-title">Literaturverzeichnis</h2>${o.bibliography.map((e) => `<p class="bib-entry">${escapeHtml(e)}</p>`).join("")}</section>`
     : "";
-  return `<header class="doc-title"><h1>${escapeHtml(o.title)}</h1></header>${toc}${bib}<main class="doc-body">${body.innerHTML}</main>`;
+  const head = o.titleHeader === false ? "" : `<header class="doc-title"><h1>${escapeHtml(o.title)}</h1></header>`;
+  return `${head}${toc}${bib}<main class="doc-body">${body.innerHTML}</main>`;
 }
 
 export function printCss(o: PrintOptions): string {

@@ -23,6 +23,7 @@ import { Flash } from "./flash";
 import { Marker } from "./marker";
 import { Timeline, TimelineEntry, TimelineText, TimelineTime } from "./timeline";
 import { PersonSketch } from "./personSketch";
+import { Pagination } from "./pagination";
 
 /** Klick auf eine Formel: der geöffnete Editor reagiert darauf (Bearbeiten-Dialog). */
 export const MATH_EDIT_EVENT = "studium:edit-math";
@@ -73,6 +74,7 @@ export function editorExtensions(opts: { placeholder?: string } = {}): Extension
     TimelineTime,
     TimelineText,
     PersonSketch,
+    Pagination,
     NormLinks,
     OutlineJump,
     Callout,

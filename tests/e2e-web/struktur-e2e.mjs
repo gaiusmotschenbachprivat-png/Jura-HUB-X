@@ -78,7 +78,7 @@ try {
   // 1. Veranstaltung über den Dialog „Neu …“ im Semester
   await page.locator(".tree-row", { hasText: "Wintersemester" }).first().click();
   await page.getByRole("button", { name: "Neu …" }).click();
-  check("Dialog zeigt Schreibarten", (await page.getByRole("radiogroup", { name: "Schreiben" }).getByRole("radio").count()) === 7);
+  check("Dialog zeigt Schreibarten", (await page.getByRole("radiogroup", { name: "Schreiben" }).getByRole("radio").count()) === 8);
   await page.getByRole("radio", { name: /Veranstaltung/ }).click();
   await page.locator("#new-title").fill("BGB AT");
   await page.getByRole("button", { name: "Anlegen" }).click();

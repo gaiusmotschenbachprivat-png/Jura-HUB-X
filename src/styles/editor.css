@@ -437,3 +437,31 @@
 .ps-rel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
 .ps-text textarea { width: 100%; font-family: var(--font-mono); }
 @media (max-width: 760px) { .ps-body { grid-template-columns: minmax(0, 1fr); } }
+
+/* Dokument (A4): Seitenansicht wie im Druck (features/editor/pagination.ts) */
+.page-desk { --desk: var(--bg-sunken); background: var(--desk); padding: 24px 0 40vh; min-height: 100%; }
+.page-desk .ProseMirror.is-paged {
+  box-sizing: border-box; position: relative; width: var(--page-w); max-width: none; margin: 0 auto;
+  padding: var(--page-t) var(--page-r) var(--page-b) var(--page-l);
+  background: var(--bg); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12), 0 6px 20px rgb(0 0 0 / 0.06); border-radius: 2px;
+}
+.page-style-notiz .ProseMirror.is-paged { font-family: Georgia, "Times New Roman", serif; font-size: 11pt; line-height: 1.45; text-align: left; }
+.page-style-hausarbeit .ProseMirror.is-paged { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; text-align: justify; }
+.page-desk .ProseMirror.is-paged p { margin: 0 0 6pt; }
+.page-desk .ProseMirror.is-paged p + p { margin-top: 0; }
+.page-desk .ProseMirror.is-paged h1, .page-desk .ProseMirror.is-paged h2, .page-desk .ProseMirror.is-paged h3, .page-desk .ProseMirror.is-paged h4 { font-family: inherit; letter-spacing: 0; line-height: 1.25; }
+.page-desk .ProseMirror.is-paged h1 { font-size: 16pt; margin: 14pt 0 6pt; }
+.page-desk .ProseMirror.is-paged h2 { font-size: 14pt; margin: 12pt 0 5pt; border: 0; padding: 0; }
+.page-desk .ProseMirror.is-paged h3 { font-size: 12.5pt; margin: 10pt 0 4pt; }
+.page-desk .ProseMirror.is-paged h4 { font-size: 12pt; margin: 8pt 0 3pt; font-style: italic; }
+.page-desk .ProseMirror.is-paged > :first-child { margin-top: 0; }
+.page-desk .ProseMirror.is-paged ul, .page-desk .ProseMirror.is-paged ol { margin: 0 0 6pt; }
+/* Seitenumbruch: der Zwischenraum zeigt ihn – keine Linie */
+.page-desk .ProseMirror.is-paged .page-break { height: 0; margin: 0; border: 0; overflow: hidden; }
+.page-desk .ProseMirror.is-paged .page-break::after, .page-desk .ProseMirror.is-paged .page-break::before { display: none; }
+.page-gap { position: relative; -webkit-user-select: none; user-select: none; pointer-events: none; }
+.page-band { position: absolute; background: var(--desk, var(--bg-sunken)); box-shadow: inset 0 6px 6px -6px rgb(0 0 0 / 0.18), inset 0 -6px 6px -6px rgb(0 0 0 / 0.18); }
+.page-foot, .page-desk .ProseMirror.is-paged::after { position: absolute; left: 0; right: 0; text-align: center; font: 10pt "Times New Roman", serif; color: var(--text-3); }
+.page-desk .ProseMirror.is-paged::after { content: attr(data-pages); bottom: calc(var(--page-b) / 2 - 8px); pointer-events: none; }
+.page-desk .footnote-list { width: var(--page-w); margin: 16px auto 0; }
+.page-desk .ProseMirror.is-paged p.is-editor-empty:first-child::before { content: "Text eingeben …"; }

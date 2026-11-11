@@ -113,6 +113,8 @@ jobs:
         run: node tests/e2e-web/karteikarten-e2e.mjs
       - name: Personenskizze
         run: node tests/e2e-web/personenskizze-e2e.mjs
+      - name: Dokument (A4)
+        run: node tests/e2e-web/dokument-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -21,6 +21,7 @@ import { DrawingDialog, type DrawingResult } from "./DrawingDialog";
 import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
 import { noteTypeOf } from "../../lib/noteTypes";
+import { DEFAULT_PAGE, layoutFor, pageSettings } from "../../lib/pageLayout";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
 import { BibliographyDialog, FootnoteDialog, FootnoteList } from "./Footnotes";
@@ -288,6 +289,24 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
 
   // Fall/Gutachten: eingefügter Text (z. B. eine Musterlösung) wird automatisch im Gutachtenstil eingefärbt
   const isFall = treeNode ? noteTypeOf(treeNode) === "fall" : false;
+  // Dokument (A4): Seitenansicht wie im Druck
+  const pageMode = !!treeNode && noteTypeOf(treeNode) === "dokument" && !compact;
+  const pageSet = treeNode ? pageSettings(treeNode.meta) : DEFAULT_PAGE;
+  const pageLayout = useMemo(() => (pageMode ? layoutFor({ margins: pageSet.margins, style: pageSet.style }) : null), [pageMode, pageSet.margins, pageSet.style]);
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) editor.commands.setPageLayout(pageLayout);
+  }, [editor, pageLayout]);
+  const viewport = useRef<HTMLDivElement>(null);
+  const [pageZoom, setPageZoom] = useState(1);
+  useEffect(() => {
+    const el = viewport.current;
+    if (!pageLayout || !el) return setPageZoom(1);
+    const fit = () => setPageZoom(Math.min(1, Math.max(0.4, (el.clientWidth - 24) / pageLayout.width)));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pageLayout]);
   useEffect(() => {
     if (editor) editor.storage.gutachten.autoPaste = isFall;
   }, [editor, isFall]);
@@ -787,11 +806,32 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           <span className="muted xs">{MOD}+Klick öffnet Links direkt</span>
         </div>
       )}
-      <div className="note-scroll">
-        <div className="note-body">
-          <EditorContent editor={editor} />
-          <FootnoteList editor={editor} onEdit={setFootnote} />
-        </div>
+      <div className="note-scroll" ref={viewport}>
+        {pageLayout ? (
+          <div
+            className={`page-desk page-style-${pageSet.style}`}
+            style={
+              {
+                zoom: pageZoom,
+                "--page-w": `${pageLayout.width}px`,
+                "--page-h": `${pageLayout.height}px`,
+                "--page-t": `${pageLayout.top}px`,
+                "--page-r": `${pageLayout.right}px`,
+                "--page-b": `${pageLayout.bottom}px`,
+                "--page-l": `${pageLayout.left}px`,
+                "--page-gap": `${pageLayout.gap}px`,
+              } as React.CSSProperties
+            }
+          >
+            <EditorContent editor={editor} />
+            <FootnoteList editor={editor} onEdit={setFootnote} />
+          </div>
+        ) : (
+          <div className="note-body">
+            <EditorContent editor={editor} />
+            <FootnoteList editor={editor} onEdit={setFootnote} />
+          </div>
+        )}
       </div>
       {sketch && (
         <PersonSketchDialog
@@ -1006,7 +1046,14 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       )}
       {bibOpen && <BibliographyDialog editor={editor} onClose={() => setBibOpen(false)} />}
       {schemaOpen && <SchemaPickerDialog editor={editor} onClose={() => setSchemaOpen(false)} gebiet={gebietOf(contextTitles.join(" "))} />}
-      {printDoc && <PrintView doc={printDoc} title={title} onClose={() => setPrintDoc(null)} />}
+      {printDoc && (
+        <PrintView
+          doc={printDoc}
+          title={title}
+          onClose={() => setPrintDoc(null)}
+          initial={pageMode ? { margins: pageSet.margins, style: pageSet.style, titleHeader: false } : undefined}
+        />
+      )}
       {footnote && (
         <FootnoteDialog
           initial={footnote.text}

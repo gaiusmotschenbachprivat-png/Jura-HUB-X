@@ -583,6 +583,18 @@ Abstand mit dem Regler vergrößern; „Automatisch“ stellt den Standard wiede
 daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
 sich seitlich wischen lässt.
 
+## Dokument (A4)
+
+Neben den Mitschriften gibt es im Dialog „Neu …“ die Schreibart **Dokument (A4)**. Sie ist für Texte gedacht, die gedruckt oder als PDF abgegeben werden (Hausarbeit, Gutachten, Klausurlösung), und zeigt den Text wie in Word auf einzelnen A4-Blättern:
+
+- Ein Absatz, der nicht mehr auf die Seite passt, beginnt automatisch auf der nächsten Seite. Unten auf jeder Seite steht die Seitenzahl.
+- Mit ⌘+Enter (am PC Strg+Enter) (oder dem Seitenumbruch-Knopf) beginnt gezielt eine neue Seite.
+- Über der Seite stehen zwei Einstellungen: **Ränder** (normal 2,5 cm links oder Korrekturrand 7 cm rechts) und **Schrift** (Georgia 11 pt oder Hausarbeit: Times 12 pt, 1,5-zeilig, Blocksatz). Sie werden mit dem Dokument gespeichert.
+- „Drucken / als PDF“ übernimmt Ränder und Schrift; der Titel wird nicht zusätzlich über den Text gesetzt.
+- Auf schmalen Bildschirmen (iPad hochkant, geteilte Ansicht) wird das Blatt verkleinert statt seitlich zu scrollen.
+
+Die Seitenansicht auf dem Bildschirm ist eine Vorschau: Der endgültige Umbruch im Druck kann um einzelne Zeilen abweichen, weil Druck und Bildschirm Text leicht unterschiedlich setzen.
+
 ## Updates
 
 Neue Versionen lädt die App beim Öffnen bzw. beim Zurückwechseln selbst und startet dann kurz neu
