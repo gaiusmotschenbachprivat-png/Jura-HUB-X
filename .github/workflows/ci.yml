@@ -117,6 +117,8 @@ jobs:
         run: node tests/e2e-web/dokument-e2e.mjs
       - name: Stapel wiederholen
         run: node tests/e2e-web/stapel-wiederholen-e2e.mjs
+      - name: Fenstertasten (iPadOS 26)
+        run: node tests/e2e-web/fenstertasten-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

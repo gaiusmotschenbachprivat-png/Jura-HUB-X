@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import type { AppInfo, Area } from "../../api/types";
 import { AREA_COLORS } from "../../lib/kinds";
-import { TOP_INSET_AUTO, TOP_INSET_MAX } from "../../lib/safeArea";
+import { autoTopInset, TOP_INSET_AUTO, TOP_INSET_MAX } from "../../lib/safeArea";
 import { openCalloutKinds } from "../editor/CalloutKinds";
 import { reportError, useApp, type View } from "../../state/store";
 import { Button } from "../../ui/Button";
@@ -81,7 +81,8 @@ function Appearance() {
       <section className="card">
         <h3>Abstand oben (iPad)</h3>
         <p className="small muted">
-          Liegt die Statusleiste mit Uhrzeit und WLAN über Knöpfen der App, hier den Abstand vergrößern. „Automatisch“ (Standard): Die App beginnt direkt unter der Statusleiste.
+          Liegen die Statusleiste oder die Fenstertasten (● ● ●) über Knöpfen der App, hier den Abstand vergrößern. „Automatisch“ (Standard): Als App vom Home-Bildschirm bleibt oben ein Streifen für die Fenstertasten frei
+          {autoTopInset() ? ` (${autoTopInset()} px)` : ""}, im Browser beginnt die App direkt unter der Statusleiste.
         </p>
         <label className="row small">
           Abstand
@@ -90,7 +91,7 @@ function Appearance() {
             min={0}
             max={TOP_INSET_MAX}
             step={2}
-            value={topInset < 0 ? 0 : topInset}
+            value={topInset < 0 ? autoTopInset() : topInset}
             onChange={(e) => setPref("topInset", Number(e.target.value))}
             aria-label="Abstand oben in Pixeln"
           />

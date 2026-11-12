@@ -71,7 +71,7 @@ try {
   check("iPad-Statusleiste: deckende Farbe (theme-color)", (await page.locator('meta[name="theme-color"]').count()) === 2);
   const pad = await page.evaluate(() => {
     const css = [...document.styleSheets].flatMap((s) => [...s.cssRules].map((r) => r.cssText)).join("\n");
-    return /\.shell-side[^{]*\{[^}]*padding-top: var\(--safe-top\)/.test(css) && /--safe-top:\s*var\(--safe-top-manual,\s*env\(safe-area-inset-top/.test(css);
+    return /\.shell-side[^{]*\{[^}]*padding-top: var\(--safe-top\)/.test(css) && /--safe-top:\s*var\(--safe-top-manual,\s*calc\(env\(safe-area-inset-top/.test(css);
   });
   check("iPad-Statusleiste: Abstand oben (safe-area) in den Bereichen", pad);
 

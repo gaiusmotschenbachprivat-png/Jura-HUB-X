@@ -584,9 +584,11 @@ liest der Import (noch) nicht. Beim **Einfügen** aus Word oder Pages bleiben Sc
 Farbe und Einzug erhalten.
 
 Als App vom Home-Bildschirm hält Studium OS Abstand zur Statusleiste (Uhrzeit, Akku) und zum
-Home-Balken: Die App beginnt direkt unter einer deckenden, scharfen Statusleiste. Liegt die
-Statusleiste trotzdem über Knöpfen, unter **Einstellungen → Abstand oben (iPad)** den
-Abstand mit dem Regler vergrößern; „Automatisch“ stellt den Standard wieder her. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
+Home-Balken. Unter iPadOS 26 legt das System oben links die Fenstertasten (● ● ●) und über
+den oberen Rand einen Weichzeichner; als App vom Home-Bildschirm hält Studium OS diesen Streifen
+(46 px) deshalb frei – Seitenleisten-Knopf, Pfeile und „Gespeichert“ liegen darunter und bleiben
+scharf. Im Safari-Tab entfällt der Streifen. Passt der Abstand nicht, unter **Einstellungen →
+Abstand oben (iPad)** mit dem Regler anpassen (0–96 px); „Automatisch“ stellt den Standard wieder her. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
 daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
 sich seitlich wischen lässt.
 

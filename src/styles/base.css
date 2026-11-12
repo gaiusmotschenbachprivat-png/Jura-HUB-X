@@ -2,8 +2,10 @@
 html, body, #root { height: 100%; margin: 0; }
 /* Abstand oben für die iOS-Statusleiste (siehe lib/safeArea.ts). Ohne
    viewport-fit=cover setzt iPadOS die App selbst unter die Statusleiste – der
-   Wert ist dann 0 und lässt sich in den Einstellungen von Hand erhöhen. */
-:root { --safe-top: var(--safe-top-manual, env(safe-area-inset-top, 0px)); }
+   Wert ist dann 0 und lässt sich in den Einstellungen von Hand erhöhen.
+   --window-controls: freier Streifen für die Fenstertasten (● ● ●) und den
+   Weichzeichner von iPadOS 26, nur als App vom Home-Bildschirm (lib/safeArea.ts). */
+:root { --safe-top: var(--safe-top-manual, calc(env(safe-area-inset-top, 0px) + var(--window-controls, 0px))); }
 html { font-size: calc(16px * var(--font-scale, 1)); }
 body {
   font-family: var(--font-ui);
