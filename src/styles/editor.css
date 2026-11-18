@@ -465,3 +465,6 @@
 .page-desk .ProseMirror.is-paged::after { content: attr(data-pages); bottom: calc(var(--page-b) / 2 - 8px); pointer-events: none; }
 .page-desk .footnote-list { width: var(--page-w); margin: 16px auto 0; }
 .page-desk .ProseMirror.is-paged p.is-editor-empty:first-child::before { content: "Text eingeben …"; }
+
+/* Entwurf aus einem fehlgeschlagenen Speichern */
+.draft-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 16px 0; padding: 10px 14px; border-radius: var(--r-lg, 10px); background: var(--accent-soft); border: 1px solid var(--line); }

@@ -119,6 +119,8 @@ jobs:
         run: node tests/e2e-web/stapel-wiederholen-e2e.mjs
       - name: Fenstertasten (iPadOS 26)
         run: node tests/e2e-web/fenstertasten-e2e.mjs
+      - name: Speicherfehler (Notfall-Entwurf)
+        run: node tests/e2e-web/speicherfehler-e2e.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

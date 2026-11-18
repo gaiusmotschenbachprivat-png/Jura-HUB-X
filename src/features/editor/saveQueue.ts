@@ -6,6 +6,7 @@
  */
 import { api, errorMessage } from "../../api";
 import { useApp } from "../../state/store";
+import { clearDraft, saveDraft } from "./drafts";
 
 interface Pending {
   id: string;
@@ -33,10 +34,13 @@ async function run(p: Pending): Promise<void> {
       try {
         const res = await api.noteSave(p.id, json, text);
         p.failed = false;
+        clearDraft(p.id);
         savedStamps.set(p.id, res.updated_at);
         st.setSaveStatus("saved", null, res.updated_at, p.id);
       } catch (e) {
         p.failed = true;
+        // Notfall-Entwurf auf dem Gerät, damit beim Neustart nichts verloren geht
+        saveDraft(p.id, json, text);
         st.setSaveStatus("error", errorMessage(e));
         throw e;
       }
@@ -65,6 +69,15 @@ export function scheduleSave(id: string, get: Pending["get"]) {
     queue.set(id, p);
   }
   p.get = get;
+  // nach einem Fehler: Entwurf mit jeder Änderung aktuell halten
+  if (p.failed) {
+    try {
+      const v = get();
+      saveDraft(id, v.json, v.text);
+    } catch {
+      /* Inhalt nicht lesbar */
+    }
+  }
   useApp.getState().setSaveStatus("dirty");
   if (p.timer) clearTimeout(p.timer);
   const pp = p;

@@ -71,26 +71,42 @@ export class Db {
 
   /**
    * Führt `fn` in einer Transaktion aus. Verschachtelte Aufrufe nutzen
-   * Savepoints. Wirft `fn`, wird alles zurückgerollt.
+   * Savepoints. Wirft `fn` (oder scheitert der Abschluss), wird alles
+   * zurückgerollt. Die Tiefe wird in jedem Fall wiederhergestellt – auch
+   * wenn COMMIT selbst fehlschlägt (z. B. Speicherfehler auf dem iPad);
+   * sonst stünde sie dauerhaft falsch und jede weitere Änderung scheiterte.
    */
   tx<T>(fn: () => T): T {
-    const name = `sp${this.depth}`;
-    this.exec(this.depth === 0 ? "BEGIN IMMEDIATE" : `SAVEPOINT ${name}`);
-    this.depth++;
+    const level = this.depth;
+    const name = `sp${level}`;
+    if (level === 0) this.begin();
+    else this.exec(`SAVEPOINT ${name}`);
+    this.depth = level + 1;
     try {
       const r = fn();
       if (r instanceof Promise) throw new Error("Transaktionen dürfen nicht asynchron sein.");
-      this.depth--;
-      this.exec(this.depth === 0 ? "COMMIT" : `RELEASE ${name}`);
+      this.exec(level === 0 ? "COMMIT" : `RELEASE ${name}`);
       return r;
     } catch (e) {
-      this.depth--;
       try {
-        this.exec(this.depth === 0 ? "ROLLBACK" : `ROLLBACK TO ${name}; RELEASE ${name}`);
+        this.exec(level === 0 ? "ROLLBACK" : `ROLLBACK TO ${name}; RELEASE ${name}`);
       } catch {
         /* ursprünglichen Fehler weitergeben */
       }
       throw e;
+    } finally {
+      this.depth = level;
+    }
+  }
+
+  /** Beginnt eine Transaktion; eine liegengebliebene (nach einem Fehler) wird vorher verworfen. */
+  private begin() {
+    try {
+      this.exec("BEGIN IMMEDIATE");
+    } catch (e) {
+      if (!/within a transaction/i.test(String((e as Error)?.message ?? e))) throw e;
+      this.exec("ROLLBACK");
+      this.exec("BEGIN IMMEDIATE");
     }
   }
 }

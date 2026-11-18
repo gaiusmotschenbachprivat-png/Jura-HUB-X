@@ -644,6 +644,13 @@ wird mit einer Meldung abgewiesen.
 3. Wiederherstellen: **Aus Backup-Datei wiederherstellen …** – funktioniert auch mit Backups
    der Desktop-App. Der bisherige Stand wird vorher als eigenes Backup aufbewahrt.
 
+**Wenn das Speichern scheitert** („Nicht gespeichert: …“ oben rechts): Die Änderungen der
+Mitschrift liegen dann zusätzlich als Notfall-Entwurf auf dem Gerät. Nach einem Neustart der App
+erscheint beim Öffnen der Mitschrift „Ungespeicherte Änderungen gefunden“ → **Wiederherstellen**.
+Bis Version 0.41.1 konnte ein einzelner gescheiterter Speichervorgang dazu führen, dass danach
+weder Speichern noch Backups gingen („near "-": syntax error“), bis die App neu gestartet wurde;
+das ist seit 0.41.2 behoben.
+
 **Achtung:** Wer in den iPad-Einstellungen die Website-Daten löscht oder die App vom
 Home-Bildschirm entfernt, löscht auch die Studiendaten. Deshalb regelmäßig sichern.
 

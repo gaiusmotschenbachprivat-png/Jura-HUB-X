@@ -27,6 +27,7 @@ import { MathDialog } from "./MathDialog";
 import { BibliographyDialog, FootnoteDialog, FootnoteList } from "./Footnotes";
 import { FOOTNOTE_EDIT_EVENT, footnotesOf, type FootnoteEditDetail } from "./formatting";
 import { LinkPicker } from "./LinkPicker";
+import { clearDraft, pendingDraft, type Draft } from "./drafts";
 import { freezeAndFlush, scheduleSave } from "./saveQueue";
 import { bestQuery, FindBar, useFindRequest } from "./FindBar";
 import { SchemaPickerDialog } from "./Gutachten";
@@ -122,6 +123,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   const rememberTitle = useApp((s) => s.rememberTitle);
   const nodes = useApp((s) => s.nodes);
   const [title, setTitle] = useState(note.title);
+  // Entwurf aus einem fehlgeschlagenen Speichern (z. B. vor einem Neustart)
+  const [draft, setDraft] = useState<Draft | null>(() => (compact ? null : pendingDraft(note.node_id, note)));
   const [words, setWords] = useState(note.word_count);
   const [linkDialog, setLinkDialog] = useState<null | "external" | "internal">(null);
   const [showHistory, setShowHistory] = useState(false);
@@ -804,6 +807,37 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             Entfernen
           </Button>
           <span className="muted xs">{MOD}+Klick öffnet Links direkt</span>
+        </div>
+      )}
+      {draft && editor && (
+        <div className="draft-banner" role="alert">
+          <span className="grow small">
+            <strong>Ungespeicherte Änderungen gefunden</strong> vom {new Date(draft.at).toLocaleString("de-DE", { dateStyle: "short", timeStyle: "short" })} – das Speichern war damals fehlgeschlagen. Sie liegen noch
+            auf diesem Gerät.
+          </span>
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => {
+              const d = draft;
+              editor.commands.setContent(parseDoc(d.json), { emitUpdate: false });
+              setWords(editor.storage.characterCount?.words?.() ?? 0);
+              scheduleSave(note.node_id, () => ({ json: d.json, text: d.text }));
+              setDraft(null);
+            }}
+          >
+            Wiederherstellen
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              clearDraft(note.node_id);
+              setDraft(null);
+            }}
+          >
+            Verwerfen
+          </Button>
         </div>
       )}
       <div className="note-scroll" ref={viewport}>
