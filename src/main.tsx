@@ -14,6 +14,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
 import { App } from "./App";
+import { installViewportGuard } from "./lib/viewportGuard";
 
 // Browser-/iPad-Version: App-Dateien offline vorhalten (keine Nutzerdaten im Cache).
 // Neue Version: Der Service Worker übernimmt sofort; die Seite speichert offene
@@ -38,6 +39,9 @@ if (__WEB_BUILD__ && "serviceWorker" in navigator) {
     })
     .catch(() => {});
 }
+
+// iPad: von der Tastatur verschobene Ansicht zurücksetzen
+installViewportGuard();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

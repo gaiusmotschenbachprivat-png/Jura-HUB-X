@@ -169,6 +169,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     autofocus: false,
     editorProps: {
       attributes: { class: `prose prose-${editorFont}`, spellcheck: "true", lang: "de" },
+      // Schreibstelle mit Abstand zum Rand halten (iPad: Kurzbefehlsleiste der Tastatur)
+      scrollThreshold: { top: 40, bottom: 110, left: 0, right: 0 },
+      scrollMargin: { top: 40, bottom: 110, left: 0, right: 0 },
       handleClick(view, _pos, event) {
         // Norm antippen → Wortlaut (nicht beim Markieren)
         const nr = normRefOf(event.target as Element);

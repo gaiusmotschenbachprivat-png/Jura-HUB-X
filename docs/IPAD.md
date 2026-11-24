@@ -588,7 +588,10 @@ Home-Balken. Unter iPadOS 26 legt das System oben links die Fenstertasten (● �
 den oberen Rand einen Weichzeichner; als App vom Home-Bildschirm hält Studium OS diesen Streifen
 (46 px) deshalb frei – Seitenleisten-Knopf, Pfeile und „Gespeichert“ liegen darunter und bleiben
 scharf. Im Safari-Tab entfällt der Streifen. Passt der Abstand nicht, unter **Einstellungen →
-Abstand oben (iPad)** mit dem Regler anpassen (0–96 px); „Automatisch“ stellt den Standard wieder her. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
+Abstand oben (iPad)** mit dem Regler anpassen (0–96 px); „Automatisch“ stellt den Standard wieder her.
+Schiebt iPadOS beim Tippen oder beim Zurückkehren in die App Bereiche nach oben (oben
+abgeschnitten, unten leer), setzt die App das sofort zurück; bei offener Bildschirmtastatur passt
+sie sich dem sichtbaren Bereich an und hält die Schreibstelle mit etwas Abstand zum unteren Rand. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
 daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
 sich seitlich wischen lässt.
 
