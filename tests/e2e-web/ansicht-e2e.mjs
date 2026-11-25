@@ -154,6 +154,31 @@ try {
   });
   check("Zeilenwechsel: kein Wackeln (Rahmen/Fenster unbewegt, Text scrollt nur vorwärts)", wob.frames === 0 && wob.back === 0 && wob.n > 0, JSON.stringify(wob));
   check("Schreibstelle bleibt über dem unteren Rand", wob.gap >= 60, JSON.stringify(wob));
+  // Hängengebliebene Tastatur-Höhe (nach dem Schließen der Tastatur): beim nächsten Antippen weg
+  await page.evaluate(() => document.documentElement.style.setProperty("--app-h", "480px"));
+  await page.evaluate(() => document.activeElement?.blur());
+  await page.mouse.click(5, 400);
+  await sleep(150);
+  const stuck = await page.evaluate(() => ({ v: document.documentElement.style.getPropertyValue("--app-h"), h: Math.round(document.getElementById("root").getBoundingClientRect().height), ih: innerHeight }));
+  check("Hängengebliebene Tastatur-Höhe wird zurückgesetzt", stuck.v === "" && stuck.h === stuck.ih, JSON.stringify(stuck));
+
+  // iPadOS-Fehler (Home-Bildschirm-App): Fensterhöhe bleibt nach der Tastatur zu klein → volle Höhe
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "standalone", { get: () => true, configurable: true });
+    window.__realIH = window.innerHeight;
+    Object.defineProperty(window, "innerHeight", { get: () => 500, configurable: true });
+    window.dispatchEvent(new Event("resize"));
+  });
+  await sleep(200);
+  const bug = await page.evaluate(() => ({ full: document.documentElement.style.getPropertyValue("--full-h"), h: Math.round(document.getElementById("root").getBoundingClientRect().height), real: window.__realIH }));
+  check("Zu klein gemeldete Fensterhöhe: App füllt trotzdem den Bildschirm", bug.full === `${bug.real}px` && bug.h === bug.real, JSON.stringify(bug));
+  await page.evaluate(() => {
+    delete window.innerHeight;
+    Object.defineProperty(window, "innerHeight", { get: () => window.__realIH, configurable: true });
+    window.dispatchEvent(new Event("resize"));
+  });
+  await sleep(200);
+  check("Danach wieder normale Höhe", (await page.evaluate(() => document.documentElement.style.getPropertyValue("--full-h"))) === "");
   const end = await geo();
   check("Leiste und Fußzeile nach dem Tippen an ihrem Platz", end.topbar === 0 && Math.abs(end.foot - end.h) <= 2 && end.primary === 0, JSON.stringify(end));
   await page.screenshot({ path: path.join(OUT, "ansicht-1.png") });

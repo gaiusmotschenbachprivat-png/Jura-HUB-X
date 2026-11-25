@@ -593,7 +593,9 @@ Schiebt iPadOS beim Tippen oder beim Zurückkehren in die App Bereiche nach oben
 abgeschnitten, unten leer), setzt die App das sofort zurück; bei offener Bildschirmtastatur passt
 sie sich dem sichtbaren Bereich an und hält die Schreibstelle mit etwas Abstand zum unteren Rand. Beim Schreiben scrollt dabei nur der Text – nicht die ganze App (früher „wackelte“ das Dokument bei
 jedem Zeilenwechsel). Nach dem Wechsel aus der geteilten Ansicht wird die Seitenansicht erst neu
-berechnet, wenn sich die Fenstergröße nicht mehr ändert. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
+berechnet, wenn sich die Fenstergröße nicht mehr ändert. Meldet iPadOS nach dem Schließen der Tastatur eine zu kleine
+Fensterhöhe (unten leer), füllt die App trotzdem den ganzen Bildschirm; eine bei offener Tastatur
+verkleinerte Höhe wird spätestens beim nächsten Antippen zurückgesetzt. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
 daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
 sich seitlich wischen lässt.
 

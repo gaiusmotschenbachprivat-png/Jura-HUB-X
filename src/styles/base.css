@@ -1,7 +1,9 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-/* bei offener Bildschirmtastatur nur der sichtbare Bereich (lib/viewportGuard.ts) */
-#root { height: var(--app-h, 100%); }
+html, body { height: var(--full-h, 100%); }
+/* bei offener Bildschirmtastatur nur der sichtbare Bereich; als Home-Bildschirm-App mit
+   fälschlich zu kleiner Fensterhöhe (iPadOS) die volle Höhe (lib/viewportGuard.ts) */
+#root { height: var(--app-h, var(--full-h, 100%)); }
 /* Abstand oben für die iOS-Statusleiste (siehe lib/safeArea.ts). Ohne
    viewport-fit=cover setzt iPadOS die App selbst unter die Statusleiste – der
    Wert ist dann 0 und lässt sich in den Einstellungen von Hand erhöhen.
