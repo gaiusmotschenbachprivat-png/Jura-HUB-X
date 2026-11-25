@@ -192,7 +192,14 @@ try {
     const blob = await (await fetch("/__fixture/folien.pdf")).blob();
     await window.__STUDIUM_API__.__importBlob(new File([blob], "Sachverhalt Fall 3.pdf", { type: "application/pdf" }), courseId);
   }, course.id);
-  await page.getByRole("button", { name: "Datei davor …" }).click();
+  await waitFor(async () => (await call("documentsList", { kind: "subtree", id: course.id })).some((d) => d.title.includes("Sachverhalt Fall 3")), 15000);
+  // Menü öffnen (auf langsamen Rechnern ggf. ein zweites Mal)
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole("button", { name: "Datei davor …" }).click();
+    if (await page.getByRole("menuitem", { name: /Sachverhalt Fall 3/ }).waitFor({ timeout: 5000 }).then(() => true, () => false)) break;
+    await page.keyboard.press("Escape");
+    await sleep(500);
+  }
   await page.getByRole("menuitem", { name: /Sachverhalt Fall 3/ }).click();
   await page.locator(".vorab-sheet img").first().waitFor({ timeout: 15000 });
   await waitFor(async () => (await page.locator(".vorab-sheet img").count()) === 2, 15000);
