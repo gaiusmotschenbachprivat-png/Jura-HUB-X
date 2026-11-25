@@ -129,6 +129,31 @@ try {
     return { caret: Math.round(r.bottom), bottom: Math.round(sc.bottom) };
   });
   check("Schreibstelle sichtbar, mit Abstand zum unteren Rand", caret.caret <= caret.bottom - 60, JSON.stringify(caret));
+  // Zeilenwechsel am unteren Rand: nur der Textbereich scrollt, die Rahmen und das Fenster nie
+  await page.evaluate(() => {
+    window.__frameScrolls = 0;
+    window.__textScroll = [];
+    document.addEventListener("scroll", (e) => {
+      const t = e.target;
+      if (t === document || (t instanceof Element && t.matches(".primary, .shell-main, .note, .workspace, #root, body, html"))) window.__frameScrolls++;
+      if (t instanceof Element && t.classList.contains("note-scroll")) window.__textScroll.push(t.scrollTop);
+    }, true);
+  });
+  for (let i = 0; i < 12; i++) {
+    await page.keyboard.press("Enter");
+    await page.keyboard.type(`Zeile ${i + 1} am unteren Rand.`);
+  }
+  await sleep(300);
+  const wob = await page.evaluate(() => {
+    const ts = window.__textScroll;
+    let back = 0;
+    for (let i = 1; i < ts.length; i++) if (ts[i] < ts[i - 1] - 1) back++;
+    const r = window.getSelection().getRangeAt(0).getBoundingClientRect();
+    const sc = document.querySelector(".note-scroll").getBoundingClientRect();
+    return { frames: window.__frameScrolls, back, n: ts.length, gap: Math.round(sc.bottom - r.bottom) };
+  });
+  check("Zeilenwechsel: kein Wackeln (Rahmen/Fenster unbewegt, Text scrollt nur vorwärts)", wob.frames === 0 && wob.back === 0 && wob.n > 0, JSON.stringify(wob));
+  check("Schreibstelle bleibt über dem unteren Rand", wob.gap >= 60, JSON.stringify(wob));
   const end = await geo();
   check("Leiste und Fußzeile nach dem Tippen an ihrem Platz", end.topbar === 0 && Math.abs(end.foot - end.h) <= 2 && end.primary === 0, JSON.stringify(end));
   await page.screenshot({ path: path.join(OUT, "ansicht-1.png") });

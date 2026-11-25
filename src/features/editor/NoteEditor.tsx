@@ -48,6 +48,7 @@ import { PersonSketchDialog } from "./PersonSketchDialog";
 import { parseSketch, type Sketch } from "../../lib/personenskizze";
 import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
+import { handleScrollToSelection } from "./caretScroll";
 import { KlausurSheets } from "./KlausurSheets";
 import { paginationKey } from "./pagination";
 import { PrintView } from "./PrintView";
@@ -172,9 +173,8 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     autofocus: false,
     editorProps: {
       attributes: { class: `prose prose-${editorFont}`, spellcheck: "true", lang: "de" },
-      // Schreibstelle mit Abstand zum Rand halten (iPad: Kurzbefehlsleiste der Tastatur)
-      scrollThreshold: { top: 40, bottom: 110, left: 0, right: 0 },
-      scrollMargin: { top: 40, bottom: 110, left: 0, right: 0 },
+      // Schreibstelle mit Abstand zum Rand halten – nur im Textbereich (caretScroll.ts)
+      handleScrollToSelection,
       handleClick(view, _pos, event) {
         // Norm antippen → Wortlaut (nicht beim Markieren)
         const nr = normRefOf(event.target as Element);
@@ -343,11 +343,22 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   useEffect(() => {
     const el = viewport.current;
     if (!pageLayout || !el) return setPageZoom(1);
-    const fit = () => setPageZoom(Math.min(1, Math.max(0.4, (el.clientWidth - 24) / pageLayout.width)));
+    // höchstens einmal je Bild und nur bei spürbarer Änderung (Wechsel aus der geteilten Ansicht: viele Größenänderungen)
+    let frame = 0;
+    const fit = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const z = Math.min(1, Math.max(0.4, (el.clientWidth - 24) / pageLayout.width));
+        setPageZoom((old) => (Math.abs(old - z) < 0.004 ? old : z));
+      });
+    };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
   }, [pageLayout]);
   useEffect(() => {
     if (editor) editor.storage.gutachten.autoPaste = isFall;

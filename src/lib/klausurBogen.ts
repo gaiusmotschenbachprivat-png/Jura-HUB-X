@@ -14,8 +14,8 @@ export const BOGEN = {
   height: 297,
   /** Rahmen des Schreibbereichs (inkl. Korrekturrand) */
   box: { left: 12, top: 40, right: 193, bottom: 283 },
-  /** Trennlinie Text | Korrekturrand */
-  divider: 137.5,
+  /** Trennlinie Text | Korrekturrand – Korrekturrand ein Drittel der Seitenbreite (70 mm) */
+  divider: 123,
   pitch: 9,
   rows: 27,
   /** Abstand des Textes zu Rahmen und Trennlinie */

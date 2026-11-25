@@ -591,7 +591,9 @@ scharf. Im Safari-Tab entfällt der Streifen. Passt der Abstand nicht, unter **E
 Abstand oben (iPad)** mit dem Regler anpassen (0–96 px); „Automatisch“ stellt den Standard wieder her.
 Schiebt iPadOS beim Tippen oder beim Zurückkehren in die App Bereiche nach oben (oben
 abgeschnitten, unten leer), setzt die App das sofort zurück; bei offener Bildschirmtastatur passt
-sie sich dem sichtbaren Bereich an und hält die Schreibstelle mit etwas Abstand zum unteren Rand. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
+sie sich dem sichtbaren Bereich an und hält die Schreibstelle mit etwas Abstand zum unteren Rand. Beim Schreiben scrollt dabei nur der Text – nicht die ganze App (früher „wackelte“ das Dokument bei
+jedem Zeilenwechsel). Nach dem Wechsel aus der geteilten Ansicht wird die Seitenansicht erst neu
+berechnet, wenn sich die Fenstergröße nicht mehr ändert. Auf dem iPad im Hochformat liegt der Kontextbereich über dem Text (Knopf oben rechts) statt
 daneben; in der geteilten Ansicht (Split View) wird die Werkzeugleiste zu einer Zeile, die
 sich seitlich wischen lässt.
 
@@ -615,7 +617,7 @@ aus wie ein linierter Klausurbogen (A4 hoch):
 - oben rechts die Felder **Fach/Kurs**, **Name/Kenn-Nr.** und **Datum**; sie stehen über dem
   Text und erscheinen auf jedem Bogen. Fach/Kurs ist mit der Veranstaltung vorbelegt, das Datum
   mit heute.
-- ein Schreibbereich mit **27 Zeilen à 9 mm**, rechts ein **Korrekturrand** (gut 5 cm), unten
+- ein Schreibbereich mit **27 Zeilen à 9 mm**, rechts ein **Korrekturrand** von 7 cm (ein Drittel der Seitenbreite), unten
   **Bogen Nr.** mit fortlaufender Nummer.
 - Der Text (Times 12 pt) sitzt **automatisch mittig auf den Linien**; Überschriften und Listen
   ebenso. Ein Absatz, der nicht mehr auf den Bogen passt, läuft Zeile für Zeile auf dem

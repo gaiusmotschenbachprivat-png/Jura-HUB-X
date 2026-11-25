@@ -232,23 +232,41 @@ export const Pagination = Extension.create({
           },
         },
         view: (view) => {
-          const schedule = () => {
-            cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(() => {
-              const s = paginationKey.getState(view.state);
-              if (!s?.layout || view.isDestroyed) return;
-              const next = compute(view, s.layout);
-              const root = view.dom as HTMLElement;
-              root.style.minHeight = `${next.pages * (s.layout.height + s.layout.gap) - s.layout.gap}px`;
-              if (next.sig !== s.sig) view.dispatch(view.state.tr.setMeta(paginationKey, next).setMeta("addToHistory", false));
-            });
+          let timer: ReturnType<typeof setTimeout> | null = null;
+          const run = () => {
+            const s = paginationKey.getState(view.state);
+            if (!s?.layout || view.isDestroyed) return;
+            const next = compute(view, s.layout);
+            const root = view.dom as HTMLElement;
+            const mh = `${next.pages * (s.layout.height + s.layout.gap) - s.layout.gap}px`;
+            if (root.style.minHeight !== mh) root.style.minHeight = mh;
+            if (next.sig !== s.sig) view.dispatch(view.state.tr.setMeta(paginationKey, next).setMeta("addToHistory", false));
           };
-          const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(schedule) : null;
+          // Änderungen am Text: im nächsten Bild; Größenänderungen (Fenster, geteilte Ansicht): erst wenn sie zur Ruhe kommen
+          const schedule = (delay = 0) => {
+            cancelAnimationFrame(frame);
+            if (timer) clearTimeout(timer);
+            timer = null;
+            if (delay) timer = setTimeout(() => (frame = requestAnimationFrame(run)), delay);
+            else frame = requestAnimationFrame(run);
+          };
+          let lastW = 0;
+          const ro =
+            typeof ResizeObserver !== "undefined"
+              ? new ResizeObserver(() => {
+                  // nur die Breite ändert den Umbruch; die Höhe ändert sich durch uns selbst
+                  const w = (view.dom as HTMLElement).getBoundingClientRect().width;
+                  if (Math.abs(w - lastW) < 0.5) return;
+                  const first = lastW === 0;
+                  lastW = w;
+                  schedule(first ? 0 : 150);
+                })
+              : null;
           ro?.observe(view.dom);
           // Bilder und Schriften ändern die Höhe nachträglich
-          const onLoad = () => schedule();
+          const onLoad = () => schedule(50);
           view.dom.addEventListener("load", onLoad, true);
-          void document.fonts?.ready.then(schedule);
+          void document.fonts?.ready.then(() => schedule());
           schedule();
           return {
             update: (v, prevState) => {
@@ -262,6 +280,7 @@ export const Pagination = Extension.create({
             },
             destroy: () => {
               cancelAnimationFrame(frame);
+              if (timer) clearTimeout(timer);
               ro?.disconnect();
               view.dom.removeEventListener("load", onLoad, true);
             },

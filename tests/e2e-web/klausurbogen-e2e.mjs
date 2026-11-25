@@ -61,6 +61,7 @@ try {
   const content = [
     { type: "heading", attrs: { level: 1 }, content: [{ type: "text", text: "Probeklausur Strafrecht AT" }] },
     para("I. Tatbestand", [{ type: "bold" }]),
+    para("1. Objektiver Tatbestand"),
     ...Array.from({ length: 6 }, (_, i) => para(`${i + 1}. ${long}`)),
     para(long.repeat(5)), // langer Absatz, läuft über die Seitengrenze
     para("Wichtig: Kausalität ist unproblematisch.", [{ type: "highlight", attrs: { color: null } }]),
@@ -123,7 +124,13 @@ try {
   const a = await align();
   check("Alle Zeilen auf den Linien (mittig, ±2,5 px)", a.lines > 40 && a.worst <= 2.5 && a.outside === 0, JSON.stringify(a));
   check("Langer Absatz läuft zeilenweise auf den nächsten Bogen", a.cuts >= 1 && a.pages >= 2, JSON.stringify(a));
-  check("Text bleibt links vom Korrekturrand", a.right <= 137.5, String(a.right));
+  check("Text bleibt links vom Korrekturrand", a.right <= 123, String(a.right));
+  const rand = await page.evaluate(() => {
+    const MM = 96 / 25.4, sh = document.querySelector(".ks-sheet").getBoundingClientRect(), box = document.querySelector(".ks-box").getBoundingClientRect(), d = document.querySelector(".ks-divider").getBoundingClientRect();
+    const sc = sh.width / (210 * MM);
+    return Math.round(((box.right - d.left) / sc / MM) * 10) / 10;
+  });
+  check("Korrekturrand: ein Drittel der Seite (70 mm)", Math.abs(rand - 70) < 0.6, `${rand} mm`);
   await page.locator(".note-scroll").evaluate((e) => (e.scrollTop = 0));
   await shot("klausur-1-bogen");
 
