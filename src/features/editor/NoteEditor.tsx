@@ -21,6 +21,7 @@ import { DrawingDialog, type DrawingResult } from "./DrawingDialog";
 import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
 import { noteTypeOf } from "../../lib/noteTypes";
+import { klausurHead, klausurLayout } from "../../lib/klausurBogen";
 import { DEFAULT_PAGE, layoutFor, pageSettings } from "../../lib/pageLayout";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
@@ -47,6 +48,8 @@ import { PersonSketchDialog } from "./PersonSketchDialog";
 import { parseSketch, type Sketch } from "../../lib/personenskizze";
 import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
+import { KlausurSheets } from "./KlausurSheets";
+import { paginationKey } from "./pagination";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
 import { normRefOf, setDefaultLaws, type NormRef } from "./normLinks";
@@ -296,9 +299,42 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
   // Fall/Gutachten: eingefügter Text (z. B. eine Musterlösung) wird automatisch im Gutachtenstil eingefärbt
   const isFall = treeNode ? noteTypeOf(treeNode) === "fall" : false;
   // Dokument (A4): Seitenansicht wie im Druck
-  const pageMode = !!treeNode && noteTypeOf(treeNode) === "dokument" && !compact;
+  // Klausur (Bogen): linierter Klausurbogen, Text im Zeilenraster
+  const klausur = !!treeNode && noteTypeOf(treeNode) === "klausurbogen" && !compact;
+  const pageMode = (!!treeNode && noteTypeOf(treeNode) === "dokument" && !compact) || klausur;
   const pageSet = treeNode ? pageSettings(treeNode.meta) : DEFAULT_PAGE;
-  const pageLayout = useMemo(() => (pageMode ? layoutFor({ margins: pageSet.margins, style: pageSet.style }) : null), [pageMode, pageSet.margins, pageSet.style]);
+  const pageLayout = useMemo(
+    () => (klausur ? klausurLayout() : pageMode ? layoutFor({ margins: pageSet.margins, style: pageSet.style }) : null),
+    [klausur, pageMode, pageSet.margins, pageSet.style],
+  );
+  const courseTitle = useMemo(() => {
+    // Veranstaltung über der Notiz (für „Fach/Kurs“)
+    let p = treeNode?.parent_id ? nodes.find((n) => n.id === treeNode.parent_id) : undefined;
+    while (p && p.kind !== "course") p = p.parent_id ? nodes.find((n) => n.id === p!.parent_id) : undefined;
+    return p?.title ?? "";
+  }, [nodes, treeNode?.parent_id]);
+  const head = klausurHead(treeNode?.meta, { fach: courseTitle });
+  const [sheetCount, setSheetCount] = useState(1);
+  useEffect(() => {
+    if (!editor || !klausur) return;
+    const upd = () => setSheetCount(paginationKey.getState(editor.state)?.pages ?? 1);
+    upd();
+    editor.on("transaction", upd);
+    return () => {
+      editor.off("transaction", upd);
+    };
+  }, [editor, klausur]);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const exportPdf = async () => {
+    if (!editor || pdfBusy) return;
+    setPdfBusy(true);
+    try {
+      const { exportKlausurPdf } = await import("./klausurPdf");
+      await exportKlausurPdf(editor.view.dom as HTMLElement, { title, head });
+    } finally {
+      setPdfBusy(false);
+    }
+  };
   useEffect(() => {
     if (editor && !editor.isDestroyed) editor.commands.setPageLayout(pageLayout);
   }, [editor, pageLayout]);
@@ -672,7 +708,9 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
       { label: "Zeitstempel einfügen", onSelect: () => insertTimestamp(editor) },
       { label: "Offene Frage aus Auswahl", disabled: !selectedText(), onSelect: () => void fromSelection("question") },
       { separator: true, label: "" },
-      { label: "Drucken / als PDF …", icon: <Printer size={14} />, onSelect: () => setPrintDoc(editor.getJSON() as PMNode) },
+      klausur
+        ? { label: "Als PDF speichern (Klausurbogen) …", icon: <Printer size={14} />, onSelect: () => void exportPdf() }
+        : { label: "Drucken / als PDF …", icon: <Printer size={14} />, onSelect: () => setPrintDoc(editor.getJSON() as PMNode) },
       { label: "Literaturverzeichnis …", onSelect: () => setBibOpen(true) },
       { label: "Als Word-Datei exportieren (.docx)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "docx") },
       { label: "Als Markdown exportieren (.md)", onSelect: () => void exportNote(editor.getJSON() as PMNode, title, "md") },
@@ -733,7 +771,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             <IconButton label="Inhaltsverzeichnis" onClick={(e) => tocMenu(e.currentTarget)}>
               <ListTree size={16} />
             </IconButton>
-            <IconButton className="hide-narrow" label="Drucken / als PDF" onClick={() => setPrintDoc(editor.getJSON() as PMNode)}>
+            <IconButton className="hide-narrow" label={klausur ? "Als PDF speichern" : "Drucken / als PDF"} onClick={() => (klausur ? void exportPdf() : setPrintDoc(editor.getJSON() as PMNode))}>
               <Printer size={16} />
             </IconButton>
             <IconButton className="hide-narrow" label="Versionshistorie" onClick={() => setShowHistory(true)}>
@@ -753,7 +791,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             </IconButton>
           </div>
         </div>
-        {treeNode && <NoteMetaBar node={treeNode} />}
+        {treeNode && <NoteMetaBar node={treeNode} fach={courseTitle} onPdf={klausur ? () => void exportPdf() : undefined} pdfBusy={pdfBusy} />}
       </div>
       {lensHere ? (
         <SlideLensView className="in-toolbar" />
@@ -844,7 +882,29 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
         </div>
       )}
       <div className="note-scroll" ref={viewport}>
-        {pageLayout ? (
+        {pageLayout && klausur ? (
+          <div
+            className="page-desk page-klausur"
+            style={
+              {
+                zoom: pageZoom,
+                "--page-w": `${pageLayout.width}px`,
+                "--page-h": `${pageLayout.height}px`,
+                "--page-t": `${pageLayout.top}px`,
+                "--page-r": `${pageLayout.right}px`,
+                "--page-b": `${pageLayout.bottom}px`,
+                "--page-l": `${pageLayout.left}px`,
+                "--page-gap": `${pageLayout.gap}px`,
+                "--grid": `${pageLayout.grid}px`,
+              } as React.CSSProperties
+            }
+          >
+            <div className="ks-stack">
+              <KlausurSheets pages={sheetCount} head={head} gap={pageLayout.gap} />
+              <EditorContent editor={editor} />
+            </div>
+          </div>
+        ) : pageLayout ? (
           <div
             className={`page-desk page-style-${pageSet.style}`}
             style={

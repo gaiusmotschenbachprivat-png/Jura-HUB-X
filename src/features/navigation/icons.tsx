@@ -20,7 +20,7 @@ import {
   Scale,
   SquareStack,
   Target,
-  type LucideIcon, FileType2 } from "lucide-react";
+  type LucideIcon, FileType2, ClipboardPenLine } from "lucide-react";
 
 import type { NodeKind, StudyNode } from "../../api/types";
 import { noteTypeInfo, noteTypeOf, type NoteType } from "../../lib/noteTypes";
@@ -66,6 +66,7 @@ export const NOTE_TYPE_ICON: Record<NoteType, LucideIcon> = {
   hausarbeit: NotebookPen,
   klausur: Target,
   dokument: FileType2,
+  klausurbogen: ClipboardPenLine,
   notiz: FileText,
 };
 

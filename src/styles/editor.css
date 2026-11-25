@@ -468,3 +468,49 @@
 
 /* Entwurf aus einem fehlgeschlagenen Speichern */
 .draft-banner { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 16px 0; padding: 10px 14px; border-radius: var(--r-lg, 10px); background: var(--accent-soft); border: 1px solid var(--line); }
+
+/* Klausurbogen (KlausurSheets.tsx, lib/klausurBogen.ts): Papier immer hell, Text im 9-mm-Raster */
+.page-klausur { --grid: 34.0157px; }
+.ks-stack { position: relative; width: var(--page-w); margin: 0 auto; }
+.ks-sheets { position: absolute; inset: 0 auto auto 0; width: 100%; pointer-events: none; }
+.ks-sheet {
+  position: absolute; left: 0; background: #fff; color: #1a1a1a; border-radius: 2px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.14), 0 6px 20px rgb(0 0 0 / 0.08);
+  font-family: "Times New Roman", Times, "Liberation Serif", serif;
+}
+.ks-sheet > * { position: absolute; }
+.ks-rule { border-top: 0.75px solid #222; }
+.ks-field { display: flex; align-items: center; gap: 6px; border-bottom: 0.75px solid #222; font-size: 12pt; line-height: 1; }
+.ks-label { font: 7pt/1 Arial, Helvetica, sans-serif; color: #333; flex: none; align-self: flex-end; padding-bottom: 2px; }
+.ks-value { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ks-center { text-align: center; }
+.ks-foot .ks-label { font-size: 8pt; }
+.ks-box { border: 1px solid #222; }
+.ks-lines {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  background-image: linear-gradient(to bottom, transparent calc(100% - 0.75px), #8d939c calc(100% - 0.75px));
+  background-repeat: repeat-y; background-position: 0 0;
+}
+.ks-divider { position: absolute; top: 0; bottom: 0; border-left: 1px solid #222; }
+.page-klausur .ProseMirror.is-paged {
+  position: relative; z-index: 1; background: transparent; box-shadow: none; margin: 0;
+  /* Papierfarben, auch im Dunkelmodus */
+  --bg: #fff; --text: #1a1a1a; --text-2: #333; --text-3: #6b7280; color: #1a1a1a; caret-color: #1a1a1a; color-scheme: light;
+  font-family: "Times New Roman", Times, "Liberation Serif", serif; font-size: 12pt; line-height: var(--grid); text-align: left;
+}
+.page-klausur .ProseMirror.is-paged::after { display: none; }
+/* keine Außenabstände zwischen Blöcken: Abstände entstehen nur im Raster (auch nicht an den Zwischenräumen) */
+.page-klausur .ProseMirror.is-paged > *, .page-klausur .ProseMirror.is-paged .page-gap { margin-top: 0; margin-bottom: 0; }
+.page-klausur .ProseMirror.is-paged p,
+.page-klausur .ProseMirror.is-paged h1, .page-klausur .ProseMirror.is-paged h2, .page-klausur .ProseMirror.is-paged h3, .page-klausur .ProseMirror.is-paged h4,
+.page-klausur .ProseMirror.is-paged ul, .page-klausur .ProseMirror.is-paged ol, .page-klausur .ProseMirror.is-paged li, .page-klausur .ProseMirror.is-paged blockquote {
+  margin: 0; padding-top: 0; padding-bottom: 0; line-height: var(--grid); border-top: 0; border-bottom: 0;
+}
+/* Auszeichnungen (Markierung, Norm, hoch-/tiefgestellt) dürfen die Zeile nicht erhöhen */
+.page-klausur .ProseMirror.is-paged :is(p, h1, h2, h3, h4, li) :is(mark, span, a, code, sup, sub, strong, em, u, s):not(.page-gap) { line-height: 0; padding-top: 0; padding-bottom: 0; }
+.page-klausur .ProseMirror.is-paged h1, .page-klausur .ProseMirror.is-paged h2, .page-klausur .ProseMirror.is-paged h3, .page-klausur .ProseMirror.is-paged h4 { font-size: 12pt; font-weight: 700; font-style: normal; color: inherit; }
+.page-klausur .ProseMirror.is-paged h1 { font-size: 13pt; }
+.page-klausur .ProseMirror.is-paged ul, .page-klausur .ProseMirror.is-paged ol { padding-left: 7mm; }
+.page-klausur .ProseMirror.is-paged blockquote { padding-left: 4mm; }
+.page-klausur .ProseMirror.is-paged p.is-editor-empty:first-child::before { content: "Hier schreiben – der Text sitzt automatisch auf den Linien …"; color: #9aa0a8; }
+.page-klausur .footnote-list { display: none; }

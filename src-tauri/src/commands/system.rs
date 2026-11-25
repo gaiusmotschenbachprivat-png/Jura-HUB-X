@@ -45,7 +45,7 @@ pub async fn setting_set(state: St<'_>, key: String, value: Value) -> CmdResult<
     state.with(|c| settings::set(c, &key, &value))
 }
 
-const EXPORT_EXT: &[&str] = &["docx", "md", "txt", "html"];
+const EXPORT_EXT: &[&str] = &["docx", "md", "txt", "html", "pdf"];
 
 /// Schreibt eine exportierte Datei (Rohdaten im Request-Body, Zielpfad im
 /// Header `x-path-hex`, UTF-8 als Hex). Der Pfad stammt aus dem Speichern-Dialog.

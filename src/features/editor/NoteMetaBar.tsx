@@ -3,18 +3,30 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import type { StudyNode } from "../../api/types";
 import { NOTE_TYPES, noteTypeOf, type NoteType } from "../../lib/noteTypes";
+import { klausurHead } from "../../lib/klausurBogen";
 import { pageSettings } from "../../lib/pageLayout";
+import { Button } from "../../ui/Button";
 import { reportError, useApp } from "../../state/store";
 import { MOD } from "../../ui/misc";
 import { NoteTypeIcon } from "../navigation/icons";
 
 /** Art der Notiz und – bei Vorlesungen – Nummer, Datum, Dozent/in. Direkt änderbar. */
-export function NoteMetaBar({ node }: { node: StudyNode }) {
+export function NoteMetaBar({ node, fach = "", onPdf, pdfBusy = false }: { node: StudyNode; fach?: string; onPdf?: () => void; pdfBusy?: boolean }) {
   const reload = useApp((s) => s.reloadNodes);
   const type = noteTypeOf(node) ?? "notiz";
   const [nr, setNr] = useState(String(node.meta?.number ?? ""));
   const [date, setDate] = useState(typeof node.meta?.date === "string" ? node.meta.date : "");
   const [lecturer, setLecturer] = useState(typeof node.meta?.lecturer === "string" ? node.meta.lecturer : "");
+  const k0 = (node.meta?.klausur ?? {}) as Record<string, string>;
+  const [kFach, setKFach] = useState(k0.fach ?? "");
+  const [kName, setKName] = useState(k0.name ?? "");
+  const [kDatum, setKDatum] = useState(k0.datum ?? "");
+  useEffect(() => {
+    const k = (node.meta?.klausur ?? {}) as Record<string, string>;
+    setKFach(k.fach ?? "");
+    setKName(k.name ?? "");
+    setKDatum(k.datum ?? "");
+  }, [node.id, node.meta]);
   useEffect(() => {
     setNr(String(node.meta?.number ?? ""));
     setDate(typeof node.meta?.date === "string" ? node.meta.date : "");
@@ -66,6 +78,40 @@ export function NoteMetaBar({ node }: { node: StudyNode }) {
             </select>
           </label>
           <span className="xs muted">A4 · Seitenumbruch mit {MOD}+Enter</span>
+        </>
+      )}
+      {type === "klausurbogen" && (
+        <>
+          {(
+            [
+              ["fach", "Fach/Kurs", kFach, setKFach, fach || "Fach"],
+              ["name", "Name/Kenn-Nr.", kName, setKName, "Name, Kennnummer"],
+              ["datum", "Datum", kDatum, setKDatum, klausurHead(undefined).datum],
+            ] as const
+          ).map(([key, label, value, set, ph]) => (
+            <label key={key} className="note-meta-field grow-field">
+              <span>{label}</span>
+              <input
+                value={value}
+                maxLength={key === "datum" ? 40 : 120}
+                placeholder={ph}
+                aria-label={label}
+                onChange={(e) => set(e.target.value)}
+                onBlur={() => {
+                  const latest = (useApp.getState().nodes.find((n) => n.id === node.id)?.meta?.klausur ?? {}) as Record<string, string>;
+                  const next = { ...latest, [key]: value.trim() };
+                  for (const k of Object.keys(next)) if (!next[k as keyof typeof next]) delete next[k as keyof typeof next];
+                  void save({ klausur: Object.keys(next).length ? next : undefined });
+                }}
+              />
+            </label>
+          ))}
+          {onPdf && (
+            <Button size="sm" variant="primary" onClick={onPdf} disabled={pdfBusy}>
+              {pdfBusy ? "PDF wird erstellt …" : "Als PDF speichern"}
+            </Button>
+          )}
+          <span className="xs muted">27 Zeilen à 9 mm · Korrekturrand rechts · neue Seite mit {MOD}+Enter</span>
         </>
       )}
       {type === "vorlesung" && (

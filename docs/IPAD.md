@@ -607,6 +607,29 @@ Neben den Mitschriften gibt es im Dialog „Neu …“ die Schreibart **Dokument
 
 Die Seitenansicht auf dem Bildschirm ist eine Vorschau: Der endgültige Umbruch im Druck kann um einzelne Zeilen abweichen, weil Druck und Bildschirm Text leicht unterschiedlich setzen.
 
+## Klausur (Bogen)
+
+Für Probeklausuren gibt es im Dialog „Neu …“ die Schreibart **Klausur (Bogen)**. Jede Seite sieht
+aus wie ein linierter Klausurbogen (A4 hoch):
+
+- oben rechts die Felder **Fach/Kurs**, **Name/Kenn-Nr.** und **Datum**; sie stehen über dem
+  Text und erscheinen auf jedem Bogen. Fach/Kurs ist mit der Veranstaltung vorbelegt, das Datum
+  mit heute.
+- ein Schreibbereich mit **27 Zeilen à 9 mm**, rechts ein **Korrekturrand** (gut 5 cm), unten
+  **Bogen Nr.** mit fortlaufender Nummer.
+- Der Text (Times 12 pt) sitzt **automatisch mittig auf den Linien**; Überschriften und Listen
+  ebenso. Ein Absatz, der nicht mehr auf den Bogen passt, läuft Zeile für Zeile auf dem
+  nächsten Bogen weiter. Neue Seite von Hand mit ⌘+Enter.
+- Das Papier bleibt auch im Dunkelmodus weiß mit schwarzer Schrift.
+- **Als PDF speichern** (über dem Text oder Drucken-Knopf) erzeugt direkt auf dem Gerät eine PDF
+  zum Hochladen: A4, Bogen mit Linien und Feldern, Text durchsuchbar, jedes Wort an derselben
+  Stelle wie auf dem Bildschirm. Auf dem iPad öffnet sich das Teilen-Menü („In Dateien sichern“).
+
+Grenzen: In die PDF kommen Text mit Fett, Kursiv, Unterstreichung, Farbe und Markierung sowie
+Listenzeichen. Bilder, Tabellenlinien, Kästen und Skizzen erscheinen dort nicht – für die
+Klausur ist der Bogen auf Fließtext im Gutachtenstil ausgelegt. Zeichen, die die PDF-Standardschrift
+nicht kennt, werden ersetzt (z. B. „→“ durch „->“).
+
 ## Updates
 
 Neue Versionen lädt die App beim Öffnen bzw. beim Zurückwechseln selbst und startet dann kurz neu

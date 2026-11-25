@@ -32,6 +32,8 @@ export interface PageLayout {
   left: number;
   /** Abstand zwischen zwei Blättern auf dem Bildschirm */
   gap: number;
+  /** Zeilenraster (Klausurbogen): jede Zeile beginnt auf einer Linie, Absätze werden zeilenweise umbrochen */
+  grid?: number;
 }
 
 export function layoutFor(s: PageSettings): PageLayout {
@@ -97,4 +99,67 @@ export function pageBreaks(blocks: Block[], L: PageLayout): { gaps: Gap[]; pages
   });
   const pages = Math.max(1, Math.floor(Math.max(0, lastEnd - 1) / S) + 1, page + 1);
   return { gaps, pages };
+}
+
+export interface GridBlock {
+  /** oberer Rand im Fluss ohne Zwischenräume */
+  top: number;
+  /** Höhe ohne Zwischenräume */
+  height: number;
+  /** Seitenumbruch danach */
+  pageBreak?: boolean;
+  /** darf zeilenweise auf die nächste Seite umbrochen werden (Absatz, Liste …) */
+  splittable: boolean;
+}
+
+export interface GridPlacement {
+  /** Zwischenraum vor dem Block (Raster ausrichten, neue Seite) */
+  before: number;
+  /** Seite, auf der der Block beginnt (0-basiert) */
+  page: number;
+  /** Zeilen im Block, ab denen eine neue Seite beginnt, je mit Höhe des Zwischenraums */
+  cuts: { line: number; height: number; page: number }[];
+}
+
+/**
+ * Zeilenraster: Blöcke beginnen auf einer Rasterlinie; passt ein Absatz nicht
+ * mehr ganz auf die Seite, läuft er ab der ersten überzähligen Zeile auf der
+ * nächsten Seite weiter (nicht teilbare Blöcke rücken ganz auf die nächste).
+ */
+export function gridBreaks(blocks: GridBlock[], L: PageLayout): { placements: GridPlacement[]; pages: number } {
+  const g = L.grid!;
+  const R = Math.max(1, Math.round(contentHeight(L) / g));
+  const S = stride(L);
+  const pageGap = S - R * g; // unterer Rand + Abstand + oberer Rand
+  let row = 0; // fortlaufende Zeile über alle Seiten
+  let extra = 0;
+  let force = false;
+  const placements: GridPlacement[] = [];
+  for (const b of blocks) {
+    if (force && row % R) row = Math.ceil(row / R) * R;
+    force = false;
+    const n = b.height < 0.5 ? 0 : Math.max(1, Math.ceil(b.height / g - 0.01));
+    if (!b.splittable && (row % R) + n > R && n <= R) row = Math.ceil(row / R) * R;
+    const page = Math.floor(row / R);
+    const want = page * S + (row % R) * g;
+    const y = b.top + extra;
+    const before = Math.max(0, want - y);
+    extra += before;
+    const cuts: GridPlacement["cuts"] = [];
+    if (b.splittable) {
+      let first = R - (row % R); // erste Zeile im Block, die nicht mehr passt
+      let p = page;
+      while (first < n) {
+        p++;
+        cuts.push({ line: first, height: pageGap, page: p - 1 });
+        extra += pageGap;
+        first += R;
+      }
+    }
+    placements.push({ before, page, cuts });
+    row += n;
+    if (b.pageBreak) force = true;
+  }
+  const pages = Math.max(1, Math.ceil(row / R) || 1);
+  return { placements, pages };
 }

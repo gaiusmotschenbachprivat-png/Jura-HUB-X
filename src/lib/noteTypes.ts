@@ -6,7 +6,7 @@
 import type { StudyNode } from "../api/types";
 import { b, doc, empty, h, ol, p, tasks, ul, type PMNode } from "./pm";
 
-export type NoteType = "vorlesung" | "zusammenfassung" | "fall" | "uebung" | "hausarbeit" | "klausur" | "dokument" | "notiz";
+export type NoteType = "vorlesung" | "zusammenfassung" | "fall" | "uebung" | "hausarbeit" | "klausur" | "dokument" | "klausurbogen" | "notiz";
 
 export interface NoteTypeInfo {
   id: NoteType;
@@ -27,6 +27,7 @@ export const NOTE_TYPES: NoteTypeInfo[] = [
   { id: "hausarbeit", label: "Hausarbeit / Seminar", plural: "Haus- & Seminararbeiten", hint: "Wissenschaftlich mit Fußnoten", template: "wissenschaftlich", color: "#7a3e8f" },
   { id: "klausur", label: "Klausurvorbereitung", plural: "Klausurvorbereitung", hint: "Prüfungsstoff, Schemata, Probeklausuren", template: "pruefungsvorbereitung", color: "#2b7a8c" },
   { id: "dokument", label: "Dokument (A4)", plural: "Dokumente", hint: "Seiten wie in Word – zum Drucken", template: "leer", color: "#3b5bdb" },
+  { id: "klausurbogen", label: "Klausur (Bogen)", plural: "Klausurbögen", hint: "Linierter Klausurbogen mit Korrekturrand – als PDF zum Hochladen", template: "leer", color: "#1f7a4d" },
   { id: "notiz", label: "Notiz", plural: "Notizen", hint: "Freier Text ohne feste Struktur", template: "leer", color: "#5b6170" },
 ];
 
