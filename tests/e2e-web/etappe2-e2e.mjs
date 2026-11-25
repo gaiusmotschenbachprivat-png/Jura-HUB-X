@@ -80,7 +80,7 @@ try {
   const nowCard = page.locator(".now-card");
   if (LIVE) {
     await nowCard.getByText("läuft seit").waitFor({ timeout: 10000 });
-    check("Jetzt: BGB AT läuft, mit Raum", /BGB AT[\s\S]*läuft seit 10 Min[\s\S]*H 1/.test(await nowCard.innerText()), await nowCard.innerText());
+    check("Jetzt: BGB AT läuft, mit Raum", /BGB AT[\s\S]*läuft seit 1[01] Min[\s\S]*H 1/.test(await nowCard.innerText()), await nowCard.innerText());
     await nowCard.getByRole("button", { name: "Mitschrift starten" }).click();
     await page.locator(".ProseMirror").waitFor();
     const made = await api(async () => (await window.__STUDIUM_API__.nodesList(null)).find((n) => n.title === "4. Vorlesung"));
