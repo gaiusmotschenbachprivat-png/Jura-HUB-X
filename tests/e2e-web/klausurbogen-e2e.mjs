@@ -188,10 +188,13 @@ try {
   await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
 
   // Seiten anderer Dateien vor den Bogen: PDF aus den Unterlagen + Bild vom Gerät
-  await page.evaluate(async (courseId) => {
-    const blob = await (await fetch("/__fixture/folien.pdf")).blob();
-    await window.__STUDIUM_API__.__importBlob(new File([blob], "Sachverhalt Fall 3.pdf", { type: "application/pdf" }), courseId);
-  }, course.id);
+  const fixture = fs.readFileSync(path.join(ROOT, "tests/e2e/fixtures/folien.pdf")).toString("base64");
+  const imported = await page.evaluate(async ([courseId, b64]) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const res = await window.__STUDIUM_API__.__importBlob(new File([bytes], "Sachverhalt Fall 3.pdf", { type: "application/pdf" }), courseId);
+    return res.map((r) => r.error ?? "ok").join(",");
+  }, [course.id, fixture]);
+  check("Sachverhalt (PDF) importiert", imported === "ok", imported);
   await waitFor(async () => (await call("documentsList", { kind: "subtree", id: course.id })).some((d) => d.title.includes("Sachverhalt Fall 3")), 15000);
   // Menü öffnen (auf langsamen Rechnern ggf. ein zweites Mal)
   for (let i = 0; i < 3; i++) {
