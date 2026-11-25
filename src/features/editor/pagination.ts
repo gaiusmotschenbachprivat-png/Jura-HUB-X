@@ -111,9 +111,10 @@ function computeGrid(view: EditorView, L: PageLayout): { deco: DecorationSet; pa
   const sigParts: string[] = [];
   placements.forEach((p, i) => {
     const b = raw[i]!;
-    if (p.before > 0.5) {
-      decos.push(Decoration.widget(b.pos, spacer(p.before, false), { side: -1, key: `g${i}-${Math.round(p.before)}`, ignoreSelection: true }));
-      sigParts.push(`${i}:${Math.round(p.before)}`);
+    // auch kleinste Abweichungen ausgleichen – sonst summieren sich Rundungen Seite für Seite
+    if (p.before > 0.05) {
+      decos.push(Decoration.widget(b.pos, spacer(p.before, false), { side: -1, key: `g${i}-${Math.round(p.before * 10)}`, ignoreSelection: true }));
+      sigParts.push(`${i}:${Math.round(p.before * 10)}`);
     }
     for (const c of p.cuts) {
       const at = cutPos(view, b, c.line, g, scale, rootRect.top);

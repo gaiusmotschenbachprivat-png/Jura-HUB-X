@@ -11,6 +11,7 @@ const HERE = path.dirname(new URL(import.meta.url).pathname);
 const require = createRequire(path.join(HERE, "../e2e/package.json"));
 const { Builder } = require("selenium-webdriver");
 const CHECKS = fs.readFileSync(path.join(HERE, "webkit-checks.js"), "utf8");
+const KLAUSUR = fs.readFileSync(path.join(HERE, "klausur-safari.js"), "utf8");
 const URL_ = process.env.E2E_URL ?? "http://127.0.0.1:4173/?e2e";
 
 const results = [];
@@ -39,6 +40,20 @@ try {
     );
     results.push(...JSON.parse(json));
     if (phase === 1) await d.navigate().refresh();
+  }
+  // Klausurbogen: Daten anlegen, neu laden, prüfen (Fenster wie ein iPad quer)
+  await d.manage().window().setRect({ width: 1180, height: 820 }).catch(() => {});
+  for (const step of [1, 2]) {
+    const json = await d.executeAsyncScript(
+      `const done = arguments[arguments.length - 1];
+       const step = ${step};
+       (async () => {\n${KLAUSUR}\n})().then((r) => done(JSON.stringify(r)), (e) => done(JSON.stringify([{ name: "Klausur Schritt ${step} ohne Abbruch", ok: false, extra: String(e) }])));`,
+    );
+    results.push(...JSON.parse(json));
+    if (step === 1) {
+      await d.navigate().refresh();
+      await new Promise((r) => setTimeout(r, 3000));
+    }
   }
 } catch (e) {
   results.push({ name: "Testlauf ohne Abbruch", ok: false, extra: String(e).slice(0, 300) });

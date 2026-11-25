@@ -898,7 +898,6 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             className="page-desk page-klausur"
             style={
               {
-                zoom: pageZoom,
                 "--page-w": `${pageLayout.width}px`,
                 "--page-h": `${pageLayout.height}px`,
                 "--page-t": `${pageLayout.top}px`,
@@ -910,9 +909,13 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
               } as React.CSSProperties
             }
           >
-            <div className="ks-stack">
-              <KlausurSheets pages={sheetCount} head={head} gap={pageLayout.gap} />
-              <EditorContent editor={editor} />
+            {/* Verkleinern per transform statt zoom: zoom rundet in Safari die Zeilenhöhe,
+                der Text wanderte dann Seite für Seite von den Linien weg */}
+            <div className="ks-scale" style={{ width: pageLayout.width * pageZoom, height: (sheetCount * (pageLayout.height + pageLayout.gap) - pageLayout.gap) * pageZoom }}>
+              <div className="ks-stack" style={pageZoom !== 1 ? { transform: `scale(${pageZoom})` } : undefined}>
+                <KlausurSheets pages={sheetCount} head={head} gap={pageLayout.gap} />
+                <EditorContent editor={editor} />
+              </div>
             </div>
           </div>
         ) : pageLayout ? (

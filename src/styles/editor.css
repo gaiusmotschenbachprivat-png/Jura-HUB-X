@@ -471,7 +471,8 @@
 
 /* Klausurbogen (KlausurSheets.tsx, lib/klausurBogen.ts): Papier immer hell, Text im 9-mm-Raster */
 .page-klausur { --grid: 34.0157px; }
-.ks-stack { position: relative; width: var(--page-w); margin: 0 auto; }
+.ks-scale { margin: 0 auto; }
+.ks-stack { position: relative; width: var(--page-w); transform-origin: 0 0; }
 .ks-sheets { position: absolute; inset: 0 auto auto 0; width: 100%; pointer-events: none; }
 .ks-sheet {
   position: absolute; left: 0; background: #fff; color: #1a1a1a; border-radius: 2px;
