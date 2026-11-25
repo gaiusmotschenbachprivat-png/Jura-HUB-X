@@ -3,15 +3,28 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import type { StudyNode } from "../../api/types";
 import { NOTE_TYPES, noteTypeOf, type NoteType } from "../../lib/noteTypes";
-import { klausurHead } from "../../lib/klausurBogen";
+import { klausurHead, vorabIds } from "../../lib/klausurBogen";
 import { pageSettings } from "../../lib/pageLayout";
 import { Button } from "../../ui/Button";
 import { reportError, useApp } from "../../state/store";
 import { MOD } from "../../ui/misc";
 import { NoteTypeIcon } from "../navigation/icons";
+import { VorabControl } from "./KlausurVorab";
 
 /** Art der Notiz und – bei Vorlesungen – Nummer, Datum, Dozent/in. Direkt änderbar. */
-export function NoteMetaBar({ node, fach = "", onPdf, pdfBusy = false }: { node: StudyNode; fach?: string; onPdf?: () => void; pdfBusy?: boolean }) {
+export function NoteMetaBar({
+  node,
+  fach = "",
+  courseId = null,
+  onPdf,
+  pdfBusy = false,
+}: {
+  node: StudyNode;
+  fach?: string;
+  courseId?: string | null;
+  onPdf?: () => void;
+  pdfBusy?: boolean;
+}) {
   const reload = useApp((s) => s.reloadNodes);
   const type = noteTypeOf(node) ?? "notiz";
   const [nr, setNr] = useState(String(node.meta?.number ?? ""));
@@ -112,6 +125,16 @@ export function NoteMetaBar({ node, fach = "", onPdf, pdfBusy = false }: { node:
             </Button>
           )}
           <span className="xs muted">27 Zeilen à 9 mm · Korrekturrand rechts · neue Seite mit {MOD}+Enter</span>
+          <VorabControl
+            ids={vorabIds(node.meta)}
+            courseId={courseId}
+            onChange={(ids) => {
+              const latest = (useApp.getState().nodes.find((n) => n.id === node.id)?.meta?.klausur ?? {}) as Record<string, unknown>;
+              const next: Record<string, unknown> = { ...latest, vorab: ids.length ? ids : undefined };
+              if (!ids.length) delete next.vorab;
+              void save({ klausur: Object.keys(next).length ? next : undefined });
+            }}
+          />
         </>
       )}
       {type === "vorlesung" && (

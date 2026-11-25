@@ -630,6 +630,11 @@ aus wie ein linierter Klausurbogen (A4 hoch):
   zum Hochladen: A4, Bogen mit Linien und Feldern, Text durchsuchbar, jedes Wort an derselben
   Stelle wie auf dem Bildschirm. Auf dem iPad öffnet sich das Teilen-Menü („In Dateien sichern“).
 
+**Seiten davor** (Sachverhalt, Aufgabenstellung, Deckblatt): über dem Bogen „Datei davor …“ wählen –
+aus den Unterlagen der Veranstaltung oder vom Gerät (PDF, PNG, JPG). Die Seiten erscheinen vor
+Bogen 1 und stehen in der gespeicherten PDF vorne (PDF-Seiten unverändert, Bilder auf A4 eingepasst).
+Reihenfolge mit ↑, entfernen mit ×; die Datei selbst bleibt unter „Dokumente“.
+
 Grenzen: In die PDF kommen Text mit Fett, Kursiv, Unterstreichung, Farbe und Markierung sowie
 Listenzeichen. Bilder, Tabellenlinien, Kästen und Skizzen erscheinen dort nicht – für die
 Klausur ist der Bogen auf Fließtext im Gutachtenstil ausgelegt. Zeichen, die die PDF-Standardschrift

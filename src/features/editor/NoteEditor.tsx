@@ -21,7 +21,7 @@ import { DrawingDialog, type DrawingResult } from "./DrawingDialog";
 import { decodeDrawing, encodeDrawing } from "../../lib/drawing";
 import { exportNote } from "./exportImport";
 import { noteTypeOf } from "../../lib/noteTypes";
-import { klausurHead, klausurLayout } from "../../lib/klausurBogen";
+import { klausurHead, klausurLayout, vorabIds } from "../../lib/klausurBogen";
 import { DEFAULT_PAGE, layoutFor, pageSettings } from "../../lib/pageLayout";
 import { editorExtensions, isAllowedHref, MATH_EDIT_EVENT, type MathEditDetail } from "./extensions";
 import { MathDialog } from "./MathDialog";
@@ -50,6 +50,7 @@ import { calloutAttrs, calloutInfo, calloutKinds } from "../../lib/callouts";
 import { openCalloutKinds } from "./CalloutKinds";
 import { handleScrollToSelection } from "./caretScroll";
 import { KlausurSheets } from "./KlausurSheets";
+import { VorabPages } from "./KlausurVorab";
 import { paginationKey } from "./pagination";
 import { PrintView } from "./PrintView";
 import { NormPopover } from "./NormPopover";
@@ -307,12 +308,14 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     () => (klausur ? klausurLayout() : pageMode ? layoutFor({ margins: pageSet.margins, style: pageSet.style }) : null),
     [klausur, pageMode, pageSet.margins, pageSet.style],
   );
-  const courseTitle = useMemo(() => {
-    // Veranstaltung über der Notiz (für „Fach/Kurs“)
+  const course = useMemo(() => {
+    // Veranstaltung über der Notiz (für „Fach/Kurs“ und die Auswahl vorangestellter Dateien)
     let p = treeNode?.parent_id ? nodes.find((n) => n.id === treeNode.parent_id) : undefined;
     while (p && p.kind !== "course") p = p.parent_id ? nodes.find((n) => n.id === p!.parent_id) : undefined;
-    return p?.title ?? "";
+    return p ?? null;
   }, [nodes, treeNode?.parent_id]);
+  const courseTitle = course?.title ?? "";
+  const vorab = useMemo(() => vorabIds(treeNode?.meta), [treeNode?.meta]);
   const head = klausurHead(treeNode?.meta, { fach: courseTitle });
   const [sheetCount, setSheetCount] = useState(1);
   useEffect(() => {
@@ -330,7 +333,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
     setPdfBusy(true);
     try {
       const { exportKlausurPdf } = await import("./klausurPdf");
-      await exportKlausurPdf(editor.view.dom as HTMLElement, { title, head });
+      await exportKlausurPdf(editor.view.dom as HTMLElement, { title, head, vorab });
     } finally {
       setPdfBusy(false);
     }
@@ -802,7 +805,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
             </IconButton>
           </div>
         </div>
-        {treeNode && <NoteMetaBar node={treeNode} fach={courseTitle} onPdf={klausur ? () => void exportPdf() : undefined} pdfBusy={pdfBusy} />}
+        {treeNode && <NoteMetaBar node={treeNode} fach={courseTitle} courseId={course?.id ?? null} onPdf={klausur ? () => void exportPdf() : undefined} pdfBusy={pdfBusy} />}
       </div>
       {lensHere ? (
         <SlideLensView className="in-toolbar" />
@@ -911,6 +914,7 @@ function LoadedEditor({ note, compact, onReload }: { note: Note; compact: boolea
           >
             {/* Verkleinern per transform statt zoom: zoom rundet in Safari die Zeilenhöhe,
                 der Text wanderte dann Seite für Seite von den Linien weg */}
+            {vorab.length > 0 && <VorabPages ids={vorab} zoom={pageZoom} />}
             <div className="ks-scale" style={{ width: pageLayout.width * pageZoom, height: (sheetCount * (pageLayout.height + pageLayout.gap) - pageLayout.gap) * pageZoom }}>
               <div className="ks-stack" style={pageZoom !== 1 ? { transform: `scale(${pageZoom})` } : undefined}>
                 <KlausurSheets pages={sheetCount} head={head} gap={pageLayout.gap} />

@@ -69,3 +69,13 @@ export function baselineMm(rowTopMm: number, pitchMm: number, fontPt: number): n
   const fsMm = fontPt / PT_PER_MM;
   return rowTopMm + pitchMm / 2 + (0.891 - (0.891 + 0.216) / 2) * fsMm;
 }
+
+/** Dateien (Dokument-IDs), deren Seiten vor dem ersten Bogen stehen (Sachverhalt, Deckblatt …) */
+export function vorabIds(meta: Record<string, unknown> | undefined): string[] {
+  const v = ((meta?.klausur ?? {}) as Record<string, unknown>).vorab;
+  return Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string" && /^[\w-]{8,64}$/.test(x)))].slice(0, 20) : [];
+}
+
+/** Dateitypen, deren Seiten vorangestellt werden können */
+export const VORAB_EXT = ["pdf", "png", "jpg", "jpeg"] as const;
+export const isVorabExt = (ext: string) => (VORAB_EXT as readonly string[]).includes(ext.toLowerCase());

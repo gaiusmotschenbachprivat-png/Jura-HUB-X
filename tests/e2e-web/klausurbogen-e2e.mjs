@@ -187,6 +187,33 @@ try {
   await shot("klausur-2-dunkel");
   await page.evaluate(() => document.documentElement.removeAttribute("data-theme"));
 
+  // Seiten anderer Dateien vor den Bogen: PDF aus den Unterlagen + Bild vom Gerät
+  await page.evaluate(async (courseId) => {
+    const blob = await (await fetch("/__fixture/folien.pdf")).blob();
+    await window.__STUDIUM_API__.__importBlob(new File([blob], "Sachverhalt Fall 3.pdf", { type: "application/pdf" }), courseId);
+  }, course.id);
+  await page.getByRole("button", { name: "Datei davor …" }).click();
+  await page.getByRole("menuitem", { name: /Sachverhalt Fall 3/ }).click();
+  await page.locator(".vorab-sheet img").first().waitFor({ timeout: 15000 });
+  await waitFor(async () => (await page.locator(".vorab-sheet img").count()) === 2, 15000);
+  check("PDF-Seiten erscheinen vor Bogen 1", (await page.locator(".vorab-sheet img").count()) === 2 && (await page.locator(".vorab-chip").first().innerText()).includes("Sachverhalt Fall 3"));
+  const order = await page.evaluate(() => document.querySelector(".vorab-pages").getBoundingClientRect().bottom <= document.querySelector(".ks-sheet").getBoundingClientRect().top + 1);
+  check("… oberhalb des ersten Bogens", order);
+  // Bild vom Gerät (1×1-PNG genügt)
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==", "base64");
+  await page.getByRole("button", { name: "Datei davor …" }).click();
+  const [chooser] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("menuitem", { name: /Vom Gerät wählen/ }).click()]);
+  await chooser.setFiles({ name: "Deckblatt.png", mimeType: "image/png", buffer: png });
+  await waitFor(async () => (await page.locator(".vorab-chip").count()) === 2, 15000);
+  await waitFor(async () => (await page.locator(".vorab-sheet img").count()) === 3, 15000);
+  check("Bild vom Gerät ebenfalls davor", (await page.locator(".vorab-chip").nth(1).innerText()).includes("Deckblatt"));
+  // Reihenfolge ändern: Deckblatt nach vorne
+  await page.getByRole("button", { name: "Weiter nach vorne" }).click();
+  await waitFor(async () => (await page.locator(".vorab-chip").first().innerText()).includes("Deckblatt"));
+  const saved = (await call("nodesList", null)).find((x) => x.id === n.id)?.meta?.klausur;
+  check("Auswahl gespeichert (Deckblatt zuerst)", Array.isArray(saved?.vorab) && saved.vorab.length === 2 && saved.name === "Max Muster, 1234567", JSON.stringify(saved));
+  await shot("klausur-3-vorab");
+
   // PDF speichern
   const [dl] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), page.getByRole("button", { name: "Als PDF speichern" }).first().click()]);
   const file = path.join(OUT, "klausur.pdf");
@@ -195,14 +222,18 @@ try {
   const pdfjs = await import(path.join(ROOT, "node_modules/pdfjs-dist/legacy/build/pdf.mjs"));
   const pdf = await pdfjs.getDocument({ data: new Uint8Array(fs.readFileSync(file)) }).promise;
   const screenPages = await sheets.count();
-  check("PDF: so viele Seiten wie Bögen, A4", pdf.numPages === screenPages, `${pdf.numPages} / ${screenPages}`);
-  const p1 = await pdf.getPage(1);
+  check("PDF: vorangestellte Seiten + Bögen", pdf.numPages === screenPages + 3, `${pdf.numPages} / ${screenPages} + 3`);
+  const firstText = (await (await pdf.getPage(1)).getTextContent()).items.map((i) => i.str).join(" ");
+  const p2Text = (await (await pdf.getPage(2)).getTextContent()).items.map((i) => i.str).join(" ");
+  const p4Text = (await (await pdf.getPage(4)).getTextContent()).items.map((i) => i.str).join(" ");
+  check("PDF: zuerst Deckblatt (Bild), dann Sachverhalt, dann Bogen 1", !firstText.includes("Bogen Nr.") && p2Text.length > 0 && !p2Text.includes("Bogen Nr.") && p4Text.includes("Bogen Nr."), `${firstText.slice(0, 40)} | ${p2Text.slice(0, 60)} | ${p4Text.slice(0, 60)}`);
+  const p1 = await pdf.getPage(4);
   const vp = p1.getViewport({ scale: 1 });
   check("PDF: A4-Format", Math.abs(vp.width - 595.3) < 1 && Math.abs(vp.height - 841.9) < 1, `${vp.width}x${vp.height}`);
   let all = "";
   let worst = 0;
   let items = 0;
-  for (let i = 1; i <= pdf.numPages; i++) {
+  for (let i = 4; i <= pdf.numPages; i++) {
     const pg = await pdf.getPage(i);
     const tc = await pg.getTextContent();
     for (const it of tc.items) {

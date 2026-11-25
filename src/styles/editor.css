@@ -515,3 +515,14 @@
 .page-klausur .ProseMirror.is-paged blockquote { padding-left: 4mm; }
 .page-klausur .ProseMirror.is-paged p.is-editor-empty:first-child::before { content: "Hier schreiben – der Text sitzt automatisch auf den Linien …"; color: #9aa0a8; }
 .page-klausur .footnote-list { display: none; }
+
+/* Klausurbogen: Seiten anderer Dateien vor dem ersten Bogen (KlausurVorab.tsx) */
+.vorab-control { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex-basis: 100%; }
+.vorab-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 260px; padding: 2px 4px 2px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg-side); font-size: var(--fs-sm); }
+.vorab-mini { border: 0; background: none; padding: 2px 4px; border-radius: 6px; color: var(--text-2); line-height: 1; }
+@media (hover: hover) { .vorab-mini:hover { background: var(--bg-hover, var(--line)); } }
+.vorab-pages { margin: 0 auto 28px; display: flex; flex-direction: column; gap: 28px; }
+.vorab-sheet { margin: 0; position: relative; background: #fff; border-radius: 2px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.14), 0 6px 20px rgb(0 0 0 / 0.08); overflow: hidden; }
+.vorab-sheet img { display: block; width: 100%; height: auto; -webkit-user-select: none; user-select: none; }
+.vorab-sheet figcaption { position: absolute; left: 8px; top: 6px; padding: 1px 8px; border-radius: 999px; background: rgb(0 0 0 / 0.55); color: #fff; pointer-events: none; }
+.vorab-loading, .vorab-error { display: grid; place-items: center; padding: 24px; color: #555; }

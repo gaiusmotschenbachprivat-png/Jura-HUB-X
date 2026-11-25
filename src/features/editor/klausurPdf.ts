@@ -199,7 +199,41 @@ export function drawSheet(page: PDFPage, f: Fonts, head: KlausurHead, nr: number
   page.drawText(num, { x: (lx + pt(b.foot.right)) / 2 - f.regular.widthOfTextAtSize(num, 12) / 2, y: mmY(page, fy) + 2.5, size: 12, font: f.regular, color: INK });
 }
 
-export async function buildKlausurPdf(runs: Run[], head: KlausurHead, opts: { title: string; pages: number }): Promise<Uint8Array> {
+/** Eine vorangestellte Datei (PDF oder Bild) */
+export interface VorabFile {
+  name: string;
+  ext: string;
+  bytes: Uint8Array;
+}
+
+/** Hängt die Seiten der vorangestellten Dateien an; liefert Hinweise zu Dateien, die nicht gingen */
+export async function addVorab(pdf: PDFDocument, files: VorabFile[]): Promise<string[]> {
+  const problems: string[] = [];
+  for (const f of files) {
+    try {
+      const ext = f.ext.toLowerCase();
+      if (ext === "pdf") {
+        const src = await PDFDocument.load(f.bytes, { ignoreEncryption: true, updateMetadata: false });
+        const copied = await pdf.copyPages(src, src.getPageIndices());
+        copied.forEach((p) => pdf.addPage(p));
+      } else if (ext === "png" || ext === "jpg" || ext === "jpeg") {
+        const img = ext === "png" ? await pdf.embedPng(f.bytes) : await pdf.embedJpg(f.bytes);
+        // A4 hoch (quer, wenn das Bild breiter als hoch ist), Bild mit 10 mm Rand eingepasst
+        const landscape = img.width > img.height;
+        const [w, h] = landscape ? [pt(BOGEN.height), pt(BOGEN.width)] : [pt(BOGEN.width), pt(BOGEN.height)];
+        const page = pdf.addPage([w, h]);
+        const m = pt(10);
+        const s = Math.min((w - 2 * m) / img.width, (h - 2 * m) / img.height);
+        page.drawImage(img, { x: (w - img.width * s) / 2, y: (h - img.height * s) / 2, width: img.width * s, height: img.height * s });
+      } else problems.push(`${f.name}: Dateityp wird nicht unterstützt`);
+    } catch (e) {
+      problems.push(`${f.name}: ${errorMessage(e)}`);
+    }
+  }
+  return problems;
+}
+
+export async function buildKlausurPdf(runs: Run[], head: KlausurHead, opts: { title: string; pages: number; vorab?: VorabFile[] }): Promise<{ bytes: Uint8Array; problems: string[] }> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(opts.title);
   pdf.setCreator("Studium OS");
@@ -211,6 +245,8 @@ export async function buildKlausurPdf(runs: Run[], head: KlausurHead, opts: { ti
     boldItalic: await pdf.embedFont(StandardFonts.TimesRomanBoldItalic),
     sans: await pdf.embedFont(StandardFonts.Helvetica),
   };
+  // Seiten anderer Dateien zuerst (Sachverhalt, Deckblatt …), danach die Bögen
+  const problems = opts.vorab?.length ? await addVorab(pdf, opts.vorab) : [];
   const count = Math.max(1, opts.pages, ...runs.map((r) => r.page + 1));
   const pages = Array.from({ length: count }, (_, i) => {
     const p = pdf.addPage([pt(BOGEN.width), pt(BOGEN.height)]);
@@ -231,18 +267,29 @@ export async function buildKlausurPdf(runs: Run[], head: KlausurHead, opts: { ti
     if (r.underline) page.drawLine({ start: { x, y: base - 1.4 }, end: { x: x + w, y: base - 1.4 }, thickness: 0.6, color });
     if (r.strike) page.drawLine({ start: { x, y: base + r.sizePt * 0.3 }, end: { x: x + w, y: base + r.sizePt * 0.3 }, thickness: 0.6, color });
   }
-  return pdf.save();
+  return { bytes: await pdf.save(), problems };
 }
 
 const safeName = (s: string) => s.replace(/[\\/:*?"<>|\u0000-\u001f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120) || "Klausur";
 
 /** Seitenansicht → PDF → Teilen-Menü bzw. Speichern-Dialog */
-export async function exportKlausurPdf(root: HTMLElement, opts: { title: string; head: KlausurHead }) {
+export async function exportKlausurPdf(root: HTMLElement, opts: { title: string; head: KlausurHead; vorab?: string[] }) {
   const st = useApp.getState();
   try {
     const gap = 28;
     const pages = Number(root.getAttribute("data-pages") ?? 1) || 1;
-    const bytes = await buildKlausurPdf(collectRuns(root, gap), opts.head, { title: opts.title, pages });
+    const runs = collectRuns(root, gap);
+    const vorab: VorabFile[] = [];
+    for (const id of opts.vorab ?? []) {
+      try {
+        const d = (await api.documentGet(id)).document;
+        vorab.push({ name: d.title, ext: d.ext, bytes: await api.documentBytes(id) });
+      } catch (e) {
+        st.toast(`Vorangestellte Datei fehlt: ${errorMessage(e)}`, "error");
+      }
+    }
+    const { bytes, problems } = await buildKlausurPdf(runs, opts.head, { title: opts.title, pages, vorab });
+    for (const p of problems) st.toast(`Nicht vorangestellt – ${p}`, "error");
     const path = await api.pickSavePath(`${safeName(opts.title)}.pdf`, "pdf");
     if (!path) return;
     await api.exportWrite(path, bytes);
