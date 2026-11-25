@@ -95,6 +95,8 @@ export function WebBackupSettings() {
     try {
       await flushAll();
       const info = await api.backupCreate();
+      // erst die Liste aktualisieren: sonst zeigt „In Dateien sichern“ oben noch das vorige Backup
+      await load();
       toast(`Backup erstellt und geprüft (${formatBytes(info.size)}, ${info.file_count} Dateien). Sichere es jetzt mit „In Dateien sichern“.`, "success");
     } catch (e) {
       toast(`Backup fehlgeschlagen: ${errorMessage(e)}`, "error");

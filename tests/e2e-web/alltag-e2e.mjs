@@ -70,6 +70,9 @@ async function exportBackup(page, file) {
   await page.getByRole("tab", { name: "Backup" }).click();
   await page.getByRole("button", { name: "Jetzt Backup erstellen" }).click();
   await page.locator(".toast", { hasText: "Backup erstellt" }).waitFor({ timeout: 30000 });
+  // Das neue Backup steht oben (nicht das vorige, z. B. „vor-Wiederherstellung“)
+  const top = await page.locator("table tbody tr td.path").first().innerText().catch(() => "");
+  if (top && /vor-Wiederherstellung|vor-Abgleich/.test(top)) throw new Error(`Oben steht noch das vorige Backup: ${top}`);
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: 15000 }), page.getByRole("button", { name: "In Dateien sichern" }).first().click()]);
   await download.saveAs(file);
 }
